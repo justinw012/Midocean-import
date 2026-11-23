@@ -418,6 +418,8 @@ class MDO_Admin {
 				</form>
 			<?php endif; ?>
 
+			<?php MDO_Preview::render(); ?>
+
 			<h2>Logboek</h2>
 			<p class="description">Bevat alleen aantallen en artikelnummers, geen sleutels of klantgegevens.</p>
 			<table class="widefat striped" style="max-width:960px">
