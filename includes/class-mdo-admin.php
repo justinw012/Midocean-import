@@ -12,7 +12,7 @@ class MDO_Admin {
 	}
 
 	public static function menu() {
-		add_submenu_page( 'woocommerce', 'Midocean', 'Midocean', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ) );
+		add_submenu_page( 'woocommerce', 'Midocean (geavanceerd)', 'Midocean (geavanceerd)', 'manage_options', self::SLUG, array( __CLASS__, 'page' ) );
 	}
 
 	private static function back( $msg = '' ) {
@@ -134,7 +134,7 @@ class MDO_Admin {
 	}
 
 	/** Alle categoriepaden én hun bovenliggende niveaus, met aantallen producten. */
-	private static function category_tree() {
+	public static function category_tree() {
 		$cats = get_option( 'mdo_categories', array() );
 		$tree = array();
 		foreach ( (array) $cats as $path => $n ) {
@@ -148,7 +148,7 @@ class MDO_Admin {
 		return $tree;
 	}
 
-	private static function pending( $hook ) {
+	public static function pending( $hook ) {
 		if ( ! function_exists( 'as_get_scheduled_actions' ) ) {
 			return 0;
 		}
