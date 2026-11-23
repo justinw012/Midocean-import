@@ -163,6 +163,7 @@ class MDO_Frontend {
 					'w'      => $pos['w'],
 					'h'      => $pos['h'],
 					'box'    => $pos['box'],
+					'shape'  => isset( $pos['type'] ) ? (string) $pos['type'] : '',
 					'techs'  => $pos['techs'],
 					'images' => $pos['images'],
 				);

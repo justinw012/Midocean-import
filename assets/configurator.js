@@ -154,7 +154,8 @@
     if (!ch) return null;
     var p = ch.opt.pos;
     var d = dims(p, fs);
-    var canH = p.w - d.w >= 3, canV = p.h >= 25 && p.h - d.h >= 8;
+    var ar = alignRules(p);
+    var canH = ar.h && p.w - d.w >= 3, canV = ar.v && p.h >= 25 && p.h - d.h >= 8;
     return { face: face, fs: fs, opt: ch.opt, opts: ch.opts, w: d.w, h: d.h, d: d, rot: fs.rot || 0, colours: nColours(fs),
       canH: canH, canV: canV, al: canH ? (fs.al || 'c') : 'c', va: canV ? (fs.va || 'm') : 'm' };
   }
@@ -162,6 +163,15 @@
     var out = [];
     cfg.faces.forEach(function (f) { var fs = st.faces[f.key]; if (fs.on) { var s = selection(f, fs); if (s) out.push(s); } });
     return out;
+  }
+  // Waar heeft uitlijnen geen zin?
+  // - Rondom / 360°: links en rechts bestaan niet op een rond product (behalve bij pennen: daar loopt het vlak langs de pen).
+  // - Rond of onregelmatig drukvlak (Ellipse/Polygon, bijv. een deksel of doming): altijd in het midden.
+  function alignRules(p) {
+    var id = String(p.id || '').toUpperCase(), shape = String(p.shape || '').toLowerCase();
+    if (shape === 'ellipse' || shape === 'polygon') return { h: false, v: false };
+    var round = /360|ROUND ?SCREEN|ROUNDPART|WRAP|AROUND|SUBLIMATION 360/.test(id) && !/PEN|PENCIL/.test(id);
+    return { h: !round, v: true };
   }
   var AL = { l: 'links', c: 'midden', r: 'rechts' }, VA = { t: 'boven', m: 'midden', b: 'onder' };
   function alignText(s) {
@@ -430,7 +440,7 @@
     ov.className = 'mdo-sheet';
     ov.innerHTML = '<div class="mdo-sheet-in" role="dialog" aria-modal="true" aria-label="Uitleg opmerking"><div class="mdo-row-between"><strong style="font-size:17px">Opmerking bij je bestelling</strong><button type="button" class="mdo-sheet-x" aria-label="Sluiten">×</button></div>' +
       '<p>Met de knoppen Formaat, Draaien en Uitlijnen bepaal je de plek van je logo of tekst. Wil je het preciezer, zet het dan hier, bijvoorbeeld:</p>' +
-      '<ul class="mdo-note-ex"><li>Logo 1 cm boven de onderrand</li><li>Tekst precies tegenover het handvat</li><li>Logo even groot als op de vorige bestelling</li></ul>' +
+      '<ul class="mdo-note-ex"><li>Logo 1 cm boven de onderrand</li><li>Tekst precies tegenover het handvat</li><li>Logo even groot als op de vorige bestelling</li><li>Bij een mok: logo rechts van het oor</li></ul>' +
       '<p class="mdo-muted">We nemen je wensen mee bij het opmaken van de drukproef. Je krijgt die eerst ter goedkeuring.</p></div>';
     ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.mdo-sheet-x')) ov.remove(); });
     ov.addEventListener('keydown', function (e) { if (e.key === 'Escape') ov.remove(); });
