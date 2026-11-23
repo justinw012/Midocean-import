@@ -151,7 +151,11 @@
     var fs = st.faces[face.key], color = cfg.colors[st.color];
     var sel = fs.on ? selection(face, fs) : null;
     var pos = sel ? sel.opt.pos : face.positions[0];
-    var url = pos.images[color.code] || pos.images[Object.keys(pos.images)[0]] || color.image;
+    var url = pos.images[color.code];
+    if (!url) { // kleurcode niet gevonden: zoek de code in het artikelnummer
+      Object.keys(pos.images).forEach(function (k) { if (!url && k && new RegExp('-' + k + '(-|$)', 'i').test(color.sku)) url = pos.images[k]; });
+    }
+    url = url || pos.images[Object.keys(pos.images)[0]] || color.image;
     var dims = imgSize[url];
     var zone = '';
     if (sel && dims && pos.box) {

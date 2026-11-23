@@ -68,6 +68,24 @@ class MDO_Frontend {
 		return $out;
 	}
 
+	/**
+	 * Kleurcode van een variant, zoals in de printdata (bijv. "03").
+	 * Uit de opgeslagen code, anders uit het artikelnummer: AR1804-03 → 03, S01194-BK-L → BK.
+	 */
+	public static function color_code( $v, $master ) {
+		$code = (string) $v->get_meta( '_mdo_color_code' );
+		if ( '' !== $code ) {
+			return $code;
+		}
+		$sku = (string) $v->get_sku();
+		if ( $master && 0 === stripos( $sku, $master . '-' ) ) {
+			$rest = substr( $sku, strlen( $master ) + 1 );
+			$part = explode( '-', $rest );
+			return (string) $part[0];
+		}
+		return '';
+	}
+
 	public static function config( $product ) {
 		$s      = MDO_Settings::all();
 		$print  = $product->get_meta( MDO_Printdata::META );
@@ -94,7 +112,7 @@ class MDO_Frontend {
 				'id'      => $vid,
 				'sku'     => $v->get_sku(),
 				'name'    => wp_strip_all_tags( wc_get_formatted_variation( $v, true, false, false ) ),
-				'code'    => (string) $v->get_meta( '_mdo_color_code' ),
+				'code'    => self::color_code( $v, $product->get_meta( '_mdo_master_code' ) ),
 				'attrs'   => $v->get_variation_attributes(),
 				'image'   => $img ? $img[0] : '',
 				'thumb'   => $thumb ? $thumb[0] : '',
