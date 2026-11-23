@@ -13,6 +13,8 @@ class MDO_Dashboard {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 5 );
 		add_action( 'admin_menu', array( __CLASS__, 'simplify_menu' ), 999 );
+		add_action( 'admin_menu', array( __CLASS__, 'stats_menu' ), 70 );
+		add_action( 'admin_init', array( __CLASS__, 'grant_stats' ) );
 		add_action( 'admin_post_mdo_quick', array( __CLASS__, 'quick' ) );
 		add_filter( 'login_redirect', array( __CLASS__, 'login_redirect' ), 99, 3 );
 		add_filter( 'woocommerce_prevent_admin_access', array( __CLASS__, 'allow_admin' ), 99 );
@@ -31,6 +33,25 @@ class MDO_Dashboard {
 	public static function menu() {
 		add_menu_page( 'PromoFun', 'PromoFun', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ), 'dashicons-store', 2 );
 		add_submenu_page( self::SLUG, 'PromoFun', 'Overzicht', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ) );
+	}
+
+	/** Winkelbeheerders mogen de statistieken van Koko Analytics bekijken (Koko geeft dat standaard alleen aan beheerders). */
+	public static function grant_stats() {
+		if ( ! MDO_Stats::koko_active() || get_option( 'mdo_koko_cap' ) ) {
+			return;
+		}
+		$role = get_role( 'shop_manager' );
+		if ( $role ) {
+			$role->add_cap( 'view_koko_analytics' );
+		}
+		update_option( 'mdo_koko_cap', 1, false );
+	}
+
+	/** Snelkoppeling naar Koko onder PromoFun, zodat het ook in het ingekorte menu staat. */
+	public static function stats_menu() {
+		if ( MDO_Stats::koko_active() ) {
+			add_submenu_page( self::SLUG, 'Statistieken', 'Statistieken', 'view_koko_analytics', 'index.php?page=koko-analytics' );
+		}
 	}
 
 	/** Winkelbeheerders zien alleen PromoFun, Bestellingen en Producten. */
