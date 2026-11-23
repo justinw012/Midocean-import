@@ -28,8 +28,8 @@
 .mdo-ink.is-on{outline:3px solid var(--mdo-accent);outline-offset:1px}
 .mdo-size input{width:100%;accent-color:var(--mdo-accent)}
 .mdo-preview{display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:12px}
-.mdo-photo{position:relative;width:100%;max-width:320px}
-.mdo-photo>img{width:100%;height:auto;display:block}
+.mdo-photo{position:relative;display:inline-block;max-width:100%;line-height:0}
+.mdo-photo>img{display:block;max-width:100%;max-height:360px;width:auto;height:auto}
 .mdo-zone{position:absolute;border:2px dashed var(--mdo-accent);border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .mdo-art{display:flex;align-items:center;justify-content:center;overflow:hidden}
 .mdo-art img,.mdo-art svg{width:100%;height:100%;object-fit:contain;display:block}
@@ -45,3 +45,19 @@
 .mdo-warn{margin:0;font-size:13px;color:#B42318}
 .mdo-buy{width:100%;min-height:50px;font-size:16px}
 .mdo-buy[disabled]{opacity:.5;cursor:not-allowed}
+.mdo-chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:999px;border:1px solid var(--mdo-line);background:#fff;color:var(--mdo-text);font-size:13px;font-weight:600;white-space:nowrap}
+.mdo-chip.is-on{border:2px solid var(--mdo-accent)}
+.mdo-dot{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.2);flex:0 0 auto}
+.mdo-summary{padding:14px;border:1px solid var(--mdo-line);border-radius:12px;gap:8px;font-size:14px}
+.mdo-summary .mdo-row-between>span:last-child{text-align:right;font-weight:600}
+.mdo-steps{display:flex;flex-direction:column;gap:8px}
+.mdo-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mdo-progress span{height:5px;border-radius:3px;background:var(--mdo-line)}
+.mdo-progress span.is-on{background:var(--mdo-accent)}
+.mdo-bar{display:none}
+.mdo.is-mobile{padding-bottom:84px}
+.mdo.is-mobile .mdo-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--mdo-line);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.mdo-bar-price{display:flex;flex-direction:column;line-height:1.2}
+.mdo-bar-price strong{font-size:18px}
+.mdo-bar-btns{display:flex;gap:8px}
+.mdo-next{min-height:46px;padding:0 22px}

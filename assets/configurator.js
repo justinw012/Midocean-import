@@ -181,31 +181,99 @@
     return h;
   }
 
-  function render() {
+  // Kleurnaam -> kleur voor het bolletje als er nog geen productfoto is.
+  var NAMED = { zwart: '#1E1E1E', wit: '#FFFFFF', 'gebroken wit': '#F1ECE0', rood: '#C8312F', blauw: '#2F6DB5', 'royal blauw': '#2443A8', marineblauw: '#1F2A44', navy: '#1F2A44', 'licht blauw': '#8EC5EA', lichtblauw: '#8EC5EA', babyblauw: '#A9CFEA', turquoise: '#2BB3C0', petrol: '#1F5F6B', groen: '#2E8B57', 'donker groen': '#1F4D2E', limoen: '#B5D334', mintgroen: '#A8DCC7', oranje: '#F07C22', geel: '#F2C230', roze: '#E86AA6', babyroze: '#F4C6D0', babyrose: '#F4C6D0', fuchsia: '#C2185B', paars: '#6A3D9A', bruin: '#7B4A2D', beige: '#D9C7A7', naturel: '#D9C7A7', grijs: '#8A8A86', steengrijs: '#8A8A86', 'donker grijs': '#4A4A48', zilver: '#C0C4C8', 'mat zilver': '#B9BDC2', goud: '#C9A227', transparant: 'transparent', bordeaux: '#6D1A2A', 'burgundy': '#6D1A2A' };
+  function dot(name) {
+    var parts = String(name).toLowerCase().split(/\s*[,/]\s*/).map(function (n) { return NAMED[n.trim()] || null; }).filter(Boolean);
+    if (!parts.length) return '';
+    var bg = parts.length > 1 ? 'linear-gradient(135deg,' + parts[0] + ' 50%,' + parts[1] + ' 50%)' : parts[0];
+    return '<span class="mdo-dot" style="background:' + bg + '"></span>';
+  }
+
+  var mobile = window.matchMedia ? window.matchMedia('(max-width: 767px)') : { matches: false };
+  st.step = 0;
+  var STEPS = ['Kleur & aantal', 'Bedrukking', 'Overzicht'];
+
+  function swatchesHtml() {
     var color = cfg.colors[st.color];
-    var h = '';
-    h += '<section class="mdo-sec"><div class="mdo-lbl">Kleur: <strong>' + esc(color.name) + '</strong></div><div class="mdo-swatches">' +
+    return '<section class="mdo-sec"><div class="mdo-lbl">Kleur: <strong>' + esc(color.name) + '</strong></div><div class="mdo-swatches">' +
       cfg.colors.map(function (c, i) {
-        return '<button type="button" data-act="color" data-v="' + i + '" class="mdo-swatch' + (i === st.color ? ' is-on' : '') + '" aria-label="' + esc(c.name) + '" title="' + esc(c.name) + '">' + (c.thumb ? '<img src="' + esc(c.thumb) + '" alt="">' : esc(c.name)) + '</button>';
+        var on = i === st.color ? ' is-on' : '';
+        if (c.thumb) return '<button type="button" data-act="color" data-v="' + i + '" class="mdo-swatch' + on + '" aria-label="' + esc(c.name) + '" title="' + esc(c.name) + '"><img src="' + esc(c.thumb) + '" alt=""></button>';
+        return '<button type="button" data-act="color" data-v="' + i + '" class="mdo-chip' + on + '">' + dot(c.name) + esc(c.name) + '</button>';
       }).join('') + '</div></section>';
-    h += '<section class="mdo-sec"><div class="mdo-lbl">Aantal</div><div class="mdo-row">' + cfg.tiers.map(function (t) {
+  }
+  function qtyHtml() {
+    return '<section class="mdo-sec"><div class="mdo-lbl">Aantal</div><div class="mdo-row">' + cfg.tiers.map(function (t) {
       return '<button type="button" data-act="qty" data-v="' + t + '" class="mdo-pill' + (t === st.qty ? ' is-on' : '') + '">' + t + '</button>';
     }).join('') + '<input type="number" min="1" data-act="qtyin" class="mdo-input mdo-qty" value="' + st.qty + '" aria-label="Aantal"></div></section>';
-    if (cfg.faces.length) {
-      h += '<section class="mdo-sec mdo-print"><div class="mdo-row-between"><span class="mdo-lbl">Bedrukking</span><span class="mdo-tabs">' +
-        cfg.faces.map(function (f) {
-          return '<button type="button" data-act="face" data-v="' + esc(f.key) + '" class="' + (f.key === st.face ? 'is-on' : '') + '">' + esc(f.label) + (st.faces[f.key].on ? ' ✓' : '') + '</button>';
-        }).join('') + '</span></div><div data-out="preview">' + previewHtml() + '</div><div data-face="' + esc(st.face) + '">' + faceHtml(faceByKey(st.face)) + '</div></section>';
-    }
-    h += '<section class="mdo-sec"><label class="mdo-lbl" for="mdo-note">Opmerking (optioneel)</label><textarea id="mdo-note" data-act="note" class="mdo-input" rows="2" maxlength="500">' + esc(st.note) + '</textarea></section>';
-    h += '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
-    root.innerHTML = h;
-    measure();
   }
+  function printHtml() {
+    if (!cfg.faces.length) return '';
+    return '<section class="mdo-sec mdo-print"><div class="mdo-lbl">Bedrukking</div><div class="mdo-tabs">' +
+      cfg.faces.map(function (f) {
+        return '<button type="button" data-act="face" data-v="' + esc(f.key) + '" class="' + (f.key === st.face ? 'is-on' : '') + '">' + esc(f.label) + (st.faces[f.key].on ? ' ✓' : '') + '</button>';
+      }).join('') + '</div><div data-out="preview">' + previewHtml() + '</div><div data-face="' + esc(st.face) + '">' + faceHtml(faceByKey(st.face)) + '</div></section>';
+  }
+  function noteHtml() {
+    return '<section class="mdo-sec"><label class="mdo-lbl" for="mdo-note">Opmerking (optioneel)</label><textarea id="mdo-note" data-act="note" class="mdo-input" rows="2" maxlength="500">' + esc(st.note) + '</textarea></section>';
+  }
+  function summaryHtml() {
+    var color = cfg.colors[st.color], sels = selections();
+    var rows = [['Kleur', color.name], ['Aantal', st.qty + ' stuks']];
+    if (!sels.length) rows.push(['Bedrukking', 'Blanco']);
+    sels.forEach(function (s) {
+      var what = s.fs.mode === 'text' ? '“' + (s.fs.text || 'Jouw tekst') + '”' : (s.fs.logo ? s.fs.logo.name : 'logo (later aanleveren)');
+      rows.push([s.face.label, cfg.techniques[s.opt.tech.id].name + ', ' + s.w + '×' + s.h + ' mm, ' + what]);
+    });
+    return '<section class="mdo-sec mdo-summary">' + rows.map(function (r) { return '<div class="mdo-row-between"><span class="mdo-muted">' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
+  }
+
+  function render() {
+    var h = '';
+    if (mobile.matches) {
+      h += '<div class="mdo-steps"><span class="mdo-muted">Stap ' + (st.step + 1) + ' van 3 · ' + STEPS[st.step] + '</span><div class="mdo-progress">' +
+        STEPS.map(function (x, i) { return '<span class="' + (i <= st.step ? 'is-on' : '') + '"></span>'; }).join('') + '</div></div>';
+      if (st.step === 0) h += swatchesHtml() + qtyHtml();
+      if (st.step === 1) h += printHtml();
+      if (st.step === 2) h += summaryHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
+      h += '<div class="mdo-bar"><div class="mdo-bar-price" data-out="bar">' + barHtml() + '</div><div class="mdo-bar-btns">' +
+        (st.step > 0 ? '<button type="button" data-act="prev" class="mdo-pill">Terug</button>' : '') +
+        (st.step < 2 ? '<button type="button" data-act="next" class="button alt mdo-next">Volgende</button>' : '') + '</div></div>';
+    } else {
+      h += swatchesHtml() + qtyHtml() + printHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
+    }
+    root.innerHTML = h;
+    root.classList.toggle('is-mobile', !!mobile.matches);
+    measure();
+    syncGallery();
+  }
+
+  function barHtml() {
+    var q = quote(cfg.colors[st.color], st.qty, priceSels(selections()));
+    return '<strong>' + eur(q.total) + '</strong><span class="mdo-muted">' + eur(q.perPc) + ' per stuk</span>';
+  }
+
+  // Hoofdfoto van het thema laten meewisselen met de gekozen kleur.
+  var lastImg = null;
+  function syncGallery() {
+    var c = cfg.colors[st.color];
+    if (!c.image || c.image === lastImg) return;
+    lastImg = c.image;
+    var img = document.querySelector('.woocommerce-product-gallery__image img, .woocommerce-product-gallery img.wp-post-image');
+    if (!img) return;
+    img.removeAttribute('srcset'); img.removeAttribute('sizes');
+    img.src = c.image;
+    if (img.hasAttribute('data-src')) img.setAttribute('data-src', c.image);
+    if (img.hasAttribute('data-large_image')) img.setAttribute('data-large_image', c.image);
+    var a = img.closest('a'); if (a) a.href = c.image;
+  }
+  if (mobile.addEventListener) mobile.addEventListener('change', render);
 
   function soft() {
     var pv = root.querySelector('[data-out="preview"]'); if (pv) pv.innerHTML = previewHtml();
     var pr = root.querySelector('[data-out="price"]'); if (pr) pr.innerHTML = priceHtml();
+    var br = root.querySelector('[data-out="bar"]'); if (br) br.innerHTML = barHtml();
     var face = faceByKey(st.face), fs = face && st.faces[face.key];
     var so = root.querySelector('[data-out="size"]');
     if (so && fs && fs.on) { var s = selection(face, fs); if (s) so.textContent = s.w + ' × ' + s.h + ' mm · max. ' + s.opt.pos.w + ' × ' + s.opt.pos.h; }
@@ -234,6 +302,8 @@
     else if (a === 'colours') { fs.colours = v; fs.pick = null; }
     else if (a === 'font') fs.font = v;
     else if (a === 'ink') fs.ink = v;
+    else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    else if (a === 'prev') { st.step = Math.max(0, st.step - 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else return;
     render();
   });

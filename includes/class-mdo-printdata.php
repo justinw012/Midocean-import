@@ -48,6 +48,12 @@ class MDO_Printdata {
 		'PANEL'       => 'paneel',
 		'BRIM'        => 'klep',
 		'BASE'        => 'voet',
+		'MIDDLE'      => 'midden',
+		'OF'          => '',
+		'BAND'        => 'band',
+		'BOTTLE'      => 'fles',
+		'CENTER'      => 'midden',
+		'CENTRE'      => 'midden',
 	);
 
 	// Tokens die alleen de techniek aanduiden, niet de plek.
