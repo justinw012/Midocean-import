@@ -53,7 +53,32 @@ class MDO_Printdata {
 	// Tokens die alleen de techniek aanduiden, niet de plek.
 	private static $tech_tokens = array( 'PD', 'PAD', 'TD1', 'TD', 'LASER', 'DL', 'RD', 'DO', 'T1', 'S', 'P' );
 
+	const LABELS_OPTION = 'mdo_position_labels';
+	const SEEN_OPTION   = 'mdo_positions_seen';
+
+	/** Naam voor de klant: eigen vertaling uit het beheerscherm, anders de automatische. */
 	public static function label( $position_id ) {
+		$own = get_option( self::LABELS_OPTION, array() );
+		if ( ! empty( $own[ $position_id ] ) ) {
+			return $own[ $position_id ];
+		}
+		return self::auto_label( $position_id );
+	}
+
+	/** True als de automatische vertaling een woord niet kent (dan blijft het Engels). */
+	public static function has_unknown( $position_id ) {
+		foreach ( preg_split( '/\s+/', strtoupper( trim( $position_id ) ) ) as $t ) {
+			if ( '' === $t || in_array( $t, self::$tech_tokens, true ) || 'HANDED' === $t || ctype_digit( $t ) ) {
+				continue;
+			}
+			if ( ! isset( self::$words[ $t ] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static function auto_label( $position_id ) {
 		$tokens = preg_split( '/\s+/', strtoupper( trim( $position_id ) ) );
 		$out    = array();
 		foreach ( $tokens as $t ) {

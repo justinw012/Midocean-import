@@ -8,6 +8,7 @@ class MDO_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 60 );
 		add_action( 'admin_post_mdo_save', array( __CLASS__, 'save' ) );
 		add_action( 'admin_post_mdo_action', array( __CLASS__, 'action' ) );
+		add_action( 'admin_post_mdo_labels', array( __CLASS__, 'save_labels' ) );
 	}
 
 	public static function menu() {
@@ -42,6 +43,54 @@ class MDO_Admin {
 		MDO_Settings::update( $new );
 		MDO_Settings::ensure_dirs();
 		self::back( 'Instellingen opgeslagen.' );
+	}
+
+	public static function save_labels() {
+		if ( ! current_user_can( 'manage_woocommerce' ) || ! check_admin_referer( 'mdo_labels' ) ) {
+			wp_die( 'Geen toegang.' );
+		}
+		$pos  = array();
+		$tech = array();
+		foreach ( (array) wp_unslash( $_POST['pos'] ?? array() ) as $id => $label ) {
+			$label = sanitize_text_field( $label );
+			if ( '' !== $label ) {
+				$pos[ sanitize_text_field( $id ) ] = $label;
+			}
+		}
+		foreach ( (array) wp_unslash( $_POST['tech'] ?? array() ) as $id => $label ) {
+			$label = sanitize_text_field( $label );
+			if ( '' !== $label ) {
+				$tech[ sanitize_text_field( $id ) ] = $label;
+			}
+		}
+		update_option( MDO_Printdata::LABELS_OPTION, $pos, false );
+		update_option( 'mdo_technique_labels', $tech, false );
+		self::back( 'Vertalingen opgeslagen.' );
+	}
+
+	/** Posities en technieken die in de gesynchroniseerde producten voorkomen. */
+	private static function seen() {
+		$seen = get_option( MDO_Printdata::SEEN_OPTION, array() );
+		$pos  = array_flip( (array) ( $seen['positions'] ?? array() ) );
+		$tech = array_flip( (array) ( $seen['techniques'] ?? array() ) );
+		foreach ( (array) glob( MDO_Settings::cache_dir( 'print' ) . '*.json' ) as $f ) {
+			$p = json_decode( (string) file_get_contents( $f ), true );
+			foreach ( (array) ( $p['positions'] ?? array() ) as $ps ) {
+				$pos[ $ps['id'] ] = 1;
+				foreach ( (array) $ps['techs'] as $t ) {
+					$tech[ $t['id'] ] = 1;
+				}
+			}
+		}
+		$pos  = array_keys( $pos );
+		$tech = array_keys( $tech );
+		usort( $pos, function ( $a, $b ) {
+			$ua = MDO_Printdata::has_unknown( $a );
+			$ub = MDO_Printdata::has_unknown( $b );
+			return $ua === $ub ? strcmp( $a, $b ) : ( $ua ? -1 : 1 );
+		} );
+		sort( $tech );
+		return array( $pos, $tech );
 	}
 
 	public static function action() {
@@ -196,6 +245,56 @@ class MDO_Admin {
 				</table>
 				<?php submit_button( 'Instellingen opslaan' ); ?>
 			</form>
+
+			<h2>Vertalingen</h2>
+			<?php
+			list( $seen_pos, $seen_tech ) = self::seen();
+			$own_pos   = get_option( MDO_Printdata::LABELS_OPTION, array() );
+			$own_tech  = get_option( 'mdo_technique_labels', array() );
+			$tech_nl   = get_option( 'mdo_technique_names', array() );
+			?>
+			<?php if ( ! $seen_pos ) : ?>
+				<p>Na de eerste synchronisatie verschijnen hier de drukposities en technieken van je producten.</p>
+			<?php else : ?>
+				<p>Midocean levert drukposities alleen in het Engels. Laat een veld leeg om de automatische vertaling te gebruiken. <strong>Oranje</strong> = de automatische vertaling kent een woord niet.</p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'mdo_labels' ); ?>
+					<input type="hidden" name="action" value="mdo_labels">
+					<h3>Drukposities (<?php echo count( $seen_pos ); ?>)</h3>
+					<div style="max-height:420px;overflow:auto;max-width:960px">
+					<table class="widefat striped">
+						<thead><tr><th>Midocean</th><th>Automatisch</th><th>Jouw vertaling</th></tr></thead>
+						<tbody>
+						<?php foreach ( $seen_pos as $id ) :
+							$unknown = MDO_Printdata::has_unknown( $id );
+							?>
+							<tr<?php echo $unknown ? ' style="background:#FFF4E5"' : ''; ?>>
+								<td><code><?php echo esc_html( $id ); ?></code></td>
+								<td><?php echo esc_html( MDO_Printdata::auto_label( $id ) ); ?><?php echo $unknown ? ' <strong style="color:#B54708">(nog Engels)</strong>' : ''; ?></td>
+								<td><input type="text" class="regular-text" name="pos[<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $own_pos[ $id ] ?? '' ); ?>"></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+					</div>
+					<h3>Technieken (<?php echo count( $seen_tech ); ?>)</h3>
+					<div style="max-height:420px;overflow:auto;max-width:960px">
+					<table class="widefat striped">
+						<thead><tr><th>Code</th><th>Naam van Midocean</th><th>Jouw naam</th></tr></thead>
+						<tbody>
+						<?php foreach ( $seen_tech as $id ) : ?>
+							<tr>
+								<td><code><?php echo esc_html( $id ); ?></code></td>
+								<td><?php echo esc_html( $tech_nl[ $id ] ?? '–' ); ?></td>
+								<td><input type="text" class="regular-text" name="tech[<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $own_tech[ $id ] ?? '' ); ?>"></td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+					</div>
+					<?php submit_button( 'Vertalingen opslaan' ); ?>
+				</form>
+			<?php endif; ?>
 
 			<h2>Logboek</h2>
 			<p class="description">Bevat alleen aantallen en artikelnummers, geen sleutels of klantgegevens.</p>

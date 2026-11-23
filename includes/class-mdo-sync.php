@@ -199,14 +199,33 @@ class MDO_Sync {
 
 			case 'scan_printdata':
 				$wanted = array_flip( $s['masters'] );
-				$r      = MDO_Json_Stream::each( $dir . 'printdata.json', $s['offset'], $deadline, function ( $raw ) use ( $wanted, $dir ) {
+				if ( ! isset( $s['seen_pos'] ) ) {
+					$s['seen_pos']  = array();
+					$s['seen_tech'] = array();
+				}
+				$r = MDO_Json_Stream::each( $dir . 'printdata.json', $s['offset'], $deadline, function ( $raw ) use ( $wanted, $dir, &$s ) {
 					$p = MDO_Normalize::printproduct( $raw );
 					if ( isset( $wanted[ $p['master_code'] ] ) ) {
 						file_put_contents( $dir . 'print/' . sanitize_file_name( $p['master_code'] ) . '.json', wp_json_encode( $p ) );
+						foreach ( $p['positions'] as $pos ) {
+							$s['seen_pos'][ $pos['id'] ] = 1;
+							foreach ( $pos['techs'] as $t ) {
+								$s['seen_tech'][ $t['id'] ] = 1;
+							}
+						}
 					}
 				} );
 				$s['offset'] = $r['offset'];
 				if ( $r['done'] ) {
+					// Bijhouden welke posities en technieken in de shop voorkomen, voor het vertaalscherm.
+					$seen = get_option( MDO_Printdata::SEEN_OPTION, array() );
+					update_option( MDO_Printdata::SEEN_OPTION, array(
+						'positions'  => array_keys( $s['seen_pos'] + (array) ( $seen['positions_map'] ?? array() ) ),
+						'techniques' => array_keys( $s['seen_tech'] + (array) ( $seen['techniques_map'] ?? array() ) ),
+						'positions_map'  => $s['seen_pos'] + (array) ( $seen['positions_map'] ?? array() ),
+						'techniques_map' => $s['seen_tech'] + (array) ( $seen['techniques_map'] ?? array() ),
+					), false );
+					unset( $s['seen_pos'], $s['seen_tech'] );
 					$s['stage'] = 'printprices';
 				}
 				break;
