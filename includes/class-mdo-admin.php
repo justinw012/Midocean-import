@@ -84,10 +84,11 @@ class MDO_Admin {
 		}
 		$pos  = array_keys( $pos );
 		$tech = array_keys( $tech );
-		usort( $pos, function ( $a, $b ) {
-			$ua = MDO_Printdata::has_unknown( $a );
-			$ub = MDO_Printdata::has_unknown( $b );
-			return $ua === $ub ? strcmp( $a, $b ) : ( $ua ? -1 : 1 );
+		$rank = array( 'onbekend' => 0, 'keuze' => 1, 'zeker' => 2 );
+		usort( $pos, function ( $a, $b ) use ( $rank ) {
+			$ra = $rank[ MDO_Printdata::explain( $a )['status'] ];
+			$rb = $rank[ MDO_Printdata::explain( $b )['status'] ];
+			return $ra === $rb ? strcmp( $a, $b ) : $ra - $rb;
 		} );
 		sort( $tech );
 		return array( $pos, $tech );
@@ -256,22 +257,53 @@ class MDO_Admin {
 			<?php if ( ! $seen_pos ) : ?>
 				<p>Na de eerste synchronisatie verschijnen hier de drukposities en technieken van je producten.</p>
 			<?php else : ?>
-				<p>Midocean levert drukposities alleen in het Engels. Laat een veld leeg om de automatische vertaling te gebruiken. <strong>Oranje</strong> = de automatische vertaling kent een woord niet.</p>
+				<?php
+				$badge  = array(
+					'onbekend' => array( '#FDE8E8', '#B42318', 'Onbekend' ),
+					'keuze'    => array( '#FFF4E5', '#B54708', 'Gekozen' ),
+					'zeker'    => array( '#E3F4E8', '#1E6B3A', 'Zeker' ),
+					'eigen'    => array( '#E8EEFD', '#1D4ED8', 'Eigen vertaling' ),
+				);
+				$counts = array( 'onbekend' => 0, 'keuze' => 0, 'zeker' => 0, 'eigen' => 0 );
+				foreach ( $seen_pos as $id ) {
+					$counts[ ! empty( $own_pos[ $id ] ) ? 'eigen' : MDO_Printdata::explain( $id )['status'] ]++;
+				}
+				$pill = function ( $k, $suffix = '' ) use ( $badge ) {
+					return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px;background:' . $badge[ $k ][0] . ';color:' . $badge[ $k ][1] . '">' . esc_html( $badge[ $k ][2] . $suffix ) . '</span>';
+				};
+				?>
+				<p>Midocean levert drukposities alleen in het Engels. Elke automatische vertaling heeft een label:</p>
+				<ul style="list-style:none;margin:0 0 12px;padding:0;line-height:2">
+					<li><?php echo $pill( 'onbekend' ); ?> Een woord staat niet in de woordenlijst en blijft Engels. Vul hier altijd zelf iets in.</li>
+					<li><?php echo $pill( 'keuze' ); ?> Het woord heeft meerdere betekenissen, of de woordvolgorde is automatisch. De uitleg staat erbij.</li>
+					<li><?php echo $pill( 'zeker' ); ?> Letterlijke vertaling van bekende woorden.</li>
+					<li><?php echo $pill( 'eigen' ); ?> Je hebt zelf een vertaling ingevuld; die wordt gebruikt.</li>
+				</ul>
+				<p><strong>Overzicht:</strong>
+					<?php echo $pill( 'onbekend', ': ' . $counts['onbekend'] ); ?>
+					<?php echo $pill( 'keuze', ': ' . $counts['keuze'] ); ?>
+					<?php echo $pill( 'zeker', ': ' . $counts['zeker'] ); ?>
+					<?php echo $pill( 'eigen', ': ' . $counts['eigen'] ); ?>
+				</p>
+				<p>Laat een veld leeg om de automatische vertaling te gebruiken.</p>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'mdo_labels' ); ?>
 					<input type="hidden" name="action" value="mdo_labels">
 					<h3>Drukposities (<?php echo count( $seen_pos ); ?>)</h3>
 					<div style="max-height:420px;overflow:auto;max-width:960px">
 					<table class="widefat striped">
-						<thead><tr><th>Midocean</th><th>Automatisch</th><th>Jouw vertaling</th></tr></thead>
+						<thead><tr><th>Midocean</th><th>Automatisch</th><th>Zekerheid</th><th>Toelichting</th><th>Jouw vertaling</th></tr></thead>
 						<tbody>
 						<?php foreach ( $seen_pos as $id ) :
-							$unknown = MDO_Printdata::has_unknown( $id );
+							$ex  = MDO_Printdata::explain( $id );
+							$own = ! empty( $own_pos[ $id ] );
 							?>
-							<tr<?php echo $unknown ? ' style="background:#FFF4E5"' : ''; ?>>
+							<tr style="background:<?php echo esc_attr( $badge[ $own ? 'eigen' : $ex['status'] ][0] ); ?>">
 								<td><code><?php echo esc_html( $id ); ?></code></td>
-								<td><?php echo esc_html( MDO_Printdata::auto_label( $id ) ); ?><?php echo $unknown ? ' <strong style="color:#B54708">(nog Engels)</strong>' : ''; ?></td>
-								<td><input type="text" class="regular-text" name="pos[<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $own_pos[ $id ] ?? '' ); ?>"></td>
+								<td><?php echo esc_html( MDO_Printdata::auto_label( $id ) ); ?></td>
+								<td><?php echo $pill( $own ? 'eigen' : $ex['status'] ); ?></td>
+								<td style="font-size:12px;color:#444"><?php echo $ex['notes'] ? implode( '<br>', array_map( 'esc_html', $ex['notes'] ) ) : '–'; ?></td>
+								<td><input type="text" class="regular-text" name="pos[<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $own_pos[ $id ] ?? '' ); ?>" placeholder="<?php echo esc_attr( MDO_Printdata::auto_label( $id ) ); ?>"></td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>
@@ -280,7 +312,7 @@ class MDO_Admin {
 					<h3>Technieken (<?php echo count( $seen_tech ); ?>)</h3>
 					<div style="max-height:420px;overflow:auto;max-width:960px">
 					<table class="widefat striped">
-						<thead><tr><th>Code</th><th>Naam van Midocean</th><th>Jouw naam</th></tr></thead>
+						<thead><tr><th>Code</th><th>Naam van Midocean (officieel Nederlands)</th><th>Jouw naam</th></tr></thead>
 						<tbody>
 						<?php foreach ( $seen_tech as $id ) : ?>
 							<tr>

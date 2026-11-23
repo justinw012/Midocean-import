@@ -56,6 +56,40 @@ class MDO_Printdata {
 		'CENTRE'      => 'midden',
 	);
 
+	/**
+	 * Woorden waarbij de vertaling een keuze is (meerdere betekenissen mogelijk).
+	 * Alle andere woorden uit $words zijn letterlijk en daarmee "zeker".
+	 */
+	private static $choices = array(
+		'ARM'         => 'Arm of mouw; gekozen: mouw (bij kleding).',
+		'CHEST'       => 'Borst (kleding); bij tassen kan "voorvak" beter zijn.',
+		'BARREL'      => 'Huls (pen); kan ook: schacht.',
+		'POCKET'      => 'Zak; bij tassen kan "vak" beter zijn.',
+		'BOX'         => 'Doos; kan ook: doosje, verpakking of blik.',
+		'POUCH'       => 'Etui; kan ook: hoesje of zakje.',
+		'STRAP'       => 'Band; kan ook: riem of hengsel.',
+		'SHOULDER'    => 'Schouder; bij tassen: schouderband.',
+		'UPPER'       => 'Boven; "bovenste deel" kan duidelijker zijn.',
+		'LOWER'       => 'Onder; "onderste deel" kan duidelijker zijn.',
+		'ROUNDSCREEN' => 'Rondom bedrukt (zeefdruk rondom).',
+		'360'         => 'Rondom (360°).',
+		'CAP'         => 'Dop (fles, pen); bij kleding betekent het "pet".',
+		'BODY'        => 'Romp; kan ook: behuizing of flesbody.',
+		'NECK'        => 'Nek (kleding); bij flessen: hals.',
+		'HOOD'        => 'Capuchon.',
+		'FLAP'        => 'Klep; kan ook: flap.',
+		'PANEL'       => 'Paneel; kan ook: vlak.',
+		'BRIM'        => 'Klep van een pet; kan ook: rand.',
+		'BASE'        => 'Voet; kan ook: onderkant of sokkel.',
+		'BAND'        => 'Band; kan ook: ring of strook.',
+		'HANDLE'      => 'Handvat; kan ook: hengsel of greep.',
+		'SLEEVE'      => 'Mouw; bij hoezen betekent het "hoes".',
+		'MIDDLE'      => 'Midden.',
+		'CENTER'      => 'Midden.',
+		'CENTRE'      => 'Midden.',
+		'BELOW'       => 'Onder.',
+	);
+
 	// Tokens die alleen de techniek aanduiden, niet de plek.
 	private static $tech_tokens = array( 'PD', 'PAD', 'TD1', 'TD', 'LASER', 'DL', 'RD', 'DO', 'T1', 'S', 'P' );
 
@@ -82,6 +116,55 @@ class MDO_Printdata {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Hoe zeker is de automatische vertaling?
+	 * zeker   = letterlijke vertaling van bekende woorden
+	 * keuze   = een woord met meerdere betekenissen, of de woordvolgorde is automatisch gekozen
+	 * onbekend = een woord staat niet in de woordenlijst en blijft Engels
+	 *
+	 * @return array{status:string,notes:string[]}
+	 */
+	public static function explain( $position_id ) {
+		$status  = 'zeker';
+		$notes   = array();
+		$places  = 0;
+		$dropped = array();
+		foreach ( preg_split( '/\s+/', strtoupper( trim( $position_id ) ) ) as $t ) {
+			if ( '' === $t || ctype_digit( $t ) && '360' !== $t || 'HANDED' === $t ) {
+				continue;
+			}
+			if ( in_array( $t, self::$tech_tokens, true ) ) {
+				$dropped[] = $t;
+				continue;
+			}
+			if ( ! isset( self::$words[ $t ] ) ) {
+				$status  = 'onbekend';
+				$notes[] = $t . ': staat niet in de woordenlijst, blijft Engels.';
+				continue;
+			}
+			if ( '' === self::$words[ $t ] ) {
+				continue;
+			}
+			$places++;
+			if ( isset( self::$choices[ $t ] ) ) {
+				if ( 'onbekend' !== $status ) {
+					$status = 'keuze';
+				}
+				$notes[] = $t . ' → ' . self::$words[ $t ] . ': ' . self::$choices[ $t ];
+			}
+		}
+		if ( $places > 1 ) {
+			if ( 'zeker' === $status ) {
+				$status = 'keuze';
+			}
+			$notes[] = 'Woordvolgorde automatisch gekozen; controleer of het goed loopt.';
+		}
+		if ( $dropped ) {
+			$notes[] = implode( ', ', $dropped ) . ' weggelaten: dat is een techniekaanduiding, geen plek.';
+		}
+		return array( 'status' => $status, 'notes' => $notes );
 	}
 
 	public static function auto_label( $position_id ) {
