@@ -157,3 +157,7 @@
 .mdo-ti-price{font-size:14px;font-weight:700;white-space:nowrap}
 .mdo-ti-tag{align-self:flex-start;font-size:12px;font-weight:700;color:#1E6B3A;background:#E6F4EA;border-radius:999px;padding:2px 8px}
 .mdo-ti-note{margin:0;font-size:12px}
+#mdo-configurator .mdo-techbtn{display:flex!important;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;cursor:pointer;background:#fff;padding-right:36px!important;position:relative;color:var(--mdo-text);font-weight:400;text-transform:none;letter-spacing:0}
+.mdo-techbtn::after{content:"";position:absolute;right:14px;top:50%;width:8px;height:8px;border-right:2px solid #555;border-bottom:2px solid #555;transform:translateY(-70%) rotate(45deg)}
+.mdo-techbtn-name{flex:1;min-width:0}
+.mdo-techbtn-more{font-size:12px;color:#646970;white-space:nowrap}

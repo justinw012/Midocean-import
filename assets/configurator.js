@@ -274,7 +274,11 @@
     h += '<div class="mdo-field"><span class="mdo-lbl">Draaien</span><div class="mdo-grid mdo-grid-rot">' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
     }).join('') + '</div></div>';
-    h += '<div class="mdo-field"><span class="mdo-lbl">Techniek</span><div class="mdo-tis">' + techRows(face, fs, sel) + '</div></div>';
+    var cur = sel.opt, more = sel.opts.length - 1;
+    h += '<div class="mdo-field"><span class="mdo-lbl">Techniek</span>' +
+      '<button type="button" class="mdo-input mdo-techbtn" data-act="techinfo" aria-haspopup="dialog">' +
+      '<span class="mdo-techbtn-name">' + esc(cfg.techniques[cur.tech.id].name) + (cur.pos.id !== face.positions[0].id ? ' (' + cur.pos.w + ' × ' + cur.pos.h + ' mm)' : '') + (cur.key === sel.opts[0].key && more ? ' – voordeligst' : '') + '</span>' +
+      '<span class="mdo-techbtn-more">' + (more ? more + (more === 1 ? ' andere optie' : ' andere opties') : '') + '</span></button></div>';
     return h;
   }
 
