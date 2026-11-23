@@ -235,10 +235,12 @@
       }
     } else {
       h += '<input type="text" class="mdo-input" data-act="text" maxlength="60" placeholder="Jouw tekst, bijv. je bedrijfsnaam" value="' + esc(fs.text) + '">';
-      h += '<label class="mdo-lbl" for="mdo-font-' + face.key + '">Lettertype</label><select id="mdo-font-' + face.key + '" data-act="fontsel" class="mdo-input" style="font-family:' + esc(FONTS[fs.font][1]) + '">' +
-        Object.keys(FONTS).map(function (k) {
-          return '<option value="' + k + '"' + (fs.font === k ? ' selected' : '') + ' style="font-family:' + esc(FONTS[k][1]) + '">' + esc(FONTS[k][0]) + '</option>';
-        }).join('') + '</select>';
+      // Eigen keuzelijst: een gewone <select> toont op telefoons alle opties in het systeemlettertype.
+      h += '<div class="mdo-lbl" id="mdo-font-lbl">Lettertype</div><div class="mdo-fontpick">' +
+        '<button type="button" data-act="fontopen" class="mdo-input mdo-fontbtn" aria-haspopup="listbox" aria-expanded="' + (st.fontOpen ? 'true' : 'false') + '" aria-labelledby="mdo-font-lbl" style="font-family:' + esc(FONTS[fs.font][1]) + '"><span>' + esc(fs.text || FONTS[fs.font][0]) + '</span><span class="mdo-fontname">' + esc(FONTS[fs.font][0]) + ' ▾</span></button>' +
+        (st.fontOpen ? '<div class="mdo-fontlist" role="listbox" aria-labelledby="mdo-font-lbl">' + Object.keys(FONTS).map(function (k) {
+          return '<button type="button" role="option" aria-selected="' + (fs.font === k ? 'true' : 'false') + '" data-act="font" data-v="' + k + '" class="mdo-fontopt' + (fs.font === k ? ' is-on' : '') + '"><span style="font-family:' + esc(FONTS[k][1]) + '">' + esc(fs.text || 'PromoFun') + '</span><span class="mdo-fontname">' + esc(FONTS[k][0]) + '</span></button>';
+        }).join('') + '</div>' : '') + '</div>';
       if (!(sel && effectOf(sel.opt.tech.id))) {
         var cur = inkOf(fs);
         h += '<div class="mdo-lbl">Tekstkleur</div><div class="mdo-row">' + INKS.map(function (c) {
@@ -381,7 +383,8 @@
     else if (a === 'face') st.face = v;
     else if (a === 'mode') { fs.mode = v; fs.pick = null; }
     else if (a === 'colours') { fs.colours = v; fs.pick = null; }
-    else if (a === 'font') fs.font = v;
+    else if (a === 'font') { fs.font = v; st.fontOpen = false; loadFont(v); }
+    else if (a === 'fontopen') { st.fontOpen = !st.fontOpen; if (st.fontOpen) Object.keys(FONTS).forEach(loadFont); }
     else if (a === 'ink') fs.ink = v;
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else if (a === 'prev') { st.step = Math.max(0, st.step - 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
