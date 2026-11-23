@@ -241,6 +241,8 @@ class MDO_Dashboard {
 				<p style="margin-bottom:0"><a href="<?php echo esc_url( self::orders_url() ); ?>">Alle bestellingen bekijken →</a></p>
 			</div>
 
+			<?php MDO_Stats::render( $card ); ?>
+
 			<div id="status" style="<?php echo esc_attr( $card ); ?>">
 				<h2 style="margin-top:0">Winkel</h2>
 				<div style="padding:12px 14px;border-radius:10px;background:<?php echo esc_attr( $sbg ); ?>;color:<?php echo esc_attr( $sfg ); ?>;margin-bottom:12px">
