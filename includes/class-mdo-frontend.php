@@ -67,6 +67,7 @@ class MDO_Frontend {
 	private static function techniques_for( array $faces ) {
 		$pp    = get_option( 'mdo_printprices', array() );
 		$names = array_merge( get_option( 'mdo_technique_names', array() ), array_filter( (array) get_option( 'mdo_technique_labels', array() ) ) );
+		$infos = array_filter( (array) get_option( 'mdo_technique_info', array() ) );
 		$s     = MDO_Settings::all();
 		$out   = array();
 		foreach ( $faces as $f ) {
@@ -87,6 +88,7 @@ class MDO_Frontend {
 					}
 					$out[ $id ] = array(
 						'name'   => ! empty( $names[ $id ] ) ? $names[ $id ] : ( $tech['name'] ? $tech['name'] : $id ),
+						'info'   => (string) ( $infos[ $id ] ?? '' ),
 						'type'   => $tech['type'],
 						'next'   => (bool) $tech['next'],
 						'setup'  => round( $tech['setup'] * $s['margin_setup'], 2 ),

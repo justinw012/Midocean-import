@@ -274,7 +274,7 @@
     h += '<div class="mdo-row"><span class="mdo-lbl">Draaien</span>' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
     }).join('') + '</div>';
-    h += '<label class="mdo-lbl" for="mdo-tech-' + face.key + '">Techniek</label><select id="mdo-tech-' + face.key + '" data-act="tech" class="mdo-input">' + sel.opts.map(function (o, i) {
+    h += '<div class="mdo-row-between"><label class="mdo-lbl" for="mdo-tech-' + face.key + '">Techniek</label><button type="button" class="mdo-info" data-act="techinfo" aria-label="Uitleg over de technieken">i</button></div><select id="mdo-tech-' + face.key + '" data-act="tech" class="mdo-input">' + sel.opts.map(function (o, i) {
       return '<option value="' + esc(o.key) + '"' + (o.key === sel.opt.key ? ' selected' : '') + '>' + esc(cfg.techniques[o.tech.id].name) + (o.pos.id !== face.positions[0].id ? ' (' + o.pos.w + '×' + o.pos.h + ' mm)' : '') + (i === 0 ? ' – voordeligst' : '') + '</option>';
     }).join('') + '</select>';
     return h;
@@ -357,6 +357,57 @@
 
   // Hoofdfoto van het thema laten meewisselen met de gekozen kleur.
   var lastImg = null;
+  // ---------- uitleg technieken (i-knop) ----------
+  var INFO = [
+    [/zeefdruk|screen/i, 'Inkt wordt door een fijn gaas op het product gedrukt.', ['Felle, egale kleuren', 'Voordelig bij grotere aantallen'], ['Elke extra kleur kost extra', 'Geen kleurverlopen of foto\'s']],
+    [/tampon|pad/i, 'Een zachte stempel brengt de inkt over, ook op gebogen vlakken.', ['Geschikt voor kleine en gebogen oppervlakken', 'Scherpe details'], ['Klein drukvlak', 'Beperkt aantal kleuren']],
+    [/laser|graveer|gravure|engrav/i, 'Het ontwerp wordt met een laser in het materiaal gegraveerd.', ['Permanent, slijt niet', 'Strak en chique'], ['Eén tint; de kleur hangt af van het materiaal']],
+    [/blind|deboss/i, 'Het ontwerp wordt in het materiaal geperst, zonder inkt.', ['Subtiel en luxe'], ['Geen kleur, minder opvallend']],
+    [/borduur|embroid/i, 'Het ontwerp wordt met garen in de stof geborduurd.', ['Luxe en duurzaam'], ['Geen fijne details of kleurverlopen']],
+    [/doming/i, 'Een full colour sticker met een glanzende, bolle laag erover.', ['Full colour met 3D-effect'], ['Alleen op kleine, vlakke oppervlakken']],
+    [/label|sticker/i, 'Een full colour label dat op het product wordt aangebracht.', ['Full colour, ook foto\'s'], ['Opgeplakt, niet direct op het materiaal gedrukt']],
+    [/sublim/i, 'De inkt trekt in het materiaal.', ['Full colour', 'Slijtvast'], ['Alleen op geschikte, lichte materialen']],
+    [/transfer/i, 'Het ontwerp wordt eerst op folie gedrukt en daarna met warmte overgebracht.', ['Veel kleuren mogelijk', 'Ook op textiel'], ['Duurder bij grote oppervlakken']],
+    [/digita|full colour|uv/i, 'Het ontwerp wordt in full colour direct op het product geprint.', ['Full colour, ook foto\'s en kleurverlopen', 'Geen extra kosten per kleur'], ['Per stuk relatief duur bij grote aantallen']]
+  ];
+  function infoFor(techId) {
+    var t = cfg.techniques[techId] || {};
+    if (t.info) {
+      var plus = [], min = [], text = [];
+      String(t.info).split(/\r?\n/).forEach(function (l) {
+        l = l.trim(); if (!l) return;
+        if (/^\+/.test(l)) plus.push(l.replace(/^\+\s*/, '')); else if (/^[-−]/.test(l)) min.push(l.replace(/^[-−]\s*/, '')); else text.push(l);
+      });
+      return [text.join(' '), plus, min];
+    }
+    for (var i = 0; i < INFO.length; i++) if (INFO[i][0].test(t.name || '')) return [INFO[i][1], INFO[i][2], INFO[i][3]];
+    return ['', [], []];
+  }
+  function openTechInfo() {
+    var face = faceByKey(st.face), fs = st.faces[face.key], sel = selection(face, fs);
+    if (!sel) return;
+    var color = cfg.colors[st.color];
+    var rows = sel.opts.map(function (o) {
+      var inf = infoFor(o.tech.id), d = dims(o.pos, fs);
+      var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
+      var printPc = q.perPc - scaleAt(color.scales, st.qty)[1] - cfg.manip;
+      return '<div class="mdo-ti' + (o.key === sel.opt.key ? ' is-on' : '') + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong><span class="mdo-muted">+ ' + eur(printPc) + ' per stuk bij ' + st.qty + ' st.</span></div>' +
+        (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
+        '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' +
+        (o.key === sel.opt.key ? '<span class="mdo-ti-cur">Gekozen</span>' : '<button type="button" class="mdo-pill" data-pick="' + esc(o.key) + '">Kies deze</button>') + '</div>';
+    }).join('');
+    var ov = document.createElement('div');
+    ov.className = 'mdo-sheet';
+    ov.innerHTML = '<div class="mdo-sheet-in" role="dialog" aria-modal="true" aria-label="Uitleg technieken"><div class="mdo-row-between"><strong style="font-size:17px">Technieken voor ' + esc(face.label.toLowerCase()) + '</strong><button type="button" class="mdo-sheet-x" aria-label="Sluiten">×</button></div>' +
+      '<p class="mdo-muted">Prijzen zijn de drukkosten per stuk bij het gekozen aantal, met de instelkosten verdeeld over de stuks.</p>' + rows + '</div>';
+    ov.addEventListener('click', function (e) {
+      var p = e.target.closest('[data-pick]');
+      if (p) { fs.pick = p.getAttribute('data-pick'); fs.size = null; ov.remove(); render(); return; }
+      if (e.target === ov || e.target.closest('.mdo-sheet-x')) ov.remove();
+    });
+    document.body.appendChild(ov);
+  }
+
   // Eigen fotogalerij (links op de pagina): alle foto's van de gekozen kleur.
   var gal = document.getElementById('mdo-gallery'), galIdx = 0;
   function syncGallery() {
@@ -421,6 +472,7 @@
     else if (a === 'font') { fs.font = v; st.fontOpen = false; loadFont(v); }
     else if (a === 'fontopen') { st.fontOpen = !st.fontOpen; if (st.fontOpen) Object.keys(FONTS).forEach(loadFont); }
     else if (a === 'ink') fs.ink = v;
+    else if (a === 'techinfo') { openTechInfo(); return; }
     else if (a === 'rot') { fs.rot = parseInt(v, 10); fs.size = null; }
     else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }

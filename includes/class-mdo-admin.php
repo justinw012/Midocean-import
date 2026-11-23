@@ -70,6 +70,14 @@ class MDO_Admin {
 		}
 		update_option( MDO_Printdata::LABELS_OPTION, $pos, false );
 		update_option( 'mdo_technique_labels', $tech, false );
+		$info = array();
+		foreach ( (array) wp_unslash( $_POST['techinfo'] ?? array() ) as $id => $text ) {
+			$text = sanitize_textarea_field( $text );
+			if ( '' !== trim( $text ) ) {
+				$info[ sanitize_text_field( $id ) ] = mb_substr( $text, 0, 600 );
+			}
+		}
+		update_option( 'mdo_technique_info', $info, false );
 		self::back( 'Vertalingen opgeslagen.' );
 	}
 
@@ -286,6 +294,7 @@ class MDO_Admin {
 			list( $seen_pos, $seen_tech ) = self::seen();
 			$own_pos   = get_option( MDO_Printdata::LABELS_OPTION, array() );
 			$own_tech  = get_option( 'mdo_technique_labels', array() );
+			$own_info  = get_option( 'mdo_technique_info', array() );
 			$tech_nl   = get_option( 'mdo_technique_names', array() );
 			?>
 			<?php if ( ! $seen_pos ) : ?>
@@ -346,13 +355,14 @@ class MDO_Admin {
 					<h3>Technieken (<?php echo count( $seen_tech ); ?>)</h3>
 					<div style="max-height:420px;overflow:auto;max-width:960px">
 					<table class="widefat striped">
-						<thead><tr><th>Code</th><th>Naam van Midocean (officieel Nederlands)</th><th>Jouw naam</th></tr></thead>
+						<thead><tr><th>Code</th><th>Naam van Midocean (officieel Nederlands)</th><th>Jouw naam</th><th>Eigen uitleg bij de i-knop <span style="font-weight:400;color:#646970">(leeg = standaardtekst; regels met + of − worden voor- en nadelen)</span></th></tr></thead>
 						<tbody>
 						<?php foreach ( $seen_tech as $id ) : ?>
 							<tr>
 								<td><code><?php echo esc_html( $id ); ?></code></td>
 								<td><?php echo esc_html( $tech_nl[ $id ] ?? '–' ); ?></td>
 								<td><input type="text" class="regular-text" name="tech[<?php echo esc_attr( $id ); ?>]" value="<?php echo esc_attr( $own_tech[ $id ] ?? '' ); ?>"></td>
+								<td><textarea name="techinfo[<?php echo esc_attr( $id ); ?>]" rows="3" style="width:100%"><?php echo esc_textarea( $own_info[ $id ] ?? '' ); ?></textarea></td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>
