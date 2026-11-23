@@ -10,6 +10,18 @@
   var FONTS = { sans: ['Strak', 'Helvetica, Arial, sans-serif'], serif: ['Klassiek', 'Georgia, "Times New Roman", serif'], script: ['Speels', '"Brush Script MT", "Segoe Script", cursive'] };
   var INKS = ['#1E1E1E', '#FFFFFF', '#C9A227', '#C8312F', '#2443A8'];
   var COLOUR_OPTS = ['1', '2', '3', '4', 'fc'];
+
+  /** Is de gekozen productkleur donker? Dan is witte tekst standaard beter leesbaar. */
+  function isDark() {
+    var name = String(cfg.colors[st.color].name).toLowerCase().split(/\s*[,/]\s*/)[0].trim();
+    var hex = (typeof NAMED !== 'undefined' && NAMED[name]) || '';
+    if (/^#[0-9a-f]{6}$/i.test(hex)) {
+      var r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+    }
+    return /zwart|black|navy|marine|donker|dark|bordeaux|petrol|royal|bruin|paars/.test(name);
+  }
+  function inkOf(fs) { return fs.ink || (isDark() ? '#FFFFFF' : '#1E1E1E'); }
   var imgSize = {}; // url -> [w, h]
 
   // ---------- prijs ----------
@@ -46,7 +58,7 @@
     faces: {}
   };
   cfg.faces.forEach(function (f, i) {
-    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'sans', ink: INKS[0], logo: null };
+    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'sans', ink: null, logo: null };
   });
 
   function nColours(fs) { return fs.mode === 'text' ? 1 : (fs.colours === 'fc' ? 1 : parseInt(fs.colours, 10)); }
@@ -120,13 +132,14 @@
       var artW = Math.min(100, sel.w / pos.w * 100), artH = Math.min(100, sel.h / pos.h * 100);
       var art;
       if (fs.mode === 'text') {
-        art = '<span class="mdo-art-text" style="font-family:' + FONTS[fs.font][1] + ';color:' + fs.ink + '">' + esc(fs.text || 'Jouw tekst') + '</span>';
+        var txt = fs.text || 'Jouw tekst', vbw = Math.max(240, txt.length * 58);
+        art = '<svg viewBox="0 0 ' + vbw + ' 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(txt) + '"><text x="' + (vbw / 2) + '" y="74" text-anchor="middle" font-size="84" font-weight="700" style="font-family:' + esc(FONTS[fs.font][1]) + '" fill="' + inkOf(fs) + '">' + esc(txt) + '</text></svg>';
       } else if (fs.logo && fs.logo.preview) {
         art = '<img src="' + esc(fs.logo.preview) + '" alt="Jouw logo">';
       } else if (fs.logo) {
         art = '<span class="mdo-art-file">' + esc(fs.logo.name) + '</span>';
       } else {
-        art = demoLogo(/zwart|black|navy|marine|donker|dark/i.test(color.name));
+        art = demoLogo(isDark());
       }
       zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%">' + art + '</div></div>';
     }
@@ -168,7 +181,7 @@
       h += '<div class="mdo-row">' + Object.keys(FONTS).map(function (k) {
         return '<button type="button" data-act="font" data-v="' + k + '" class="mdo-pill' + (fs.font === k ? ' is-on' : '') + '" style="font-family:' + FONTS[k][1] + '">' + FONTS[k][0] + '</button>';
       }).join('') + INKS.map(function (c) {
-        return '<button type="button" data-act="ink" data-v="' + c + '" class="mdo-ink' + (fs.ink === c ? ' is-on' : '') + '" style="background:' + c + '" aria-label="Tekstkleur ' + c + '"></button>';
+        return '<button type="button" data-act="ink" data-v="' + c + '" class="mdo-ink' + (inkOf(fs) === c ? ' is-on' : '') + '" style="background:' + c + '" aria-label="Tekstkleur ' + c + '"></button>';
       }).join('') + '</div>';
     }
     if (!sel) return h + '<p class="mdo-warn">Voor deze keuze is op ' + esc(face.label.toLowerCase()) + ' geen techniek beschikbaar.</p>';
@@ -343,7 +356,7 @@
       return {
         position: s.opt.pos.id, tech: s.opt.tech.id, colours: s.colours, mode: s.fs.mode, w: s.w, h: s.h,
         logo: s.fs.logo ? s.fs.logo.token : '', logoname: s.fs.logo ? s.fs.logo.name : '',
-        text: s.fs.text, font: s.fs.font, ink: s.fs.ink
+        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs)
       };
     });
     form.querySelector('[name="variation_id"]').value = color.id;
