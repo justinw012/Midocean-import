@@ -77,3 +77,22 @@
 .mdo-configured .summary .tawcvs-swatches{display:none!important}
 .mdo-configured form.variations_form,
 .mdo-configured form.cart:not(.mdo-form){display:none!important}
+@font-face{font-family:"MDO Poppins";src:url("fonts/poppins.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Montserrat";src:url("fonts/montserrat.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Open Sans";src:url("fonts/opensans.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Oswald";src:url("fonts/oswald.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Anton";src:url("fonts/anton.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Bebas Neue";src:url("fonts/bebasneue.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Roboto Slab";src:url("fonts/robotoslab.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Playfair Display";src:url("fonts/playfair.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Courier Prime";src:url("fonts/courierprime.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Pacifico";src:url("fonts/pacifico.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Lobster";src:url("fonts/lobster.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Dancing Script";src:url("fonts/dancing.woff2") format("woff2");font-weight:400 900;font-display:swap}
+@font-face{font-family:"MDO Permanent Marker";src:url("fonts/marker.woff2") format("woff2");font-weight:400 900;font-display:swap}
+.mdo-picker{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 10px 0 4px;border-radius:999px;border:1px solid var(--mdo-line);background:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.mdo-picker.is-on{border:2px solid var(--mdo-accent)}
+.mdo-picker input[type=color]{width:32px;height:32px;padding:0;border:0;border-radius:50%;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);cursor:pointer}
+.mdo-picker input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.mdo-picker input[type=color]::-webkit-color-swatch{border:2px solid #fff;border-radius:50%}
+.mdo-pms{width:170px;flex:0 0 auto}

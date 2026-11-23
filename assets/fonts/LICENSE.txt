@@ -1,0 +1,9 @@
+Lettertypen in deze map komen uit de Google Fonts-collectie (github.com/google/fonts),
+omgezet naar woff2 (vet, Latijnse tekens). Ze mogen vrij gebruikt en meegeleverd worden.
+
+SIL Open Font License 1.1 (https://openfontlicense.org):
+  Anton, Bebas Neue, Courier Prime, Dancing Script, Lobster, Montserrat, Open Sans,
+  Oswald, Pacifico, Playfair Display, Poppins
+
+Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0):
+  Permanent Marker, Roboto Slab

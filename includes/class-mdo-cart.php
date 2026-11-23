@@ -9,7 +9,21 @@ defined( 'ABSPATH' ) || exit;
 class MDO_Cart {
 	const MAX_LOGO = 20971520; // 20 MB
 	const LOGO_EXT = array( 'pdf', 'eps', 'ai', 'svg', 'png', 'jpg', 'jpeg' );
-	const FONTS    = array( 'sans' => 'Strak', 'serif' => 'Klassiek', 'script' => 'Speels' );
+	const FONTS    = array(
+		'poppins'      => 'Poppins',
+		'montserrat'   => 'Montserrat',
+		'opensans'     => 'Open Sans',
+		'oswald'       => 'Oswald',
+		'anton'        => 'Anton',
+		'bebasneue'    => 'Bebas Neue',
+		'robotoslab'   => 'Roboto Slab',
+		'playfair'     => 'Playfair Display',
+		'courierprime' => 'Courier Prime',
+		'pacifico'     => 'Pacifico',
+		'lobster'      => 'Lobster',
+		'dancing'      => 'Dancing Script',
+		'marker'       => 'Permanent Marker',
+	);
 
 	public static function init() {
 		add_filter( 'woocommerce_add_to_cart_validation', array( __CLASS__, 'validate' ), 10, 3 );
@@ -86,8 +100,9 @@ class MDO_Cart {
 				'logo'     => $logo,
 				'logoname' => $logo ? sanitize_file_name( (string) ( $p['logoname'] ?? '' ) ) : '',
 				'text'     => 'text' === $mode ? mb_substr( sanitize_text_field( (string) ( $p['text'] ?? '' ) ), 0, 60 ) : '',
-				'font'     => isset( self::FONTS[ $p['font'] ?? '' ] ) ? $p['font'] : 'sans',
-				'ink'      => preg_match( '/^#[0-9a-fA-F]{6}$/', (string) ( $p['ink'] ?? '' ) ) ? $p['ink'] : '',
+				'font'     => isset( self::FONTS[ $p['font'] ?? '' ] ) ? $p['font'] : 'poppins',
+				'ink'      => preg_match( '/^#[0-9a-fA-F]{6}$/', (string) ( $p['ink'] ?? '' ) ) ? strtoupper( $p['ink'] ) : '',
+				'pms'      => mb_substr( preg_replace( '/[^\p{L}\p{N} ,.\-\/]/u', '', (string) ( $p['pms'] ?? '' ) ), 0, 60 ),
 			);
 		}
 		return array( 'cfg' => $cfg, 'color' => $color, 'prints' => $sels, 'note' => mb_substr( sanitize_textarea_field( (string) ( $data['note'] ?? '' ) ), 0, 500 ) );
@@ -162,9 +177,14 @@ class MDO_Cart {
 	private static function lines( array $mdo ) {
 		$out = array();
 		foreach ( $mdo['prints'] as $p ) {
-			$what = 'text' === $p['mode']
-				? '“' . $p['text'] . '” (' . self::FONTS[ $p['font'] ] . ')'
-				: ( $p['logo'] ? 'logo: ' . ( $p['logoname'] ? $p['logoname'] : 'bestand' ) : 'logo volgt later' );
+			$font = isset( self::FONTS[ $p['font'] ] ) ? self::FONTS[ $p['font'] ] : $p['font'];
+			$pms  = ! empty( $p['pms'] ) ? 'PMS ' . $p['pms'] : '';
+			if ( 'text' === $p['mode'] ) {
+				$kleur = trim( ( $p['ink'] ? 'kleur ' . $p['ink'] : '' ) . ( $pms ? ( $p['ink'] ? ', ' : '' ) . $pms : '' ) );
+				$what  = '“' . $p['text'] . '” (' . $font . ( $kleur ? ', ' . $kleur : '' ) . ')';
+			} else {
+				$what = ( $p['logo'] ? 'logo: ' . ( $p['logoname'] ? $p['logoname'] : 'bestand' ) : 'logo volgt later' ) . ( $pms ? ' (' . $pms . ')' : '' );
+			}
 			$cols  = $p['full'] ? 'full colour' : ( $p['colours'] . ( 1 === $p['colours'] ? ' kleur' : ' kleuren' ) );
 			$out[] = array(
 				'key'   => $p['face'],

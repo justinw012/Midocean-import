@@ -7,7 +7,21 @@
   var cfg = JSON.parse(root.getAttribute('data-config'));
   var form = root.closest('form');
 
-  var FONTS = { sans: ['Strak', 'Helvetica, Arial, sans-serif'], serif: ['Klassiek', 'Georgia, "Times New Roman", serif'], script: ['Speels', '"Brush Script MT", "Segoe Script", cursive'] };
+  var FONTS = {
+    poppins: ['Poppins (strak)', '"MDO Poppins", Arial, sans-serif'],
+    montserrat: ['Montserrat (modern)', '"MDO Montserrat", Arial, sans-serif'],
+    opensans: ['Open Sans (neutraal)', '"MDO Open Sans", Arial, sans-serif'],
+    oswald: ['Oswald (smal)', '"MDO Oswald", "Arial Narrow", sans-serif'],
+    anton: ['Anton (dik)', '"MDO Anton", Impact, sans-serif'],
+    bebasneue: ['Bebas Neue (hoofdletters)', '"MDO Bebas Neue", Impact, sans-serif'],
+    robotoslab: ['Roboto Slab (schreef)', '"MDO Roboto Slab", Georgia, serif'],
+    playfair: ['Playfair Display (klassiek)', '"MDO Playfair Display", Georgia, serif'],
+    courierprime: ['Courier Prime (typemachine)', '"MDO Courier Prime", "Courier New", monospace'],
+    pacifico: ['Pacifico (speels)', '"MDO Pacifico", cursive'],
+    lobster: ['Lobster (retro)', '"MDO Lobster", cursive'],
+    dancing: ['Dancing Script (handschrift)', '"MDO Dancing Script", cursive'],
+    marker: ['Permanent Marker (stift)', '"MDO Permanent Marker", cursive']
+  };
   var INKS = ['#1E1E1E', '#FFFFFF', '#C9A227', '#C8312F', '#2443A8'];
   var COLOUR_OPTS = ['1', '2', '3', '4', 'fc'];
 
@@ -65,7 +79,7 @@
     faces: {}
   };
   cfg.faces.forEach(function (f, i) {
-    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'sans', ink: null, logo: null };
+    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'poppins', ink: null, pms: '', logo: null };
   });
 
   function nColours(fs) { return fs.mode === 'text' ? 1 : (fs.colours === 'fc' ? 1 : parseInt(fs.colours, 10)); }
@@ -105,6 +119,12 @@
     if (!w) w = txt.length * 50;
     var vbw = Math.ceil(w + 12);
     return (textCache[key] = { txt: txt, vbw: vbw, aspect: 100 / vbw });
+  }
+  var loadedFonts = {};
+  function loadFont(key) {
+    if (loadedFonts[key] || !document.fonts || !document.fonts.load) return;
+    loadedFonts[key] = 1;
+    document.fonts.load('700 84px ' + FONTS[key][1]).then(function () { textCache = {}; soft(); }).catch(function () {});
   }
   function aspect(fs) {
     if (fs.mode === 'text') return textBox(fs).aspect;
@@ -210,13 +230,24 @@
       h += '<div class="mdo-row"><span class="mdo-lbl">Kleuren in je logo</span>' + COLOUR_OPTS.map(function (k) {
         return '<button type="button" data-act="colours" data-v="' + k + '" class="mdo-pill' + (fs.colours === k ? ' is-on' : '') + '">' + (k === 'fc' ? 'Full colour' : k) + '</button>';
       }).join('') + '</div>';
+      if (fs.colours !== 'fc') {
+        h += '<input type="text" class="mdo-input" data-act="pms" maxlength="60" placeholder="Pantone-kleuren van je logo (optioneel), bijv. 485 C, Black" value="' + esc(fs.pms) + '" aria-label="Pantone-kleuren van je logo">';
+      }
     } else {
       h += '<input type="text" class="mdo-input" data-act="text" maxlength="60" placeholder="Jouw tekst, bijv. je bedrijfsnaam" value="' + esc(fs.text) + '">';
-      h += '<div class="mdo-row">' + Object.keys(FONTS).map(function (k) {
-        return '<button type="button" data-act="font" data-v="' + k + '" class="mdo-pill' + (fs.font === k ? ' is-on' : '') + '" style="font-family:' + FONTS[k][1] + '">' + FONTS[k][0] + '</button>';
-      }).join('') + (sel && effectOf(sel.opt.tech.id) ? '' : INKS.map(function (c) {
-        return '<button type="button" data-act="ink" data-v="' + c + '" class="mdo-ink' + (inkOf(fs) === c ? ' is-on' : '') + '" style="background:' + c + '" aria-label="Tekstkleur ' + c + '"></button>';
-      }).join('')) + '</div>';
+      h += '<label class="mdo-lbl" for="mdo-font-' + face.key + '">Lettertype</label><select id="mdo-font-' + face.key + '" data-act="fontsel" class="mdo-input" style="font-family:' + esc(FONTS[fs.font][1]) + '">' +
+        Object.keys(FONTS).map(function (k) {
+          return '<option value="' + k + '"' + (fs.font === k ? ' selected' : '') + ' style="font-family:' + esc(FONTS[k][1]) + '">' + esc(FONTS[k][0]) + '</option>';
+        }).join('') + '</select>';
+      if (!(sel && effectOf(sel.opt.tech.id))) {
+        var cur = inkOf(fs);
+        h += '<div class="mdo-lbl">Tekstkleur</div><div class="mdo-row">' + INKS.map(function (c) {
+          return '<button type="button" data-act="ink" data-v="' + c + '" class="mdo-ink' + (cur.toLowerCase() === c.toLowerCase() ? ' is-on' : '') + '" style="background:' + c + '" aria-label="Tekstkleur ' + c + '"></button>';
+        }).join('') +
+          '<label class="mdo-picker' + (INKS.map(function (c) { return c.toLowerCase(); }).indexOf(cur.toLowerCase()) < 0 ? ' is-on' : '') + '" title="Eigen kleur kiezen"><input type="color" data-act="inkpick" value="' + esc(/^#[0-9a-f]{6}$/i.test(cur) ? cur : '#1e1e1e') + '" aria-label="Eigen kleur kiezen"><span>Eigen kleur</span></label>' +
+          '<input type="text" class="mdo-input mdo-pms" data-act="pms" maxlength="20" placeholder="PMS-code (optioneel)" value="' + esc(fs.pms) + '" aria-label="Pantone-code (optioneel)"></div>' +
+          '<p class="mdo-muted">Kleuren op een scherm wijken af van drukinkt. Weet je de Pantone-code (PMS) van je huisstijl, vul die dan in voor een exacte kleur.</p>';
+      }
       if (sel && effectOf(sel.opt.tech.id)) {
         h += '<p class="mdo-muted">' + (effectOf(sel.opt.tech.id) === 'engrave' ? 'Bij lasergravering wordt je tekst in het materiaal gegraveerd; de kleur hangt af van het materiaal.' : 'Bij blinddruk wordt je tekst in het materiaal geperst, zonder inkt.') + '</p>';
       }
@@ -362,6 +393,8 @@
     var t = e.target, a = t.getAttribute('data-act'), fs = curFace();
     if (a === 'toggle') { fs.on = t.checked; render(); }
     else if (a === 'tech') { fs.pick = t.value; fs.size = null; render(); }
+    else if (a === 'fontsel') { fs.font = t.value; render(); loadFont(fs.font); }
+    else if (a === 'inkpick') { fs.ink = t.value; render(); }
     else if (a === 'qtyin') { var q = parseInt(t.value, 10); if (q > 0) { st.qty = q; render(); } }
     else if (a === 'logo' && t.files && t.files[0]) upload(t.files[0], fs);
   });
@@ -370,6 +403,8 @@
     var t = e.target, a = t.getAttribute('data-act'), fs = curFace();
     if (a === 'size') { fs.size = parseInt(t.value, 10); soft(); }
     else if (a === 'text') { fs.text = t.value; soft(); }
+    else if (a === 'inkpick') { fs.ink = t.value; soft(); }
+    else if (a === 'pms') { fs.pms = t.value; }
     else if (a === 'note') st.note = t.value;
   });
 
@@ -393,7 +428,7 @@
       return {
         position: s.opt.pos.id, tech: s.opt.tech.id, colours: s.colours, mode: s.fs.mode, w: s.w, h: s.h,
         logo: s.fs.logo ? s.fs.logo.token : '', logoname: s.fs.logo ? s.fs.logo.name : '',
-        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs)
+        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs), pms: s.fs.pms
       };
     });
     form.querySelector('[name="variation_id"]').value = color.id;
@@ -407,4 +442,5 @@
   });
 
   render();
+  loadFont('poppins');
 })();
