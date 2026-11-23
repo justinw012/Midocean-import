@@ -315,14 +315,16 @@
   function render() {
     var h = '';
     if (mobile.matches) {
-      h += '<div class="mdo-steps"><span class="mdo-muted">Stap ' + (st.step + 1) + ' van 3 · ' + STEPS[st.step] + '</span><div class="mdo-progress">' +
-        STEPS.map(function (x, i) { return '<span class="' + (i <= st.step ? 'is-on' : '') + '"></span>'; }).join('') + '</div></div>';
+      // Stappen als tikbare tabs, zodat "Bedrukking" direct zichtbaar en bereikbaar is.
+      h += '<div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
+        return '<button type="button" role="tab" aria-selected="' + (i === st.step ? 'true' : 'false') + '" data-act="goto" data-v="' + i + '" class="' + (i === st.step ? 'is-on' : '') + (i < st.step ? ' is-done' : '') + '"><span class="mdo-stepnr">' + (i + 1) + '</span>' + esc(x) + '</button>';
+      }).join('') + '</div>';
       if (st.step === 0) h += swatchesHtml() + qtyHtml();
       if (st.step === 1) h += printHtml();
       if (st.step === 2) h += summaryHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
       h += '<div class="mdo-bar"><div class="mdo-bar-price" data-out="bar">' + barHtml() + '</div><div class="mdo-bar-btns">' +
         (st.step > 0 ? '<button type="button" data-act="prev" class="mdo-pill">Terug</button>' : '') +
-        (st.step < 2 ? '<button type="button" data-act="next" class="button alt mdo-next">Volgende</button>' : '') + '</div></div>';
+        (st.step < 2 ? '<button type="button" data-act="next" class="button alt mdo-next">' + (st.step === 0 ? 'Bedrukking kiezen' : 'Naar overzicht') + '</button>' : '') + '</div></div>';
     } else {
       h += swatchesHtml() + qtyHtml() + printHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
     }
@@ -386,6 +388,7 @@
     else if (a === 'font') { fs.font = v; st.fontOpen = false; loadFont(v); }
     else if (a === 'fontopen') { st.fontOpen = !st.fontOpen; if (st.fontOpen) Object.keys(FONTS).forEach(loadFont); }
     else if (a === 'ink') fs.ink = v;
+    else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else if (a === 'prev') { st.step = Math.max(0, st.step - 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else return;

@@ -105,3 +105,8 @@
 .mdo-fontopt .mdo-fontname{font-family:system-ui,sans-serif}
 .mdo-fontopt span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mdo-fontopt:hover,.mdo-fontopt.is-on{background:#FCE8EC}
+.mdo-steptabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mdo-steptabs button{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:58px;padding:6px 4px;border-radius:10px;border:1px solid var(--mdo-line);background:#fff;color:var(--mdo-text);font-size:13px;font-weight:600;line-height:1.2}
+.mdo-steptabs button.is-on{border:2px solid var(--mdo-accent);background:#FCE8EC}
+.mdo-stepnr{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--mdo-line);font-size:12px}
+.mdo-steptabs button.is-on .mdo-stepnr,.mdo-steptabs button.is-done .mdo-stepnr{background:var(--mdo-accent);color:#fff}
