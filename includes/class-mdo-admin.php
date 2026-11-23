@@ -12,7 +12,7 @@ class MDO_Admin {
 	}
 
 	public static function menu() {
-		add_submenu_page( 'woocommerce', 'Midocean (geavanceerd)', 'Midocean (geavanceerd)', 'manage_options', self::SLUG, array( __CLASS__, 'page' ) );
+		add_submenu_page( MDO_Dashboard::SLUG, 'Instellingen', 'Instellingen', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ) );
 	}
 
 	private static function back( $msg = '' ) {
@@ -42,7 +42,7 @@ class MDO_Admin {
 			'hidden_categories'=> array_values( array_map( 'sanitize_text_field', (array) ( $in['hidden_categories'] ?? array() ) ) ),
 		);
 		$key = trim( (string) ( $in['api_key'] ?? '' ) );
-		if ( '' !== $key ) {
+		if ( '' !== $key && current_user_can( 'manage_options' ) ) {
 			$new['api_key'] = sanitize_text_field( $key );
 		}
 		MDO_Settings::update( $new );
@@ -176,7 +176,7 @@ class MDO_Admin {
 		};
 		?>
 		<div class="wrap">
-			<h1>Midocean Import &amp; Configurator</h1>
+			<h1>PromoFun – Instellingen</h1>
 			<?php if ( $msg ) : ?>
 				<div class="notice notice-info"><p><?php echo esc_html( $msg ); ?></p></div>
 			<?php endif; ?>
@@ -207,9 +207,13 @@ class MDO_Admin {
 
 				<h2>Verbinding</h2>
 				<table class="form-table">
+					<?php if ( current_user_can( 'manage_options' ) ) : ?>
 					<tr><th>API-sleutel</th><td>
 						<input type="password" name="api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo $s['api_key'] ? 'Opgeslagen – laat leeg om te behouden' : 'Plak hier je Midocean API-sleutel'; ?>">
 					</td></tr>
+					<?php else : ?>
+					<tr><th>API-sleutel</th><td><?php echo $s['api_key'] ? 'Ingesteld door de beheerder.' : 'Nog niet ingesteld; vraag de beheerder.'; ?></td></tr>
+					<?php endif; ?>
 					<tr><th>Taal productteksten</th><td>
 						<select name="language">
 							<?php foreach ( array( 'nl' => 'Nederlands', 'en' => 'Engels', 'de' => 'Duits', 'fr' => 'Frans' ) as $k => $l ) : ?>

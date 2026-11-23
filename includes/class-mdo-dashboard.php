@@ -30,6 +30,7 @@ class MDO_Dashboard {
 
 	public static function menu() {
 		add_menu_page( 'PromoFun', 'PromoFun', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ), 'dashicons-store', 2 );
+		add_submenu_page( self::SLUG, 'PromoFun', 'Overzicht', 'manage_woocommerce', self::SLUG, array( __CLASS__, 'page' ) );
 	}
 
 	/** Winkelbeheerders zien alleen PromoFun, Bestellingen en Producten. */
@@ -288,9 +289,7 @@ class MDO_Dashboard {
 				<?php endif; ?>
 			</div>
 
-			<?php if ( current_user_can( 'manage_options' ) ) : ?>
-				<p style="max-width:1100px;color:#646970">Geavanceerd (API-sleutel, productnamen, vertalingen, logboek): <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . MDO_Admin::SLUG ) ); ?>">WooCommerce → Midocean (geavanceerd)</a></p>
-			<?php endif; ?>
+			<p style="max-width:1100px;color:#646970">Meer instellingen (productnamen, vertalingen, uitleg technieken, voorraad, logboek): <a href="<?php echo esc_url( admin_url( 'admin.php?page=' . MDO_Admin::SLUG ) ); ?>">PromoFun → Instellingen</a></p>
 		</div>
 		<?php
 	}
