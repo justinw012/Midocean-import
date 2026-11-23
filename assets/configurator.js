@@ -265,6 +265,8 @@
       }
       if (sel && effectOf(sel.opt.tech.id)) {
         h += '<p class="mdo-muted">' + (effectOf(sel.opt.tech.id) === 'engrave' ? 'Bij lasergravering wordt je tekst in het materiaal gegraveerd; de kleur hangt af van het materiaal.' : 'Bij blinddruk wordt je tekst in het materiaal geperst, zonder inkt.') + '</p>';
+        var inkOpt = sel.opts.filter(function (o) { return !effectOf(o.tech.id); })[0];
+        if (inkOpt) h += '<button type="button" class="mdo-linkbtn" data-act="techinfo">Liever in kleur? Kies ' + esc(cfg.techniques[inkOpt.tech.id].name.toLowerCase()) + ' of een andere techniek</button>';
       }
     }
     if (!sel) return h + '<p class="mdo-warn">Voor deze keuze is op ' + esc(face.label.toLowerCase()) + ' geen techniek beschikbaar.</p>';
