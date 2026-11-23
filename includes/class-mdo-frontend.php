@@ -99,6 +99,7 @@ class MDO_Frontend {
 				'image'   => $img ? $img[0] : '',
 				'thumb'   => $thumb ? $thumb[0] : '',
 				'stock'   => $v->managing_stock() ? (int) $v->get_stock_quantity() : null,
+				'backorders' => $v->backorders_allowed(),
 				'scales'  => $sell,
 			);
 		}

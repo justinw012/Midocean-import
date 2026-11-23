@@ -22,6 +22,13 @@
     return /zwart|black|navy|marine|donker|dark|bordeaux|petrol|royal|bruin|paars/.test(name);
   }
   function inkOf(fs) { return fs.ink || (isDark() ? '#FFFFFF' : '#1E1E1E'); }
+  /** Laser en blinddruk hebben geen inktkleur: toon een gravure-effect. */
+  function effectOf(techId) {
+    var n = String((cfg.techniques[techId] || {}).name || '').toLowerCase();
+    if (/laser|graveer|gravure|engrav/.test(n)) return 'engrave';
+    if (/blind|deboss|emboss|reli/.test(n)) return 'deboss';
+    return '';
+  }
   var imgSize = {}; // url -> [w, h]
 
   // ---------- prijs ----------
@@ -128,9 +135,15 @@
   // ---------- weergave ----------
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  function demoLogo(dark) {
-    var ink = dark ? '#FFFFFF' : '#1D1A2E';
-    return '<svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Voorbeeldlogo"><circle cx="48" cy="55" r="40" fill="' + ink + '"/><path d="M30 70 L48 32 L66 70 Z" fill="#DF3550"/><text x="100" y="52" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Jouw</text><text x="100" y="84" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Logo</text></svg>';
+  function effectInk(effect) {
+    if (effect === 'engrave') return isDark() ? '#C9CDD2' : '#5A5E64';
+    if (effect === 'deboss') return isDark() ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.28)';
+    return null;
+  }
+  function demoLogo(dark, effect) {
+    var ink = effectInk(effect) || (dark ? '#FFFFFF' : '#1D1A2E');
+    var accent = effect ? ink : '#DF3550';
+    return '<svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Voorbeeldlogo"><circle cx="48" cy="55" r="40" fill="' + ink + '"/><path d="M30 70 L48 32 L66 70 Z" fill="' + (effect ? (isDark() ? '#1E1E1E' : '#FFFFFF') : accent) + '"/><text x="100" y="52" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Jouw</text><text x="100" y="84" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Logo</text></svg>';
   }
 
   function previewHtml() {
@@ -146,15 +159,16 @@
       var zl = b[0] / W * 100, zt = b[1] / H * 100, zw = (b[2] - b[0]) / W * 100, zh = (b[3] - b[1]) / H * 100;
       var artW = Math.min(100, sel.w / pos.w * 100), artH = Math.min(100, sel.h / pos.h * 100);
       var art;
+      var effect = effectOf(sel.opt.tech.id);
       if (fs.mode === 'text') {
         var tb = textBox(fs), txt = tb.txt, vbw = tb.vbw;
-        art = '<svg viewBox="0 0 ' + vbw + ' 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(txt) + '"><text x="' + (vbw / 2) + '" y="74" text-anchor="middle" font-size="84" font-weight="700" style="font-family:' + esc(FONTS[fs.font][1]) + '" fill="' + inkOf(fs) + '">' + esc(txt) + '</text></svg>';
+        art = '<svg viewBox="0 0 ' + vbw + ' 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(txt) + '"><text x="' + (vbw / 2) + '" y="74" text-anchor="middle" font-size="84" font-weight="700" style="font-family:' + esc(FONTS[fs.font][1]) + '" fill="' + (effectInk(effect) || inkOf(fs)) + '">' + esc(txt) + '</text></svg>';
       } else if (fs.logo && fs.logo.preview) {
-        art = '<img src="' + esc(fs.logo.preview) + '" alt="Jouw logo">';
+        art = '<img src="' + esc(fs.logo.preview) + '" alt="Jouw logo" class="' + (effect ? 'mdo-fx-' + effect + (isDark() ? ' on-dark' : '') : '') + '">';
       } else if (fs.logo) {
         art = '<span class="mdo-art-file">' + esc(fs.logo.name) + '</span>';
       } else {
-        art = demoLogo(isDark());
+        art = demoLogo(isDark(), effect);
       }
       zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%">' + art + '</div></div>';
     }
@@ -170,11 +184,12 @@
       var x = quote(color, t, priceSels(sels));
       return '<div class="mdo-tier' + (t === st.qty ? ' is-on' : '') + '"><span>' + t + ' st.</span><span>' + eur(x.perPc) + '</span></div>';
     }).join('');
-    var stockMsg = (color.stock !== null && st.qty > color.stock) ? '<p class="mdo-warn">Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.</p>' : '';
+    var short = color.stock !== null && st.qty > color.stock, block = short && !color.backorders;
+    var stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg +
-      '<button type="button" class="mdo-buy button alt"' + (stockMsg ? ' disabled' : '') + '>In winkelwagen</button>';
+      '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
   }
 
   function faceHtml(face) {
@@ -195,9 +210,12 @@
       h += '<input type="text" class="mdo-input" data-act="text" maxlength="60" placeholder="Jouw tekst, bijv. je bedrijfsnaam" value="' + esc(fs.text) + '">';
       h += '<div class="mdo-row">' + Object.keys(FONTS).map(function (k) {
         return '<button type="button" data-act="font" data-v="' + k + '" class="mdo-pill' + (fs.font === k ? ' is-on' : '') + '" style="font-family:' + FONTS[k][1] + '">' + FONTS[k][0] + '</button>';
-      }).join('') + INKS.map(function (c) {
+      }).join('') + (sel && effectOf(sel.opt.tech.id) ? '' : INKS.map(function (c) {
         return '<button type="button" data-act="ink" data-v="' + c + '" class="mdo-ink' + (inkOf(fs) === c ? ' is-on' : '') + '" style="background:' + c + '" aria-label="Tekstkleur ' + c + '"></button>';
-      }).join('') + '</div>';
+      }).join('')) + '</div>';
+      if (sel && effectOf(sel.opt.tech.id)) {
+        h += '<p class="mdo-muted">' + (effectOf(sel.opt.tech.id) === 'engrave' ? 'Bij lasergravering wordt je tekst in het materiaal gegraveerd; de kleur hangt af van het materiaal.' : 'Bij blinddruk wordt je tekst in het materiaal geperst, zonder inkt.') + '</p>';
+      }
     }
     if (!sel) return h + '<p class="mdo-warn">Voor deze keuze is op ' + esc(face.label.toLowerCase()) + ' geen techniek beschikbaar.</p>';
     var p = sel.opt.pos;

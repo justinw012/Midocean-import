@@ -114,7 +114,7 @@ class MDO_Importer {
 		}
 		$p      = json_decode( file_get_contents( $file ), true );
 		$prices = self::cache_json( 'prices.json' );
-		$stock  = self::cache_json( 'stock.json' );
+		$stock  = self::cache_json( 'stock-selected.json' );
 		$pf     = MDO_Settings::cache_dir( 'print' ) . sanitize_file_name( $master ) . '.json';
 		$print  = file_exists( $pf ) ? json_decode( file_get_contents( $pf ), true ) : null;
 		$s      = MDO_Settings::all();
@@ -230,7 +230,7 @@ class MDO_Importer {
 			if ( isset( $stock[ $v['sku'] ] ) ) {
 				$var->set_manage_stock( true );
 				$var->set_stock_quantity( (int) $stock[ $v['sku'] ] );
-				$var->set_backorders( 'no' );
+				$var->set_backorders( MDO_Settings::get( 'backorders' ) );
 			}
 			$var->update_meta_data( '_mdo_color_code', $v['color_code'] );
 			if ( $v['gtin'] && method_exists( $var, 'set_global_unique_id' ) && ! $var->get_global_unique_id() ) {

@@ -149,7 +149,7 @@ class MDO_Normalize {
 	public static function stock( array $e ) {
 		return array(
 			(string) self::pick( $e, array( 'sku' ), '' ),
-			(int) self::num( self::pick( $e, array( 'qty', 'quantity', 'stock' ), 0 ) ),
+			(int) self::num( self::pick( $e, array( 'qty', 'quantity', 'stock', 'qty_available', 'available', 'free_stock' ), 0 ) ),
 		);
 	}
 

@@ -36,6 +36,7 @@ class MDO_Admin {
 			'name_format'      => in_array( $in['name_format'] ?? '', array( 'short_name', 'short', 'name', 'name_short' ), true ) ? $in['name_format'] : 'short_name',
 			'rename_existing'  => empty( $in['rename_existing'] ) ? 0 : 1,
 			'update_slug'      => empty( $in['update_slug'] ) ? 0 : 1,
+			'backorders'       => ( 'notify' === ( $in['backorders'] ?? '' ) ) ? 'notify' : 'no',
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
 		);
@@ -253,6 +254,13 @@ class MDO_Admin {
 						<?php endforeach; ?>
 						<label style="display:block;line-height:2;margin-top:6px"><input type="checkbox" name="rename_existing" value="1" <?php checked( $s['rename_existing'] ); ?>> Ook bestaande producten hernoemen bij de volgende synchronisatie</label>
 						<label style="display:block;line-height:2"><input type="checkbox" name="update_slug" value="1" <?php checked( $s['update_slug'] ); ?>> Webadres (URL) aanpassen aan de nieuwe naam <span style="color:#777">– niet doen als de shop al live staat en de oude links gedeeld zijn</span></label>
+					</td></tr>
+					<tr><th>Niet op voorraad</th><td>
+						<select name="backorders">
+							<option value="no" <?php selected( $s['backorders'], 'no' ); ?>>Niet bestelbaar</option>
+							<option value="notify" <?php selected( $s['backorders'], 'notify' ); ?>>Toch bestelbaar (klant ziet: langere levertijd)</option>
+						</select>
+						<p class="description">Geldt vanaf de volgende synchronisatie.</p>
 					</td></tr>
 					<tr><th>Teksten bestaande producten</th><td><label><input type="checkbox" name="overwrite_texts" value="1" <?php checked( $s['overwrite_texts'] ); ?>> Naam en omschrijving overschrijven met Midocean</label></td></tr>
 					<tr><th>Configurator</th><td><label><input type="checkbox" name="configurator" value="1" <?php checked( $s['configurator'] ); ?>> Configurator tonen op Midocean-producten</label></td></tr>

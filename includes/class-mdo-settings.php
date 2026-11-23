@@ -18,6 +18,7 @@ class MDO_Settings {
 			'name_format'      => 'short_name', // short_name | short | name | name_short
 			'rename_existing'  => 0,
 			'update_slug'      => 1,
+			'backorders'       => 'no', // no | notify
 			'configurator'     => 1,
 		);
 	}

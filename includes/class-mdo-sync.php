@@ -295,16 +295,32 @@ class MDO_Sync {
 				break;
 
 			case 'scan_stock':
+				$s['st_total']   = $s['st_total'] ?? 0;
+				$s['st_nonzero'] = $s['st_nonzero'] ?? 0;
 				$r = MDO_Json_Stream::each( $dir . 'stock.json', $s['offset'], $deadline, function ( $raw ) use ( &$s ) {
+					if ( 0 === $s['st_total'] ) {
+						MDO_Log::info( 'Voorraadfeed, velden per regel: ' . implode( ', ', array_keys( $raw ) ) . '.' );
+					}
 					list( $sku, $qty ) = MDO_Normalize::stock( $raw );
+					$s['st_total']++;
+					if ( $qty > 0 ) {
+						$s['st_nonzero']++;
+					}
 					if ( isset( $s['skus'][ $sku ] ) ) {
 						$s['stock'][ $sku ] = $qty;
 					}
 				} );
 				$s['offset'] = $r['offset'];
 				if ( $r['done'] ) {
-					file_put_contents( $dir . 'stock.json', wp_json_encode( $s['stock'] ) );
-					unset( $s['stock'] );
+					if ( $s['st_total'] > 50 && 0 === $s['st_nonzero'] ) {
+						// Waarschijnlijk een onbekende veldnaam: liever niets aanpassen dan alles op 0 zetten.
+						MDO_Log::error( 'Voorraadfeed gaf voor alle ' . $s['st_total'] . ' artikelen 0 terug; voorraad niet bijgewerkt.' );
+						$s['stock'] = array();
+					} else {
+						MDO_Log::info( 'Voorraad: ' . $s['st_nonzero'] . ' van ' . $s['st_total'] . ' artikelen op voorraad bij Midocean.' );
+					}
+					file_put_contents( $dir . 'stock-selected.json', wp_json_encode( $s['stock'] ) );
+					unset( $s['stock'], $s['st_total'], $s['st_nonzero'] );
 					$s['stage'] = 'queue';
 				}
 				break;
@@ -340,10 +356,32 @@ class MDO_Sync {
 		if ( false === $start ) {
 			$start = MDO_Json_Stream::find_array_start( $f );
 		}
-		if ( false !== $start ) {
-			update_option( 'mdo_stock_offset', array( 'offset' => $start, 'updated' => 0 ), false );
-			as_enqueue_async_action( 'mdo_stock_step', array(), self::GROUP );
+		if ( false === $start ) {
+			MDO_Log::error( 'Voorraadfeed heeft een onverwachte opbouw.' );
+			return;
 		}
+		// Steekproef: als de eerste 500 regels allemaal 0 zijn, klopt de veldnaam waarschijnlijk niet.
+		$n  = 0;
+		$nz = 0;
+		try {
+			MDO_Json_Stream::each( $f, $start, time() + 10, function ( $raw ) use ( &$n, &$nz ) {
+				list( , $qty ) = MDO_Normalize::stock( $raw );
+				$n++;
+				if ( $qty > 0 ) {
+					$nz++;
+				}
+				if ( $n >= 500 ) {
+					throw new Exception( 'genoeg' );
+				}
+			} );
+		} catch ( Exception $e ) { // steekproef klaar
+		}
+		if ( $n >= 50 && 0 === $nz ) {
+			MDO_Log::error( 'Voorraadfeed gaf in een steekproef van ' . $n . ' artikelen overal 0; voorraad niet bijgewerkt.' );
+			return;
+		}
+		update_option( 'mdo_stock_offset', array( 'offset' => $start, 'updated' => 0 ), false );
+		as_enqueue_async_action( 'mdo_stock_step', array(), self::GROUP );
 	}
 
 	public static function stock_step() {
