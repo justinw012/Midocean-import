@@ -1,0 +1,300 @@
+<?php
+/**
+ * Maakt of werkt één WooCommerce-product bij vanuit de cache van de laatste sync.
+ * Bestaande producten (bijv. eerder via WP All Import geïmporteerd) worden herkend
+ * op het artikelnummer van de varianten.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+class MDO_Importer {
+
+	private static $cache = array();
+
+	private static function cache_json( $name ) {
+		if ( ! isset( self::$cache[ $name ] ) ) {
+			$f                    = MDO_Settings::cache_dir() . $name;
+			self::$cache[ $name ] = file_exists( $f ) ? json_decode( file_get_contents( $f ), true ) : array();
+		}
+		return is_array( self::$cache[ $name ] ) ? self::$cache[ $name ] : array();
+	}
+
+	private static function find_parent( array $p ) {
+		$q = get_posts( array(
+			'post_type'   => 'product',
+			'post_status' => 'any',
+			'meta_key'    => '_mdo_master_code',
+			'meta_value'  => $p['master_code'],
+			'fields'      => 'ids',
+			'numberposts' => 1,
+		) );
+		if ( $q ) {
+			return (int) $q[0];
+		}
+		foreach ( $p['variants'] as $v ) {
+			$id = wc_get_product_id_by_sku( $v['sku'] );
+			if ( $id ) {
+				$parent = wp_get_post_parent_id( $id );
+				return $parent ? (int) $parent : (int) $id;
+			}
+		}
+		$id = wc_get_product_id_by_sku( $p['master_code'] );
+		return $id ? (int) $id : 0;
+	}
+
+	/** Bestaande kleur-eigenschap van het product hergebruiken, anders pa_kleur of een lokale "Kleur". */
+	private static function colour_attribute( $product ) {
+		if ( $product ) {
+			foreach ( $product->get_attributes() as $key => $attr ) {
+				if ( false !== stripos( $key, 'kleur' ) || false !== stripos( $key, 'color' ) || false !== stripos( $key, 'colour' ) ) {
+					return array( 'key' => $key, 'name' => $attr->get_name(), 'taxonomy' => $attr->is_taxonomy() );
+				}
+			}
+		}
+		if ( taxonomy_exists( 'pa_kleur' ) ) {
+			return array( 'key' => 'pa_kleur', 'name' => 'pa_kleur', 'taxonomy' => true );
+		}
+		return array( 'key' => 'kleur', 'name' => 'Kleur', 'taxonomy' => false );
+	}
+
+	private static function category_ids( $path ) {
+		$ids    = array();
+		$parent = 0;
+		foreach ( array_filter( array_map( 'trim', explode( '>', $path ) ) ) as $name ) {
+			$term = get_term_by( 'name', $name, 'product_cat' );
+			if ( $term && (int) $term->parent !== $parent ) {
+				$found = get_terms( array( 'taxonomy' => 'product_cat', 'name' => $name, 'parent' => $parent, 'hide_empty' => false ) );
+				$term  = ( ! is_wp_error( $found ) && $found ) ? $found[0] : null;
+			}
+			if ( ! $term ) {
+				$new = wp_insert_term( $name, 'product_cat', array( 'parent' => $parent ) );
+				if ( is_wp_error( $new ) ) {
+					break;
+				}
+				$term = get_term( $new['term_id'], 'product_cat' );
+			}
+			$ids[]  = (int) $term->term_id;
+			$parent = (int) $term->term_id;
+		}
+		return $ids;
+	}
+
+	private static function colour_label( array $v ) {
+		$name = $v['color_name'] ? $v['color_name'] : ( $v['color_group'] ? $v['color_group'] : $v['color_code'] );
+		return $name ? $name : $v['sku'];
+	}
+
+	public static function import_product( $master ) {
+		$file = MDO_Settings::cache_dir( 'products' ) . sanitize_file_name( $master ) . '.json';
+		if ( ! file_exists( $file ) ) {
+			return;
+		}
+		$p      = json_decode( file_get_contents( $file ), true );
+		$prices = self::cache_json( 'prices.json' );
+		$stock  = self::cache_json( 'stock.json' );
+		$pf     = MDO_Settings::cache_dir( 'print' ) . sanitize_file_name( $master ) . '.json';
+		$print  = file_exists( $pf ) ? json_decode( file_get_contents( $pf ), true ) : null;
+		$s      = MDO_Settings::all();
+
+		$id      = self::find_parent( $p );
+		$is_new  = ! $id;
+		$product = $id ? wc_get_product( $id ) : null;
+		if ( $product && ! $product->is_type( 'variable' ) ) {
+			MDO_Log::error( $master . ': bestaand product is geen variabel product; overgeslagen.' );
+			return;
+		}
+		if ( ! $product ) {
+			$product = new WC_Product_Variable();
+			$product->set_status( $s['new_status'] );
+			if ( ! wc_get_product_id_by_sku( $p['master_code'] ) ) {
+				$product->set_sku( $p['master_code'] );
+			}
+		}
+		if ( $is_new || $s['overwrite_texts'] ) {
+			$product->set_name( $p['name'] ? $p['name'] : $p['master_code'] );
+			$product->set_description( wp_kses_post( wpautop( $p['long'] ) ) );
+			$product->set_short_description( wp_kses_post( $p['short'] ) );
+		}
+		if ( $p['variants'] ) {
+			$cats = self::category_ids( $p['variants'][0]['category'] );
+			if ( $cats && ( $is_new || ! $product->get_category_ids() ) ) {
+				$product->set_category_ids( $cats );
+			}
+		}
+		if ( $p['weight'] ) {
+			$product->set_weight( $p['weight'] );
+		}
+		if ( $p['length'] ) {
+			$factor = ( 'mm' === $p['size_unit'] ) ? 0.1 : 1;
+			$product->set_length( $p['length'] * $factor );
+			$product->set_width( $p['width'] * $factor );
+			$product->set_height( $p['height'] * $factor );
+		}
+
+		// Kleur-eigenschap met alle kleuren.
+		$ca      = self::colour_attribute( $is_new ? null : $product );
+		$options = array();
+		foreach ( $p['variants'] as $v ) {
+			$options[ $v['sku'] ] = self::colour_label( $v );
+		}
+		$attr = new WC_Product_Attribute();
+		if ( $ca['taxonomy'] ) {
+			$term_ids = array();
+			foreach ( array_unique( $options ) as $label ) {
+				$t = term_exists( $label, $ca['key'] );
+				if ( ! $t ) {
+					$t = wp_insert_term( $label, $ca['key'] );
+				}
+				if ( ! is_wp_error( $t ) ) {
+					$term_ids[] = (int) ( is_array( $t ) ? $t['term_id'] : $t );
+				}
+			}
+			$attr->set_id( wc_attribute_taxonomy_id_by_name( $ca['key'] ) );
+			$attr->set_name( $ca['key'] );
+			$attr->set_options( $term_ids );
+		} else {
+			$attr->set_name( $ca['name'] );
+			$attr->set_options( array_values( array_unique( $options ) ) );
+		}
+		$attr->set_visible( true );
+		$attr->set_variation( true );
+		$attrs                 = $product->get_attributes();
+		$attrs[ $ca['key'] ]   = $attr;
+		$product->set_attributes( $attrs );
+		$product->update_meta_data( '_mdo_master_code', $p['master_code'] );
+		$product->update_meta_data( '_mdo_documents', $p['documents'] );
+		if ( $print ) {
+			$product->update_meta_data( MDO_Printdata::META, $print );
+		}
+		$parent_id = $product->save();
+
+		// Varianten.
+		$attr_key = $ca['taxonomy'] ? $ca['key'] : sanitize_title( $ca['name'] );
+		$count    = 0;
+		foreach ( $p['variants'] as $v ) {
+			$vid = wc_get_product_id_by_sku( $v['sku'] );
+			$var = $vid ? wc_get_product( $vid ) : null;
+			if ( $var && ! $var->is_type( 'variation' ) ) {
+				continue;
+			}
+			if ( ! $var ) {
+				$var = new WC_Product_Variation();
+				$var->set_parent_id( $parent_id );
+				$var->set_sku( $v['sku'] );
+			}
+			$label = $options[ $v['sku'] ];
+			if ( $ca['taxonomy'] ) {
+				$term  = get_term_by( 'name', $label, $ca['key'] );
+				$value = $term ? $term->slug : sanitize_title( $label );
+			} else {
+				$value = $label;
+			}
+			$var->set_attributes( array( $attr_key => $value ) );
+
+			$scales = isset( $prices[ $v['sku'] ] ) ? $prices[ $v['sku'] ] : null;
+			if ( $scales ) {
+				$var->set_regular_price( wc_format_decimal( $scales[0][1] * (float) $s['margin_product'], 2 ) );
+				$var->update_meta_data( '_mdo_scales', $scales );
+			}
+			if ( isset( $stock[ $v['sku'] ] ) ) {
+				$var->set_manage_stock( true );
+				$var->set_stock_quantity( (int) $stock[ $v['sku'] ] );
+				$var->set_backorders( 'no' );
+			}
+			$var->update_meta_data( '_mdo_color_code', $v['color_code'] );
+			if ( $v['gtin'] && method_exists( $var, 'set_global_unique_id' ) && ! $var->get_global_unique_id() ) {
+				try {
+					$var->set_global_unique_id( $v['gtin'] );
+				} catch ( Exception $e ) { // dubbele EAN: overslaan
+				}
+			}
+			$var->set_status( 'publish' );
+			$var->save();
+			$count++;
+		}
+		WC_Product_Variable::sync( $parent_id );
+
+		MDO_Log::info( $master . ': ' . ( $is_new ? 'aangemaakt' : 'bijgewerkt' ) . ' met ' . $count . ' kleuren.' );
+		as_enqueue_async_action( 'mdo_import_images', array( $parent_id ), MDO_Sync::GROUP );
+	}
+
+	/** Zoekt een eerder gedownloade afbeelding op bron-URL, anders downloaden. */
+	private static function attachment_for( $url, $parent_id ) {
+		$found = get_posts( array(
+			'post_type'   => 'attachment',
+			'post_status' => 'inherit',
+			'meta_key'    => '_mdo_source_url',
+			'meta_value'  => $url,
+			'fields'      => 'ids',
+			'numberposts' => 1,
+		) );
+		if ( $found ) {
+			return (int) $found[0];
+		}
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$id = media_sideload_image( $url, $parent_id, null, 'id' );
+		if ( is_wp_error( $id ) ) {
+			return 0;
+		}
+		update_post_meta( $id, '_mdo_source_url', $url );
+		return (int) $id;
+	}
+
+	public static function import_images( $parent_id ) {
+		$product = wc_get_product( $parent_id );
+		if ( ! $product ) {
+			return;
+		}
+		$master = $product->get_meta( '_mdo_master_code' );
+		$file   = MDO_Settings::cache_dir( 'products' ) . sanitize_file_name( $master ) . '.json';
+		if ( ! file_exists( $file ) ) {
+			return;
+		}
+		$p        = json_decode( file_get_contents( $file ), true );
+		$deadline = time() + MDO_Sync::BUDGET;
+		$hash     = md5( wp_json_encode( wp_list_pluck( $p['variants'], 'images' ) ) );
+		if ( $product->get_meta( '_mdo_images_hash' ) === $hash ) {
+			return;
+		}
+
+		$first_gallery = null;
+		foreach ( $p['variants'] as $v ) {
+			$vid = wc_get_product_id_by_sku( $v['sku'] );
+			if ( ! $vid || ! $v['images'] ) {
+				continue;
+			}
+			$ids = array();
+			foreach ( $v['images'] as $url ) {
+				if ( time() > $deadline ) {
+					// Later verder; al gedownloade afbeeldingen worden hergebruikt.
+					as_enqueue_async_action( 'mdo_import_images', array( $parent_id ), MDO_Sync::GROUP );
+					return;
+				}
+				$a = self::attachment_for( $url, $parent_id );
+				if ( $a ) {
+					$ids[] = $a;
+				}
+			}
+			if ( ! $ids ) {
+				continue;
+			}
+			$var = wc_get_product( $vid );
+			$var->set_image_id( $ids[0] );
+			$var->save();
+			// Additional Variation Images Gallery (woo-variation-gallery).
+			update_post_meta( $vid, 'woo_variation_gallery_images', array_slice( $ids, 1 ) );
+			if ( null === $first_gallery ) {
+				$first_gallery = $ids;
+			}
+		}
+		if ( $first_gallery ) {
+			$product->set_image_id( $first_gallery[0] );
+			$product->set_gallery_image_ids( array_slice( $first_gallery, 1 ) );
+		}
+		$product->update_meta_data( '_mdo_images_hash', $hash );
+		$product->save();
+		MDO_Log::info( $master . ': afbeeldingen bijgewerkt.' );
+	}
+}
