@@ -68,6 +68,16 @@ class MDO_Admin {
 				$tech[ sanitize_text_field( $id ) ] = $label;
 			}
 		}
+		$words = array();
+		foreach ( (array) wp_unslash( $_POST['word'] ?? array() ) as $w => $nl ) {
+			$w  = strtoupper( preg_replace( '/[^A-Za-z0-9()\/.\-]/', '', (string) $w ) );
+			$nl = sanitize_text_field( $nl );
+			if ( '' !== $w && '' !== $nl ) {
+				$words[ $w ] = $nl;
+			}
+		}
+		update_option( MDO_Printdata::WORDS_OPTION, $words, false );
+		MDO_Printdata::reset_words();
 		update_option( MDO_Printdata::LABELS_OPTION, $pos, false );
 		update_option( 'mdo_technique_labels', $tech, false );
 		$info = array();
@@ -336,6 +346,38 @@ class MDO_Admin {
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'mdo_labels' ); ?>
 					<input type="hidden" name="action" value="mdo_labels">
+					<?php
+					$own_words = MDO_Printdata::own_words();
+					$unknown   = MDO_Printdata::unknown_words( $seen_pos );
+					?>
+					<h3>Woorden (<?php echo count( $unknown ); ?> nog niet vertaald)</h3>
+					<p style="max-width:960px">Vertaal hier één woord, dan geldt het voor álle drukposities waar het in staat. Bijvoorbeeld <code>CORK</code> = <code>kurk</code> maakt van <code>CORK FRONT</code> "Kurk voorkant". Een streepje (<code>-</code>) laat het woord weg. Een vertaling per drukpositie hieronder gaat altijd voor.</p>
+					<div style="max-height:320px;overflow:auto;max-width:960px">
+					<table class="widefat striped">
+						<thead><tr><th>Woord</th><th>Komt voor in</th><th>Voorbeeld</th><th>Jouw vertaling</th></tr></thead>
+						<tbody>
+						<?php foreach ( $unknown as $w => $info ) : ?>
+							<tr style="background:#FDE8E8">
+								<td><code><?php echo esc_html( $w ); ?></code></td>
+								<td><?php echo (int) $info['count']; ?> positie<?php echo 1 === $info['count'] ? '' : 's'; ?></td>
+								<td><code><?php echo esc_html( $info['example'] ); ?></code></td>
+								<td><input type="text" name="word[<?php echo esc_attr( $w ); ?>]" value=""></td>
+							</tr>
+						<?php endforeach; ?>
+						<?php foreach ( $own_words as $w => $nl ) : ?>
+							<tr style="background:#E8EEFD">
+								<td><code><?php echo esc_html( $w ); ?></code></td>
+								<td colspan="2">Eigen vertaling</td>
+								<td><input type="text" name="word[<?php echo esc_attr( $w ); ?>]" value="<?php echo esc_attr( $nl ); ?>"></td>
+							</tr>
+						<?php endforeach; ?>
+						<?php if ( ! $unknown && ! $own_words ) : ?>
+							<tr><td colspan="4">Alle woorden zijn bekend.</td></tr>
+						<?php endif; ?>
+						</tbody>
+					</table>
+					</div>
+					<p class="description">Een eigen woord toevoegen dat al automatisch vertaald wordt? Vul het in bij een drukpositie hieronder, of vraag het mij.</p>
 					<h3>Drukposities (<?php echo count( $seen_pos ); ?>)</h3>
 					<div style="max-height:420px;overflow:auto;max-width:960px">
 					<table class="widefat striped">

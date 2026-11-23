@@ -55,6 +55,232 @@ class MDO_Printdata {
 		'BOTTLE'      => 'fles',
 		'CENTER'      => 'midden',
 		'CENTRE'      => 'midden',
+		// Uitgebreid op basis van alle drukposities van Midocean.
+		'PART' => 'deel',
+		'PEN' => 'pen',
+		'CUP' => 'beker',
+		'GLASS' => 'glas',
+		'TOWEL' => 'handdoek',
+		'PLATE' => 'plaatje',
+		'SEGMENT' => 'segment',
+		'SEG' => 'segment',
+		'RACKET' => 'racket',
+		'MUG' => 'mok',
+		'INLAY' => 'inleg',
+		'METAL' => 'metaal',
+		'STAND' => 'standaard',
+		'GLOVE' => 'handschoen',
+		'KNIFE' => 'mes',
+		'NOTEBOOK' => 'notitieboek',
+		'POT' => 'pot',
+		'COASTER' => 'onderzetter',
+		'CORNER' => 'hoek',
+		'OPENER' => 'opener',
+		'TRANSPARENT' => 'transparant',
+		'PLUG' => 'stekker',
+		'STRIP' => 'strook',
+		'HEAD' => 'kop',
+		'BOARD' => 'plank',
+		'LABEL' => 'label',
+		'SMALL' => 'klein',
+		'CASE' => 'hoes',
+		'HOLDER' => 'houder',
+		'FORK' => 'vork',
+		'PIECE' => 'stuk',
+		'BUTTON' => 'knop',
+		'BUTTONS' => 'knoppen',
+		'FAN' => 'waaier',
+		'CHARGER' => 'oplader',
+		'PILLOW' => 'kussen',
+		'PUZZLE' => 'puzzel',
+		'STAR' => 'ster',
+		'TREE' => 'boom',
+		'BALL' => 'bal',
+		'OUTSIDE' => 'buitenkant',
+		'PENCIL' => 'potlood',
+		'SHAKER' => 'shaker',
+		'CARTON' => 'doos',
+		'STEEL' => 'staal',
+		'TUBE' => 'koker',
+		'CHEESE' => 'kaas',
+		'PATCH' => 'embleem',
+		'BELL' => 'bel',
+		'CARD' => 'kaart',
+		'CARDS' => 'kaarten',
+		'MIRROR' => 'spiegel',
+		'STRIPE' => 'streep',
+		'EAR' => 'oor',
+		'TOOL' => 'gereedschap',
+		'LIGHT' => 'lamp',
+		'CLOSURE' => 'sluiting',
+		'EGG' => 'ei',
+		'SPOON' => 'lepel',
+		'CUBE' => 'kubus',
+		'SEAT' => 'zitting',
+		'FOLDER' => 'map',
+		'TSHIRT' => 'T-shirt',
+		'T-SHIRT' => 'T-shirt',
+		'SLATE' => 'leisteen',
+		'LEATHER' => 'leer',
+		'POTHOLDER' => 'pannenlap',
+		'COVER' => 'omslag',
+		'DISPLAY' => 'scherm',
+		'TORCH' => 'zaklamp',
+		'CORK' => 'kurk',
+		'ROOF' => 'dak',
+		'WOOD' => 'hout',
+		'KEYRING' => 'sleutelhanger',
+		'BAMBOO' => 'bamboe',
+		'BUCKLE' => 'gesp',
+		'TRAY' => 'dienblad',
+		'INFUSER' => 'theezeef',
+		'BIG' => 'groot',
+		'STICK' => 'stok',
+		'PLANK' => 'plank',
+		'CARDBOARD' => 'karton',
+		'ROLLER' => 'roller',
+		'HAMMOCK' => 'hangmat',
+		'STRAW' => 'rietje',
+		'SOLAR' => 'zonnepaneel',
+		'PAPER' => 'papier',
+		'HAT' => 'hoed',
+		'FRISBEE' => 'frisbee',
+		'SPATULA' => 'spatel',
+		'COIN' => 'munt',
+		'FILTER' => 'filter',
+		'BREAST' => 'borst',
+		'RING' => 'ring',
+		'CLOTH' => 'doek',
+		'LAMP' => 'lamp',
+		'SPADE' => 'schep',
+		'EARBUD' => 'oordopje',
+		'ORGANIZER' => 'organizer',
+		'MOUSEPAD' => 'muismat',
+		'WING' => 'vleugel',
+		'LUNCHBOX' => 'lunchbox',
+		'BLANKET' => 'deken',
+		'FIRESTARTER' => 'vuurstarter',
+		'LEG' => 'poot',
+		'CONTAINER' => 'bak',
+		'MOUSE' => 'muis',
+		'USB' => 'USB',
+		'MAT' => 'mat',
+		'UMBRELLA' => 'paraplu',
+		'LEAF' => 'blad',
+		'MARKER' => 'marker',
+		'TUMBLER' => 'beker',
+		'POLE' => 'paal',
+		'REST' => 'steun',
+		'TUB' => 'kuipje',
+		'RACK' => 'rek',
+		'AXE' => 'bijl',
+		'WHISK' => 'garde',
+		'HOODIE' => 'hoodie',
+		'BUCKET' => 'emmer',
+		'TEA' => 'thee',
+		'DOOR' => 'deur',
+		'RULER' => 'liniaal',
+		'RULLER' => 'liniaal',
+		'INNER' => 'binnenkant',
+		'SLIPPER' => 'slipper',
+		'SLIPPERS' => 'slippers',
+		'SHOVEL' => 'schep',
+		'TOOTHBRUSH' => 'tandenborstel',
+		'SOCK' => 'sok',
+		'ENVELOPE' => 'envelop',
+		'TONGS' => 'tang',
+		'PAGE' => 'pagina',
+		'KEYBOARD' => 'toetsenbord',
+		'HAND' => 'hand',
+		'SHARPENER' => 'puntenslijper',
+		'CHAIR' => 'stoel',
+		'WALLET' => 'portemonnee',
+		'KEY' => 'sleutel',
+		'WRIST' => 'pols',
+		'TABLE' => 'tafel',
+		'GRIP' => 'greep',
+		'TAG' => 'label',
+		'MAGNET' => 'magneet',
+		'MASK' => 'masker',
+		'MICROPHONE' => 'microfoon',
+		'HEART' => 'hart',
+		'KITE' => 'vlieger',
+		'CANDLE' => 'kaars',
+		'BEANIE' => 'muts',
+		'SCARF' => 'sjaal',
+		'CARAFE' => 'karaf',
+		'WHEEL' => 'wiel',
+		'BACKREST' => 'rugleuning',
+		'CIRCLE' => 'cirkel',
+		'BALLPEN' => 'balpen',
+		'BEAR' => 'beer',
+		'SCREWDRIVER' => 'schroevendraaier',
+		'POWERBANK' => 'powerbank',
+		'SURFACE' => 'oppervlak',
+		'COLLAR' => 'kraag',
+		'POCKETS' => 'zakken',
+		'TOKEN' => 'munt',
+		'INSERT' => 'inleg',
+		'LIDTOP' => 'bovenkant deksel',
+		'CUTTER' => 'snijder',
+		'MEASURING' => 'meet',
+		'HOURGLASS' => 'zandloper',
+		'SLEEPING' => 'slaap',
+		'TOWER' => 'toren',
+		'WHITE' => 'wit',
+		'BLACK' => 'zwart',
+		'RED' => 'rood',
+		'GREEN' => 'groen',
+		'SILVER' => 'zilver',
+		'ORANGE' => 'oranje',
+		'YELLOW' => 'geel',
+		'PVC' => 'pvc',
+		'COLOURED' => 'gekleurd',
+		'COLORED' => 'gekleurd',
+		'COLOURDED' => 'gekleurd',
+		'TEXTURED' => 'gestructureerd',
+		'SMOOTH' => 'glad',
+		'FLAT' => 'vlak',
+		'CONVEX' => 'bol',
+		'REFLECTIVE' => 'reflecterend',
+		'EMBROIDERY' => '',
+		'TRANSFER' => '',
+		'DEBOSSING' => '',
+		'DIGITAL' => '',
+		'SUBLIMATION' => '',
+		'DOMING' => '',
+		'INKLESS' => '',
+		'PRINT' => '',
+		'(PAD)' => '',
+		'(PD)' => '',
+		'(B)' => '',
+		'DO/DL' => '',
+		'ABOVE' => 'boven',
+		'UNDER' => 'onder',
+		'UP' => 'boven',
+		'DOWN' => 'onder',
+		'OPPOSITE' => 'tegenover',
+		'NEXT' => 'naast',
+		'TO' => '',
+		'ON' => 'op',
+		'IN' => 'in',
+		'AT' => 'bij',
+		'WITH' => 'met',
+		'ROUND' => 'rond',
+		'FULL' => 'volledig',
+		'SINGLE' => 'enkel',
+		'OUTER' => 'buitenkant',
+		'HIGH' => 'hoog',
+		'LOW' => 'laag',
+		'END' => 'uiteinde',
+		'ADDITIONAL' => 'extra',
+		'FIRST' => 'eerste',
+		'OTHER' => 'ander',
+		'ROUNDPART' => 'ronde deel',
+		'LEVEL' => 'niveau',
+		'LINE' => 'lijn',
+		'CM' => 'cm',
+		'INCH' => 'inch',
 	);
 
 	/**
@@ -62,6 +288,24 @@ class MDO_Printdata {
 	 * Alle andere woorden uit $words zijn letterlijk en daarmee "zeker".
 	 */
 	private static $choices = array(
+		'PLATE' => 'Plaatje; kan ook: bord (servies).',
+		'FAN' => 'Waaier; kan ook: ventilator.',
+		'STAND' => 'Standaard; kan ook: voet.',
+		'CASE' => 'Hoes; kan ook: etui of koffer.',
+		'HEAD' => 'Kop; kan ook: hoofd.',
+		'BOARD' => 'Plank; kan ook: bord (bijv. snijplank).',
+		'PATCH' => 'Embleem; kan ook: badge of patch.',
+		'LIGHT' => 'Lamp; kan ook: licht.',
+		'COVER' => 'Omslag (boek); kan ook: hoes of deksel.',
+		'TUMBLER' => 'Beker; kan ook: drinkbeker of tumbler.',
+		'CONTAINER' => 'Bak; kan ook: houder of pot.',
+		'NEXT' => 'Naast: "next to" wordt "naast"; controleer de woordvolgorde.',
+		'ON' => 'Op: controleer de woordvolgorde.',
+		'REST' => 'Steun; kan ook: houder.',
+		'INLAY' => 'Inleg; kan ook: inlegplaatje.',
+		'INSERT' => 'Inleg; kan ook: inzetstuk.',
+		'SHAKER' => 'Shaker; kan ook: cocktailshaker.',
+		'TUB' => 'Kuipje; kan ook: bakje.',
 		'ARM'         => 'Arm of mouw; gekozen: mouw (bij kleding).',
 		'CHEST'       => 'Borst (kleding); bij tassen kan "voorvak" beter zijn.',
 		'BARREL'      => 'Huls (pen); kan ook: schacht.',
@@ -97,6 +341,58 @@ class MDO_Printdata {
 
 	const LABELS_OPTION = 'mdo_position_labels';
 	const SEEN_OPTION   = 'mdo_positions_seen';
+	const WORDS_OPTION  = 'mdo_position_words';
+
+	private static $own_words = null;
+
+	/** Eigen woordvertalingen uit het beheerscherm (bijv. CORK => kurk); gelden in elke drukpositie. */
+	public static function own_words() {
+		if ( null === self::$own_words ) {
+			self::$own_words = (array) get_option( self::WORDS_OPTION, array() );
+		}
+		return self::$own_words;
+	}
+
+	public static function reset_words() {
+		self::$own_words = null;
+	}
+
+	/** Vertaling van één woord: eigen woordenlijst eerst, dan de ingebouwde. Null = onbekend. */
+	public static function word( $t ) {
+		$own = self::own_words();
+		if ( isset( $own[ $t ] ) ) {
+			return '-' === $own[ $t ] ? '' : $own[ $t ];
+		}
+		return isset( self::$words[ $t ] ) ? self::$words[ $t ] : null;
+	}
+
+	/** Woorden in een positie-id; "SIDE1" wordt "SIDE 1", haakjes om techniekcodes vallen weg. */
+	public static function tokens( $position_id ) {
+		$id = strtoupper( trim( (string) $position_id ) );
+		$id = preg_replace( '/\(([A-Z0-9\/]+)\)/', '$1', $id );
+		$id = preg_replace( '/([A-Z]{2,})(\d+)\b/', '$1 $2', $id );
+		return array_values( array_filter( preg_split( '/\s+/', $id ), 'strlen' ) );
+	}
+
+	/** Woorden die nog niet vertaald zijn, met hoe vaak ze voorkomen en een voorbeeld. */
+	public static function unknown_words( array $position_ids ) {
+		$out = array();
+		foreach ( $position_ids as $id ) {
+			foreach ( self::tokens( $id ) as $t ) {
+				if ( in_array( $t, self::$tech_tokens, true ) || 'HANDED' === $t || ctype_digit( $t ) || null !== self::word( $t ) ) {
+					continue;
+				}
+				if ( ! isset( $out[ $t ] ) ) {
+					$out[ $t ] = array( 'count' => 0, 'example' => $id );
+				}
+				$out[ $t ]['count']++;
+			}
+		}
+		uasort( $out, function ( $a, $b ) {
+			return $b['count'] - $a['count'];
+		} );
+		return $out;
+	}
 
 	/** Naam voor de klant: eigen vertaling uit het beheerscherm, anders de automatische. */
 	public static function label( $position_id ) {
@@ -109,11 +405,11 @@ class MDO_Printdata {
 
 	/** True als de automatische vertaling een woord niet kent (dan blijft het Engels). */
 	public static function has_unknown( $position_id ) {
-		foreach ( preg_split( '/\s+/', strtoupper( trim( $position_id ) ) ) as $t ) {
+		foreach ( self::tokens( $position_id ) as $t ) {
 			if ( '' === $t || in_array( $t, self::$tech_tokens, true ) || 'HANDED' === $t || ctype_digit( $t ) ) {
 				continue;
 			}
-			if ( ! isset( self::$words[ $t ] ) ) {
+			if ( null === self::word( $t ) ) {
 				return true;
 			}
 		}
@@ -133,7 +429,7 @@ class MDO_Printdata {
 		$notes   = array();
 		$places  = 0;
 		$dropped = array();
-		foreach ( preg_split( '/\s+/', strtoupper( trim( $position_id ) ) ) as $t ) {
+		foreach ( self::tokens( $position_id ) as $t ) {
 			if ( '' === $t || ctype_digit( $t ) && '360' !== $t || 'HANDED' === $t ) {
 				continue;
 			}
@@ -141,20 +437,20 @@ class MDO_Printdata {
 				$dropped[] = $t;
 				continue;
 			}
-			if ( ! isset( self::$words[ $t ] ) ) {
+			if ( null === self::word( $t ) ) {
 				$status  = 'onbekend';
 				$notes[] = $t . ': staat niet in de woordenlijst, blijft Engels.';
 				continue;
 			}
-			if ( '' === self::$words[ $t ] ) {
+			if ( '' === self::word( $t ) ) {
 				continue;
 			}
 			$places++;
-			if ( isset( self::$choices[ $t ] ) ) {
+			if ( isset( self::$choices[ $t ] ) && ! isset( self::own_words()[ $t ] ) ) {
 				if ( 'onbekend' !== $status ) {
 					$status = 'keuze';
 				}
-				$notes[] = $t . ' → ' . self::$words[ $t ] . ': ' . self::$choices[ $t ];
+				$notes[] = $t . ' → ' . self::word( $t ) . ': ' . self::$choices[ $t ];
 			}
 		}
 		if ( $places > 1 ) {
@@ -170,7 +466,7 @@ class MDO_Printdata {
 	}
 
 	public static function auto_label( $position_id ) {
-		$tokens = preg_split( '/\s+/', strtoupper( trim( $position_id ) ) );
+		$tokens = self::tokens( $position_id );
 		$out    = array();
 		foreach ( $tokens as $t ) {
 			if ( in_array( $t, self::$tech_tokens, true ) ) {
@@ -185,7 +481,7 @@ class MDO_Printdata {
 				$out[] = $t;
 				continue;
 			}
-			$w = isset( self::$words[ $t ] ) ? self::$words[ $t ] : strtolower( $t );
+			$w = null !== self::word( $t ) ? self::word( $t ) : strtolower( $t );
 			if ( '' !== $w ) {
 				$out[] = $w;
 			}
