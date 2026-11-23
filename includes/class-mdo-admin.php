@@ -33,6 +33,9 @@ class MDO_Admin {
 			'setup_per_colour' => empty( $in['setup_per_colour'] ) ? 0 : 1,
 			'new_status'       => ( 'publish' === ( $in['new_status'] ?? '' ) ) ? 'publish' : 'draft',
 			'overwrite_texts'  => empty( $in['overwrite_texts'] ) ? 0 : 1,
+			'name_format'      => in_array( $in['name_format'] ?? '', array( 'short_name', 'short', 'name', 'name_short' ), true ) ? $in['name_format'] : 'short_name',
+			'rename_existing'  => empty( $in['rename_existing'] ) ? 0 : 1,
+			'update_slug'      => empty( $in['update_slug'] ) ? 0 : 1,
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
 		);
@@ -240,6 +243,16 @@ class MDO_Admin {
 							<option value="draft" <?php selected( $s['new_status'], 'draft' ); ?>>Als concept (eerst zelf controleren)</option>
 							<option value="publish" <?php selected( $s['new_status'], 'publish' ); ?>>Direct publiceren</option>
 						</select>
+					</td></tr>
+					<tr><th>Productnaam</th><td>
+						<?php
+						$ex = array( 'name' => 'ABE', 'short' => 'Matglazen fles 500 ml' );
+						foreach ( array( 'short_name' => 'Omschrijving – modelnaam', 'short' => 'Alleen omschrijving', 'name' => 'Alleen modelnaam (zoals Midocean)', 'name_short' => 'Modelnaam – omschrijving' ) as $k => $l ) :
+							?>
+							<label style="display:block;line-height:2"><input type="radio" name="name_format" value="<?php echo esc_attr( $k ); ?>" <?php checked( $s['name_format'], $k ); ?>> <?php echo esc_html( $l ); ?> <span style="color:#777">– bijv. “<?php echo esc_html( MDO_Importer::title( $ex, $k ) ); ?>”</span></label>
+						<?php endforeach; ?>
+						<label style="display:block;line-height:2;margin-top:6px"><input type="checkbox" name="rename_existing" value="1" <?php checked( $s['rename_existing'] ); ?>> Ook bestaande producten hernoemen bij de volgende synchronisatie</label>
+						<label style="display:block;line-height:2"><input type="checkbox" name="update_slug" value="1" <?php checked( $s['update_slug'] ); ?>> Webadres (URL) aanpassen aan de nieuwe naam <span style="color:#777">– niet doen als de shop al live staat en de oude links gedeeld zijn</span></label>
 					</td></tr>
 					<tr><th>Teksten bestaande producten</th><td><label><input type="checkbox" name="overwrite_texts" value="1" <?php checked( $s['overwrite_texts'] ); ?>> Naam en omschrijving overschrijven met Midocean</label></td></tr>
 					<tr><th>Configurator</th><td><label><input type="checkbox" name="configurator" value="1" <?php checked( $s['configurator'] ); ?>> Configurator tonen op Midocean-producten</label></td></tr>

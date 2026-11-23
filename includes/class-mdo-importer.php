@@ -84,6 +84,29 @@ class MDO_Importer {
 		return $name ? $name : $v['sku'];
 	}
 
+	/** Productnaam volgens de instelling, bijv. "Matglazen fles 500 ml – ABE". */
+	public static function title( array $p, $format = null ) {
+		$format = $format ? $format : MDO_Settings::get( 'name_format' );
+		$short  = trim( rtrim( trim( wp_strip_all_tags( $p['short'] ) ), '.' ) );
+		$name   = trim( $p['name'] );
+		if ( '' === $short ) {
+			return $name ? $name : ( $p['master_code'] ?? '' );
+		}
+		if ( '' === $name ) {
+			return $short;
+		}
+		switch ( $format ) {
+			case 'short':
+				return $short;
+			case 'name':
+				return $name;
+			case 'name_short':
+				return $name . ' – ' . $short;
+			default:
+				return $short . ' – ' . $name;
+		}
+	}
+
 	public static function import_product( $master ) {
 		$file = MDO_Settings::cache_dir( 'products' ) . sanitize_file_name( $master ) . '.json';
 		if ( ! file_exists( $file ) ) {
@@ -110,8 +133,16 @@ class MDO_Importer {
 				$product->set_sku( $p['master_code'] );
 			}
 		}
+		$title = self::title( $p );
+		if ( $is_new || $s['overwrite_texts'] || $s['rename_existing'] ) {
+			if ( $product->get_name() !== $title ) {
+				$product->set_name( $title );
+				if ( $is_new || $s['update_slug'] ) {
+					$product->set_slug( sanitize_title( $title ) );
+				}
+			}
+		}
 		if ( $is_new || $s['overwrite_texts'] ) {
-			$product->set_name( $p['name'] ? $p['name'] : $p['master_code'] );
 			$product->set_description( wp_kses_post( wpautop( $p['long'] ) ) );
 			$product->set_short_description( wp_kses_post( $p['short'] ) );
 		}

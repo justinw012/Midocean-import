@@ -15,6 +15,9 @@ class MDO_Settings {
 			'setup_per_colour' => 1,
 			'new_status'       => 'draft',
 			'overwrite_texts'  => 0,
+			'name_format'      => 'short_name', // short_name | short | name | name_short
+			'rename_existing'  => 0,
+			'update_slug'      => 1,
 			'configurator'     => 1,
 		);
 	}
