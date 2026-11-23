@@ -148,3 +148,12 @@
 .mdo-ti-pick{align-self:flex-start;font-size:13px;color:#646970}
 .mdo-ti-cur{align-self:flex-start;font-size:13px;font-weight:700;color:var(--mdo-accent,#DF3550)}
 #mdo-configurator .mdo-grid .mdo-pill{font-size:14px!important;line-height:1.2!important;padding:0 6px!important;margin:0!important;width:100%!important;min-width:0!important}
+.mdo-tis{display:flex;flex-direction:column;gap:8px}
+.mdo-tis .mdo-ti{background:#fff}
+.mdo-tis .mdo-ti.is-on{background:#FFF7F8}
+.mdo-ti strong{display:inline-flex;align-items:center;gap:8px;font-size:15px}
+.mdo-ti-dot{width:18px;height:18px;border-radius:50%;border:2px solid #B8B8B8;flex:none;box-sizing:border-box}
+.mdo-ti.is-on .mdo-ti-dot{border:6px solid var(--mdo-accent,#DF3550)}
+.mdo-ti-price{font-size:14px;font-weight:700;white-space:nowrap}
+.mdo-ti-tag{align-self:flex-start;font-size:12px;font-weight:700;color:#1E6B3A;background:#E6F4EA;border-radius:999px;padding:2px 8px}
+.mdo-ti-note{margin:0;font-size:12px}

@@ -274,9 +274,7 @@
     h += '<div class="mdo-field"><span class="mdo-lbl">Draaien</span><div class="mdo-grid mdo-grid-rot">' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
     }).join('') + '</div></div>';
-    h += '<div class="mdo-row-between"><label class="mdo-lbl" for="mdo-tech-' + face.key + '">Techniek</label><button type="button" class="mdo-info" data-act="techinfo" aria-label="Uitleg over de technieken">i</button></div><select id="mdo-tech-' + face.key + '" data-act="tech" class="mdo-input">' + sel.opts.map(function (o, i) {
-      return '<option value="' + esc(o.key) + '"' + (o.key === sel.opt.key ? ' selected' : '') + '>' + esc(cfg.techniques[o.tech.id].name) + (o.pos.id !== face.positions[0].id ? ' (' + o.pos.w + '×' + o.pos.h + ' mm)' : '') + (i === 0 ? ' – voordeligst' : '') + '</option>';
-    }).join('') + '</select>';
+    h += '<div class="mdo-field"><span class="mdo-lbl">Techniek</span><div class="mdo-tis">' + techRows(face, fs, sel) + '</div></div>';
     return h;
   }
 
@@ -383,6 +381,21 @@
     for (var i = 0; i < INFO.length; i++) if (INFO[i][0].test(t.name || '')) return [INFO[i][1], INFO[i][2], INFO[i][3]];
     return ['', [], []];
   }
+  function techRows(face, fs, sel) {
+    var color = cfg.colors[st.color];
+    return sel.opts.map(function (o, i) {
+      var inf = infoFor(o.tech.id), d = dims(o.pos, fs), on = o.key === sel.opt.key;
+      var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
+      var printPc = q.perPc - scaleAt(color.scales, st.qty)[1] - cfg.manip;
+      var size = o.pos.id !== face.positions[0].id ? ' <span class="mdo-muted">(' + o.pos.w + ' × ' + o.pos.h + ' mm)</span>' : '';
+      return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-act="techpick" data-v="' + esc(o.key) + '" role="radio" tabindex="0" aria-checked="' + on + '">' +
+        '<div class="mdo-row-between"><strong><span class="mdo-ti-dot"></span>' + esc(cfg.techniques[o.tech.id].name) + size + '</strong><span class="mdo-ti-price">+ ' + eur(printPc) + ' p.st.</span></div>' +
+        (i === 0 && sel.opts.length > 1 ? '<span class="mdo-ti-tag">Voordeligst</span>' : '') +
+        (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
+        (inf[1].length || inf[2].length ? '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+        '</div>';
+    }).join('') + '<p class="mdo-muted mdo-ti-note">Drukkosten per stuk bij ' + st.qty + ' stuks, instelkosten inbegrepen.</p>';
+  }
   function openTechInfo() {
     var face = faceByKey(st.face), fs = st.faces[face.key], sel = selection(face, fs);
     if (!sel) return;
@@ -468,7 +481,7 @@
   function curFace() { return st.faces[st.face]; }
 
   root.addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-act]'); if (!b) return;
+    var b = e.target.closest('button[data-act],[data-act="techpick"]'); if (!b) return;
     var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), fs = curFace();
     if (a === 'color') { st.color = parseInt(v, 10); galIdx = 0; }
     else if (a === 'qty') st.qty = parseInt(v, 10);
@@ -479,12 +492,18 @@
     else if (a === 'fontopen') { st.fontOpen = !st.fontOpen; if (st.fontOpen) Object.keys(FONTS).forEach(loadFont); }
     else if (a === 'ink') fs.ink = v;
     else if (a === 'techinfo') { openTechInfo(); return; }
+    else if (a === 'techpick') { if (fs.pick === v) return; fs.pick = v; fs.size = null; }
     else if (a === 'rot') { fs.rot = parseInt(v, 10); fs.size = null; }
     else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else if (a === 'prev') { st.step = Math.max(0, st.step - 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else return;
     render();
+  });
+
+  root.addEventListener('keydown', function (e) {
+    var t = e.target.closest && e.target.closest('[data-act="techpick"]');
+    if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); }
   });
 
   root.addEventListener('change', function (e) {
