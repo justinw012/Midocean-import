@@ -48,6 +48,7 @@ class MDO_Printdata {
 		'PANEL'       => 'paneel',
 		'BRIM'        => 'klep',
 		'BASE'        => 'voet',
+		'RIBBON'      => 'lint',
 		'MIDDLE'      => 'midden',
 		'OF'          => '',
 		'BAND'        => 'band',
@@ -82,6 +83,7 @@ class MDO_Printdata {
 		'BRIM'        => 'Klep van een pet; kan ook: rand.',
 		'BASE'        => 'Voet; kan ook: onderkant of sokkel.',
 		'BAND'        => 'Band; kan ook: ring of strook.',
+		'RIBBON'      => 'Lint; kan ook: band (bijv. de band om een lunchbox).',
 		'HANDLE'      => 'Handvat; kan ook: hengsel of greep.',
 		'SLEEVE'      => 'Mouw; bij hoezen betekent het "hoes".',
 		'MIDDLE'      => 'Midden.',
@@ -225,9 +227,21 @@ class MDO_Printdata {
 			usort( $g, function ( $a, $b ) {
 				return strlen( $a['id'] ) - strlen( $b['id'] );
 			} );
+			$label = self::label( $g[0]['id'] );
+			$own   = get_option( self::LABELS_OPTION, array() );
+			if ( count( $g ) > 1 && empty( $own[ $g[0]['id'] ] ) ) {
+				// Gemeenschappelijke plaatsaanduiding: TOP COMPASS + LASER COMPASS → "Kompas".
+				$common = self::place_tokens( $g[0]['id'] );
+				foreach ( $g as $pos ) {
+					$common = array_values( array_intersect( $common, self::place_tokens( $pos['id'] ) ) );
+				}
+				if ( $common ) {
+					$label = self::auto_label( implode( ' ', $common ) );
+				}
+			}
 			$faces[] = array(
 				'key'       => sanitize_title( $g[0]['id'] ),
-				'label'     => self::label( $g[0]['id'] ),
+				'label'     => $label,
 				'positions' => $g,
 			);
 		}
@@ -243,6 +257,11 @@ class MDO_Printdata {
 		$ta = self::place_tokens( $a['id'] );
 		$tb = self::place_tokens( $b['id'] );
 		if ( ! array_intersect( $ta, $tb ) ) {
+			return false;
+		}
+		// Alleen samenvoegen als de ene plaatsaanduiding volledig in de andere zit
+		// (FRONT en FRONT PD, COMPASS en TOP COMPASS), niet bij LID LEFT en LID CENTER.
+		if ( array_diff( $ta, $tb ) && array_diff( $tb, $ta ) ) {
 			return false;
 		}
 		$pairs = array( array( 'LEFT', 'RIGHT' ), array( 'FRONT', 'BACK' ), array( 'TOP', 'BOTTOM' ), array( 'UPPER', 'LOWER' ) );
