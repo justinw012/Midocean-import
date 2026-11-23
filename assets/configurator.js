@@ -391,10 +391,11 @@
       var inf = infoFor(o.tech.id), d = dims(o.pos, fs);
       var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
       var printPc = q.perPc - scaleAt(color.scales, st.qty)[1] - cfg.manip;
-      return '<div class="mdo-ti' + (o.key === sel.opt.key ? ' is-on' : '') + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong><span class="mdo-muted">+ ' + eur(printPc) + ' per stuk bij ' + st.qty + ' st.</span></div>' +
+      var on = o.key === sel.opt.key;
+      return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-pick="' + esc(o.key) + '" role="button" tabindex="0" aria-pressed="' + on + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong><span class="mdo-muted">+ ' + eur(printPc) + ' per stuk bij ' + st.qty + ' st.</span></div>' +
         (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
         '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' +
-        (o.key === sel.opt.key ? '<span class="mdo-ti-cur">Gekozen</span>' : '<button type="button" class="mdo-pill" data-pick="' + esc(o.key) + '">Kies deze</button>') + '</div>';
+        (on ? '<span class="mdo-ti-cur">✓ Gekozen</span>' : '<span class="mdo-ti-pick">Tik om te kiezen</span>') + '</div>';
     }).join('');
     var ov = document.createElement('div');
     ov.className = 'mdo-sheet';
@@ -404,6 +405,11 @@
       var p = e.target.closest('[data-pick]');
       if (p) { fs.pick = p.getAttribute('data-pick'); fs.size = null; ov.remove(); render(); return; }
       if (e.target === ov || e.target.closest('.mdo-sheet-x')) ov.remove();
+    });
+    ov.addEventListener('keydown', function (e) {
+      var p = e.target.closest('[data-pick]');
+      if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); p.click(); }
+      else if (e.key === 'Escape') ov.remove();
     });
     document.body.appendChild(ov);
   }

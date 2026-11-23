@@ -136,5 +136,9 @@
 .mdo-ti ul{margin:0;padding:0;list-style:none;font-size:14px;display:flex;flex-direction:column;gap:3px}
 .mdo-ti li.plus::before{content:"✓ ";color:#1E6B3A;font-weight:700}
 .mdo-ti li.min::before{content:"✗ ";color:#B42318;font-weight:700}
-.mdo-ti .mdo-pill{align-self:flex-start}
+.mdo-ti{cursor:pointer;transition:border-color .15s,background .15s}
+.mdo-ti:hover{border-color:var(--mdo-accent,#DF3550);background:#FFF7F8}
+.mdo-ti:focus-visible{outline:2px solid var(--mdo-accent,#DF3550);outline-offset:2px}
+.mdo-ti.is-on{background:#FFF7F8}
+.mdo-ti-pick{align-self:flex-start;font-size:13px;color:#646970}
 .mdo-ti-cur{align-self:flex-start;font-size:13px;font-weight:700;color:var(--mdo-accent,#DF3550)}
