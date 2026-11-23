@@ -240,9 +240,9 @@
     if (fs.mode === 'logo') {
       h += '<label class="mdo-upload"><input type="file" data-act="logo" accept=".pdf,.eps,.ai,.svg,.png,.jpg,.jpeg"><span>' +
         (fs.logo ? esc(fs.logo.name) : 'Upload je logo (PDF, EPS, AI, SVG, PNG, JPG) – of later aanleveren') + '</span></label>';
-      h += '<div class="mdo-row"><span class="mdo-lbl">Kleuren in je logo</span>' + COLOUR_OPTS.map(function (k) {
+      h += '<div class="mdo-field"><span class="mdo-lbl">Kleuren in je logo</span><div class="mdo-grid mdo-grid-col">' + COLOUR_OPTS.map(function (k) {
         return '<button type="button" data-act="colours" data-v="' + k + '" class="mdo-pill' + (fs.colours === k ? ' is-on' : '') + '">' + (k === 'fc' ? 'Full colour' : k) + '</button>';
-      }).join('') + '</div>';
+      }).join('') + '</div></div>';
       if (fs.colours !== 'fc') {
         h += '<input type="text" class="mdo-input" data-act="pms" maxlength="60" placeholder="Pantone-kleuren van je logo (optioneel), bijv. 485 C, Black" value="' + esc(fs.pms) + '" aria-label="Pantone-kleuren van je logo">';
       }
@@ -271,9 +271,9 @@
     var p = sel.opt.pos;
     h += '<label class="mdo-size"><span class="mdo-row-between"><span class="mdo-lbl">Formaat</span><span class="mdo-muted" data-out="size">' + sel.w + ' × ' + sel.h + ' mm · max. ' + p.w + ' × ' + p.h + '</span></span>' +
       '<input type="range" data-act="size" min="5" max="' + sel.d.max + '" step="1" value="' + sel.d.len + '"></label>';
-    h += '<div class="mdo-row"><span class="mdo-lbl">Draaien</span>' + [0, 90, 180, 270].map(function (r) {
+    h += '<div class="mdo-field"><span class="mdo-lbl">Draaien</span><div class="mdo-grid mdo-grid-rot">' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
-    }).join('') + '</div>';
+    }).join('') + '</div></div>';
     h += '<div class="mdo-row-between"><label class="mdo-lbl" for="mdo-tech-' + face.key + '">Techniek</label><button type="button" class="mdo-info" data-act="techinfo" aria-label="Uitleg over de technieken">i</button></div><select id="mdo-tech-' + face.key + '" data-act="tech" class="mdo-input">' + sel.opts.map(function (o, i) {
       return '<option value="' + esc(o.key) + '"' + (o.key === sel.opt.key ? ' selected' : '') + '>' + esc(cfg.techniques[o.tech.id].name) + (o.pos.id !== face.positions[0].id ? ' (' + o.pos.w + '×' + o.pos.h + ' mm)' : '') + (i === 0 ? ' – voordeligst' : '') + '</option>';
     }).join('') + '</select>';

@@ -113,7 +113,12 @@
 .mdo-art{position:relative}
 .mdo-art-in{position:absolute;left:50%;top:50%;display:flex;align-items:center;justify-content:center;transform-origin:50% 50%}
 .mdo-art-in img,.mdo-art-in svg{width:100%;height:100%;object-fit:contain;display:block}
-.mdo-rot{display:inline-flex;align-items:center;gap:6px}
+.mdo-field{display:flex;flex-direction:column;gap:6px}
+.mdo-grid{display:grid;gap:8px}
+.mdo-grid .mdo-pill{width:100%;min-width:0;padding:0 6px;white-space:nowrap}
+.mdo-grid-rot{grid-template-columns:repeat(4,minmax(0,1fr))}
+.mdo-grid-col{grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,2.2fr)}
+.mdo-rot{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .mdo-rot-ico{display:inline-block;font-weight:800;font-size:15px;line-height:1}
 .mdo-gallery{display:flex;flex-direction:column;gap:10px}
 .mdo-gallery-main{display:block;cursor:zoom-in}
@@ -142,3 +147,4 @@
 .mdo-ti.is-on{background:#FFF7F8}
 .mdo-ti-pick{align-self:flex-start;font-size:13px;color:#646970}
 .mdo-ti-cur{align-self:flex-start;font-size:13px;font-weight:700;color:var(--mdo-accent,#DF3550)}
+#mdo-configurator .mdo-grid .mdo-pill{font-size:14px!important;line-height:1.2!important;padding:0 6px!important;margin:0!important;width:100%!important;min-width:0!important}
