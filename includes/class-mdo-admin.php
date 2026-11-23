@@ -39,6 +39,7 @@ class MDO_Admin {
 			'backorders'       => ( 'notify' === ( $in['backorders'] ?? '' ) ) ? 'notify' : 'no',
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
+			'hidden_categories'=> array_values( array_map( 'sanitize_text_field', (array) ( $in['hidden_categories'] ?? array() ) ) ),
 		);
 		$key = trim( (string) ( $in['api_key'] ?? '' ) );
 		if ( '' !== $key ) {
@@ -214,18 +215,30 @@ class MDO_Admin {
 				<?php if ( ! $tree ) : ?>
 					<p>Nog geen categorieën bekend. Sla eerst je API-sleutel op en klik op <strong>Categorieën ophalen</strong>.</p>
 				<?php else : ?>
-					<p>Vink een hoofd- of subcategorie aan; alles daaronder wordt meegenomen.</p>
-					<div style="max-height:420px;overflow:auto;border:1px solid #ccd0d4;background:#fff;padding:8px 12px;max-width:720px">
+					<p><strong>Importeren:</strong> vink een hoofd- of subcategorie aan; alles daaronder wordt meegenomen.<br>
+					<strong>Verbergen:</strong> wordt wel geïmporteerd en bijgewerkt, maar is niet te vinden in de winkel en de zoekfunctie. Wie de directe link heeft, kan het product nog wel openen. Werkt ook op een subcategorie binnen een geïmporteerde hoofdcategorie.</p>
+					<div style="max-height:460px;overflow:auto;border:1px solid #ccd0d4;background:#fff;max-width:760px">
+						<table class="widefat striped" style="border:0">
+							<thead><tr><th>Categorie</th><th style="width:90px;text-align:center">Importeren</th><th style="width:90px;text-align:center">Verbergen</th></tr></thead>
+							<tbody>
 						<?php foreach ( $tree as $path => $n ) :
 							$depth = substr_count( $path, '>' );
 							$name  = trim( substr( strrchr( ' > ' . $path, '>' ), 1 ) );
+							$imp   = MDO_Sync::in_list( $path, $s['categories'] );
+							$hid   = MDO_Sync::in_list( $path, $s['hidden_categories'] );
+							$own_i = in_array( $path, (array) $s['categories'], true );
+							$own_h = in_array( $path, (array) $s['hidden_categories'], true );
 							?>
-							<label style="display:block;margin-left:<?php echo 20 * $depth; ?>px;line-height:1.9">
-								<input type="checkbox" name="categories[]" value="<?php echo esc_attr( $path ); ?>" <?php checked( in_array( $path, (array) $s['categories'], true ) ); ?>>
-								<?php echo esc_html( $name ); ?> <span style="color:#777">(<?php echo (int) $n; ?>)</span>
-							</label>
+							<tr>
+								<td style="padding-left:<?php echo 10 + 20 * $depth; ?>px"><?php echo esc_html( $name ); ?> <span style="color:#777">(<?php echo (int) $n; ?>)</span><?php echo ( $hid && ! $own_h ) ? ' <span style="color:#B54708;font-size:12px">verborgen via bovenliggende</span>' : ''; ?></td>
+								<td style="text-align:center"><input type="checkbox" name="categories[]" value="<?php echo esc_attr( $path ); ?>" <?php checked( $own_i ); ?> <?php echo ( $imp && ! $own_i ) ? 'title="Al meegenomen via bovenliggende categorie"' : ''; ?>><?php echo ( $imp && ! $own_i ) ? ' <span style="color:#1E6B3A">✓</span>' : ''; ?></td>
+								<td style="text-align:center"><input type="checkbox" name="hidden_categories[]" value="<?php echo esc_attr( $path ); ?>" <?php checked( $own_h ); ?>></td>
+							</tr>
 						<?php endforeach; ?>
+							</tbody>
+						</table>
 					</div>
+					<p class="description">Wijzigingen bij Verbergen gelden vanaf de volgende synchronisatie.</p>
 				<?php endif; ?>
 
 				<h2>Prijzen</h2>

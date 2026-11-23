@@ -192,6 +192,17 @@ class MDO_Importer {
 		$attrs                 = $product->get_attributes();
 		$attrs[ $ca['key'] ]   = $attr;
 		$product->set_attributes( $attrs );
+		// Verbergen in de winkel als de categorie dat vraagt; terugzetten als dat niet meer zo is.
+		$hide = $p['variants'] && MDO_Sync::in_list( $p['variants'][0]['category'], $s['hidden_categories'] );
+		if ( $hide ) {
+			if ( 'hidden' !== $product->get_catalog_visibility() ) {
+				$product->set_catalog_visibility( 'hidden' );
+				$product->update_meta_data( '_mdo_hidden', 1 );
+			}
+		} elseif ( $product->get_meta( '_mdo_hidden' ) ) {
+			$product->set_catalog_visibility( 'visible' );
+			$product->delete_meta_data( '_mdo_hidden' );
+		}
 		$product->update_meta_data( '_mdo_master_code', $p['master_code'] );
 		$product->update_meta_data( '_mdo_documents', $p['documents'] );
 		if ( $print ) {

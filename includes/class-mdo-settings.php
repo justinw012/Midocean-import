@@ -9,6 +9,7 @@ class MDO_Settings {
 			'api_key'          => '',
 			'language'         => 'nl',
 			'categories'       => array(), // paden "Niveau1 > Niveau2 > Niveau3"
+			'hidden_categories'=> array(), // geïmporteerd, maar niet zichtbaar in de winkel
 			'margin_product'   => 2.0,
 			'margin_print'     => 1.3,
 			'margin_setup'     => 1.2,

@@ -93,6 +93,15 @@ class MDO_Sync {
 		MDO_Log::error( $msg );
 	}
 
+	public static function in_list( $path, $list ) {
+		foreach ( (array) $list as $cat ) {
+			if ( $path === $cat || 0 === strpos( $path, $cat . ' > ' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static function selected( $path ) {
 		foreach ( (array) MDO_Settings::get( 'categories' ) as $cat ) {
 			if ( $path === $cat || 0 === strpos( $path, $cat . ' > ' ) ) {
