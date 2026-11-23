@@ -11,6 +11,7 @@ class MDO_Frontend {
 
 	public static function init() {
 		add_action( 'woocommerce_before_single_product', array( __CLASS__, 'maybe_replace' ) );
+		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 	}
 
 	public static function configurable( $product ) {
@@ -22,12 +23,36 @@ class MDO_Frontend {
 			&& get_option( 'mdo_printprices' );
 	}
 
+	public static function body_class( $classes ) {
+		if ( is_product() ) {
+			$product = wc_get_product( get_queried_object_id() );
+			if ( self::configurable( $product ) ) {
+				$classes[] = 'mdo-configured';
+			}
+		}
+		return $classes;
+	}
+
 	public static function maybe_replace() {
 		global $product;
 		if ( ! self::configurable( $product ) ) {
 			return;
 		}
-		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
+		// Het standaard bestelblok weghalen, ook als het thema het op een andere plek of
+		// prioriteit heeft gezet (Zigcy Lite toonde het anders onder de configurator).
+		global $wp_filter;
+		foreach ( $wp_filter as $hook => $obj ) {
+			if ( 0 !== strpos( $hook, 'woocommerce_' ) || ! is_object( $obj ) || empty( $obj->callbacks ) ) {
+				continue;
+			}
+			foreach ( $obj->callbacks as $prio => $cbs ) {
+				foreach ( $cbs as $cb ) {
+					if ( 'woocommerce_template_single_add_to_cart' === $cb['function'] ) {
+						remove_action( $hook, 'woocommerce_template_single_add_to_cart', $prio );
+					}
+				}
+			}
+		}
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render' ), 30 );
 		wp_enqueue_style( 'mdo-configurator', MDO_URL . 'assets/configurator.css', array(), MDO_VERSION );
 		wp_enqueue_script( 'mdo-configurator', MDO_URL . 'assets/configurator.js', array(), MDO_VERSION, true );

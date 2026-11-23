@@ -65,3 +65,15 @@
 .mdo-art img.mdo-fx-engrave.on-dark{filter:grayscale(1) contrast(.6) brightness(1.6);opacity:.85}
 .mdo-art img.mdo-fx-deboss{filter:grayscale(1) brightness(0);opacity:.25}
 .mdo-art img.mdo-fx-deboss.on-dark{filter:grayscale(1) brightness(2);opacity:.18}
+/* Op producten met configurator: andere kleur-/variatiekeuzes in het bestelgedeelte verbergen
+   (bijv. van Variation Swatches of het thema), zodat er maar één kleurkeuze is. */
+.mdo-configured .summary form.variations_form,
+.mdo-configured .summary table.variations,
+.mdo-configured .summary .single_variation_wrap,
+.mdo-configured .summary [class^="cfvsw"],
+.mdo-configured .summary [class*=" cfvsw"],
+.mdo-configured .summary .woo-variation-swatches,
+.mdo-configured .summary .variable-items-wrapper,
+.mdo-configured .summary .tawcvs-swatches{display:none!important}
+.mdo-configured form.variations_form,
+.mdo-configured form.cart:not(.mdo-form){display:none!important}
