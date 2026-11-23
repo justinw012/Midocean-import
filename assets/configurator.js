@@ -84,8 +84,23 @@
     out.sort(function (a, b) { return (a.cost - b.cost) || (b.isDefault - a.isDefault); });
     return out;
   }
+  // Breedte van de tekst meten, zodat tekst net als een logo het hele vlak kan vullen.
+  var measureCanvas = null, textCache = {};
+  function textBox(fs) {
+    var txt = fs.text || 'Jouw tekst', key = fs.font + '|' + txt;
+    if (textCache[key]) return textCache[key];
+    var w = 0;
+    try {
+      measureCanvas = measureCanvas || document.createElement('canvas');
+      var ctx = measureCanvas.getContext && measureCanvas.getContext('2d');
+      if (ctx) { ctx.font = '700 84px ' + FONTS[fs.font][1]; w = ctx.measureText(txt).width; }
+    } catch (e) { w = 0; }
+    if (!w) w = txt.length * 50;
+    var vbw = Math.ceil(w + 12);
+    return (textCache[key] = { txt: txt, vbw: vbw, aspect: 100 / vbw });
+  }
   function aspect(fs) {
-    if (fs.mode === 'text') return 0.25;
+    if (fs.mode === 'text') return textBox(fs).aspect;
     if (fs.logo && fs.logo.preview && imgSize[fs.logo.preview]) { var d = imgSize[fs.logo.preview]; return d[1] / d[0]; }
     return 0.5;
   }
@@ -132,7 +147,7 @@
       var artW = Math.min(100, sel.w / pos.w * 100), artH = Math.min(100, sel.h / pos.h * 100);
       var art;
       if (fs.mode === 'text') {
-        var txt = fs.text || 'Jouw tekst', vbw = Math.max(240, txt.length * 58);
+        var tb = textBox(fs), txt = tb.txt, vbw = tb.vbw;
         art = '<svg viewBox="0 0 ' + vbw + ' 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(txt) + '"><text x="' + (vbw / 2) + '" y="74" text-anchor="middle" font-size="84" font-weight="700" style="font-family:' + esc(FONTS[fs.font][1]) + '" fill="' + inkOf(fs) + '">' + esc(txt) + '</text></svg>';
       } else if (fs.logo && fs.logo.preview) {
         art = '<img src="' + esc(fs.logo.preview) + '" alt="Jouw logo">';
