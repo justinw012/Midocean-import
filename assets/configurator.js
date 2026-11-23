@@ -92,13 +92,25 @@
   function faceByKey(k) { for (var i = 0; i < cfg.faces.length; i++) if (cfg.faces[i].key === k) return cfg.faces[i]; return null; }
 
   /** Mogelijke (positie, techniek)-combinaties voor een vlak, voordeligste eerst. */
+  /**
+   * Afmetingen van het ontwerp op een positie, rekening houdend met draaien.
+   * len = lengte van het ontwerp zelf (schuifje), thick = hoogte van het ontwerp;
+   * w × h = ruimte op het product (wat Midocean drukt en waar de prijs op rekent).
+   */
+  function dims(p, fs) {
+    var a = aspect(fs), vertical = ((fs.rot || 0) % 180) !== 0;
+    var maxLen = Math.max(5, Math.floor(vertical ? Math.min(p.h, p.w / a) : Math.min(p.w, p.h / a)));
+    var len = Math.max(5, Math.min(maxLen, fs.size || Math.round(maxLen * 0.6)));
+    var thick = Math.max(2, Math.round(len * a));
+    return { len: len, thick: thick, max: maxLen, vertical: vertical, w: vertical ? thick : len, h: vertical ? len : thick };
+  }
   function options(face, fs) {
     var out = [];
     face.positions.forEach(function (p) {
       p.techs.forEach(function (t) {
         if (!allowed(t, fs)) return;
-        var w = Math.min(p.w, fs.size || p.w * 0.6), h = Math.min(p.h, w * aspect(fs));
-        var c = quote(cfg.colors[st.color], st.qty, [{ tech: t.id, colours: nColours(fs), w: w, h: h }]);
+        var d = dims(p, fs);
+        var c = quote(cfg.colors[st.color], st.qty, [{ tech: t.id, colours: nColours(fs), w: d.w, h: d.h }]);
         out.push({ key: p.id + '|' + t.id, pos: p, tech: t, cost: c.perPc, isDefault: !!t.default });
       });
     });
@@ -141,9 +153,8 @@
     var ch = chosen(face, fs);
     if (!ch) return null;
     var p = ch.opt.pos;
-    var w = Math.max(5, Math.min(p.w, fs.size || Math.round(p.w * 0.6)));
-    var h = Math.max(3, Math.min(p.h, Math.round(w * aspect(fs))));
-    return { face: face, fs: fs, opt: ch.opt, opts: ch.opts, w: w, h: h, colours: nColours(fs) };
+    var d = dims(p, fs);
+    return { face: face, fs: fs, opt: ch.opt, opts: ch.opts, w: d.w, h: d.h, d: d, rot: fs.rot || 0, colours: nColours(fs) };
   }
   function selections() {
     var out = [];
@@ -194,7 +205,9 @@
       } else {
         art = demoLogo(isDark(), effect);
       }
-      zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%">' + art + '</div></div>';
+      // Binnenste vlak heeft de onverdraaide maat van het ontwerp en wordt rond het midden gedraaid.
+      var d = sel.d, innerW = d.vertical ? (d.len / d.thick * 100) : 100, innerH = d.vertical ? (d.thick / d.len * 100) : 100;
+      zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%"><div class="mdo-art-in" style="width:' + innerW + '%;height:' + innerH + '%;transform:translate(-50%,-50%) rotate(' + sel.rot + 'deg)">' + art + '</div></div></div>';
     }
     return '<div class="mdo-preview"><div class="mdo-photo"><img src="' + esc(url) + '" alt="' + esc(face.label) + ', ' + esc(color.name) + '" data-measure="' + esc(url) + '">' + zone + '</div>' +
       (dims ? '' : '<p class="mdo-muted">Foto laden…</p>') + '</div>';
@@ -257,7 +270,10 @@
     if (!sel) return h + '<p class="mdo-warn">Voor deze keuze is op ' + esc(face.label.toLowerCase()) + ' geen techniek beschikbaar.</p>';
     var p = sel.opt.pos;
     h += '<label class="mdo-size"><span class="mdo-row-between"><span class="mdo-lbl">Formaat</span><span class="mdo-muted" data-out="size">' + sel.w + ' × ' + sel.h + ' mm · max. ' + p.w + ' × ' + p.h + '</span></span>' +
-      '<input type="range" data-act="size" min="5" max="' + p.w + '" step="1" value="' + sel.w + '"></label>';
+      '<input type="range" data-act="size" min="5" max="' + sel.d.max + '" step="1" value="' + sel.d.len + '"></label>';
+    h += '<div class="mdo-row"><span class="mdo-lbl">Draaien</span>' + [0, 90, 180, 270].map(function (r) {
+      return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
+    }).join('') + '</div>';
     h += '<label class="mdo-lbl" for="mdo-tech-' + face.key + '">Techniek</label><select id="mdo-tech-' + face.key + '" data-act="tech" class="mdo-input">' + sel.opts.map(function (o, i) {
       return '<option value="' + esc(o.key) + '"' + (o.key === sel.opt.key ? ' selected' : '') + '>' + esc(cfg.techniques[o.tech.id].name) + (o.pos.id !== face.positions[0].id ? ' (' + o.pos.w + '×' + o.pos.h + ' mm)' : '') + (i === 0 ? ' – voordeligst' : '') + '</option>';
     }).join('') + '</select>';
@@ -388,6 +404,7 @@
     else if (a === 'font') { fs.font = v; st.fontOpen = false; loadFont(v); }
     else if (a === 'fontopen') { st.fontOpen = !st.fontOpen; if (st.fontOpen) Object.keys(FONTS).forEach(loadFont); }
     else if (a === 'ink') fs.ink = v;
+    else if (a === 'rot') { fs.rot = parseInt(v, 10); fs.size = null; }
     else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     else if (a === 'prev') { st.step = Math.max(0, st.step - 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
@@ -434,7 +451,7 @@
       return {
         position: s.opt.pos.id, tech: s.opt.tech.id, colours: s.colours, mode: s.fs.mode, w: s.w, h: s.h,
         logo: s.fs.logo ? s.fs.logo.token : '', logoname: s.fs.logo ? s.fs.logo.name : '',
-        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs), pms: s.fs.pms
+        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs), pms: s.fs.pms, rot: s.rot
       };
     });
     form.querySelector('[name="variation_id"]').value = color.id;

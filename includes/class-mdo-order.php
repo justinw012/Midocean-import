@@ -40,7 +40,7 @@ class MDO_Order {
 					'tech'     => $p['tech'],
 					'techname' => $p['techname'],
 					'colours'  => $p['full'] ? 'full colour' : (int) $p['colours'],
-					'size'     => $p['w'] . ' × ' . $p['h'] . ' mm',
+					'size'     => $p['w'] . ' × ' . $p['h'] . ' mm' . ( ! empty( $p['rot'] ) ? ' (' . $p['rot'] . '° gedraaid)' : '' ),
 					'mode'     => $p['mode'],
 					'text'     => $p['text'],
 					'font'     => isset( MDO_Cart::FONTS[ $p['font'] ] ) ? MDO_Cart::FONTS[ $p['font'] ] : $p['font'],

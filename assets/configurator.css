@@ -110,3 +110,8 @@
 .mdo-steptabs button.is-on{border:2px solid var(--mdo-accent);background:#FCE8EC}
 .mdo-stepnr{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--mdo-line);font-size:12px}
 .mdo-steptabs button.is-on .mdo-stepnr,.mdo-steptabs button.is-done .mdo-stepnr{background:var(--mdo-accent);color:#fff}
+.mdo-art{position:relative}
+.mdo-art-in{position:absolute;left:50%;top:50%;display:flex;align-items:center;justify-content:center;transform-origin:50% 50%}
+.mdo-art-in img,.mdo-art-in svg{width:100%;height:100%;object-fit:contain;display:block}
+.mdo-rot{display:inline-flex;align-items:center;gap:6px}
+.mdo-rot-ico{display:inline-block;font-weight:800;font-size:15px;line-height:1}

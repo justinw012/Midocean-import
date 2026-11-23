@@ -97,6 +97,7 @@ class MDO_Cart {
 				'w'        => round( $w, 1 ),
 				'h'        => round( $h, 1 ),
 				'mode'     => $mode,
+				'rot'      => in_array( (int) ( $p['rot'] ?? 0 ), array( 0, 90, 180, 270 ), true ) ? (int) $p['rot'] : 0,
 				'logo'     => $logo,
 				'logoname' => $logo ? sanitize_file_name( (string) ( $p['logoname'] ?? '' ) ) : '',
 				'text'     => 'text' === $mode ? mb_substr( sanitize_text_field( (string) ( $p['text'] ?? '' ) ), 0, 60 ) : '',
@@ -188,7 +189,7 @@ class MDO_Cart {
 			$cols  = $p['full'] ? 'full colour' : ( $p['colours'] . ( 1 === $p['colours'] ? ' kleur' : ' kleuren' ) );
 			$out[] = array(
 				'key'   => $p['face'],
-				'value' => $p['techname'] . ', ' . $cols . ', ' . $p['w'] . ' × ' . $p['h'] . ' mm, ' . $what,
+				'value' => $p['techname'] . ', ' . $cols . ', ' . $p['w'] . ' × ' . $p['h'] . ' mm' . ( ! empty( $p['rot'] ) ? ', ' . $p['rot'] . '° gedraaid' : '' ) . ', ' . $what,
 			);
 		}
 		if ( ! $mdo['prints'] ) {
