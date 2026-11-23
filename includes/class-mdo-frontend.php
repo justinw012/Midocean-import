@@ -54,6 +54,11 @@ class MDO_Frontend {
 			}
 		}
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render' ), 30 );
+
+		// Fotogalerij vervangen door een galerij die per kleur alle foto's toont.
+		// (De standaardgalerij en Variation Gallery luisteren naar het oude bestelformulier.)
+		remove_all_actions( 'woocommerce_before_single_product_summary', 20 );
+		add_action( 'woocommerce_before_single_product_summary', array( __CLASS__, 'render_gallery' ), 20 );
 		wp_enqueue_style( 'mdo-configurator', MDO_URL . 'assets/configurator.css', array(), MDO_VERSION );
 		wp_enqueue_script( 'mdo-configurator', MDO_URL . 'assets/configurator.js', array(), MDO_VERSION, true );
 	}
@@ -141,6 +146,7 @@ class MDO_Frontend {
 				'attrs'   => $v->get_variation_attributes(),
 				'image'   => $img ? $img[0] : '',
 				'thumb'   => $thumb ? $thumb[0] : '',
+				'gallery' => self::gallery_for( $v, $product ),
 				'stock'   => $v->managing_stock() ? (int) $v->get_stock_quantity() : null,
 				'backorders' => $v->backorders_allowed(),
 				'scales'  => $sell,
@@ -174,6 +180,49 @@ class MDO_Frontend {
 			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'mdo_logo' ),
 		);
+	}
+
+	/** Alle foto's van een kleur: hoofdfoto + extra foto's (Variation Gallery), anders die van het product. */
+	private static function gallery_for( $v, $product ) {
+		$ids = array();
+		if ( $v->get_image_id() ) {
+			$ids[] = (int) $v->get_image_id();
+		}
+		$extra = get_post_meta( $v->get_id(), 'woo_variation_gallery_images', true );
+		if ( is_array( $extra ) ) {
+			$ids = array_merge( $ids, array_map( 'intval', $extra ) );
+		}
+		if ( count( $ids ) < 2 ) {
+			if ( ! $ids && $product->get_image_id() ) {
+				$ids[] = (int) $product->get_image_id();
+			}
+			$ids = array_merge( $ids, array_map( 'intval', $product->get_gallery_image_ids() ) );
+		}
+		$out = array();
+		foreach ( array_values( array_unique( array_filter( $ids ) ) ) as $id ) {
+			$large = wp_get_attachment_image_src( $id, 'woocommerce_single' );
+			$full  = wp_get_attachment_image_src( $id, 'full' );
+			$thumb = wp_get_attachment_image_src( $id, 'woocommerce_gallery_thumbnail' );
+			if ( $large ) {
+				$out[] = array(
+					'large' => $large[0],
+					'full'  => $full ? $full[0] : $large[0],
+					'thumb' => $thumb ? $thumb[0] : $large[0],
+					'alt'   => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
+				);
+			}
+		}
+		return $out;
+	}
+
+	public static function render_gallery() {
+		global $product;
+		$img = wp_get_attachment_image_src( $product->get_image_id(), 'woocommerce_single' );
+		echo '<div class="images mdo-gallery" id="mdo-gallery">';
+		if ( $img ) {
+			echo '<div class="mdo-gallery-main"><img src="' . esc_url( $img[0] ) . '" alt="' . esc_attr( $product->get_name() ) . '"></div>';
+		}
+		echo '</div>';
 	}
 
 	public static function render() {

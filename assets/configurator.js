@@ -357,17 +357,34 @@
 
   // Hoofdfoto van het thema laten meewisselen met de gekozen kleur.
   var lastImg = null;
+  // Eigen fotogalerij (links op de pagina): alle foto's van de gekozen kleur.
+  var gal = document.getElementById('mdo-gallery'), galIdx = 0;
   function syncGallery() {
     var c = cfg.colors[st.color];
-    if (!c.image || c.image === lastImg) return;
-    lastImg = c.image;
-    var img = document.querySelector('.woocommerce-product-gallery__image img, .woocommerce-product-gallery img.wp-post-image');
-    if (!img) return;
-    img.removeAttribute('srcset'); img.removeAttribute('sizes');
-    img.src = c.image;
-    if (img.hasAttribute('data-src')) img.setAttribute('data-src', c.image);
-    if (img.hasAttribute('data-large_image')) img.setAttribute('data-large_image', c.image);
-    var a = img.closest('a'); if (a) a.href = c.image;
+    if (!gal || !c.gallery || !c.gallery.length) return;
+    var key = st.color + ':' + galIdx;
+    if (key === lastImg) return;
+    lastImg = key;
+    var g = c.gallery, cur = g[Math.min(galIdx, g.length - 1)];
+    gal.innerHTML = '<a class="mdo-gallery-main" href="' + esc(cur.full) + '" data-act="zoom"><img src="' + esc(cur.large) + '" alt="' + esc(cur.alt || c.name) + '"></a>' +
+      (g.length > 1 ? '<div class="mdo-gallery-thumbs">' + g.map(function (x, i) {
+        return '<button type="button" data-gi="' + i + '" class="' + (i === galIdx ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
+      }).join('') + '</div>' : '');
+  }
+  if (gal) {
+    gal.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-gi]');
+      if (b) { galIdx = parseInt(b.getAttribute('data-gi'), 10); syncGallery(); return; }
+      var z = e.target.closest('[data-act="zoom"]');
+      if (z) {
+        e.preventDefault();
+        var ov = document.createElement('div');
+        ov.className = 'mdo-lightbox';
+        ov.innerHTML = '<img src="' + esc(z.getAttribute('href')) + '" alt=""><button type="button" aria-label="Sluiten">×</button>';
+        ov.addEventListener('click', function () { ov.remove(); });
+        document.body.appendChild(ov);
+      }
+    });
   }
   if (mobile.addEventListener) mobile.addEventListener('change', render);
 
@@ -396,7 +413,7 @@
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act]'); if (!b) return;
     var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), fs = curFace();
-    if (a === 'color') st.color = parseInt(v, 10);
+    if (a === 'color') { st.color = parseInt(v, 10); galIdx = 0; }
     else if (a === 'qty') st.qty = parseInt(v, 10);
     else if (a === 'face') st.face = v;
     else if (a === 'mode') { fs.mode = v; fs.pick = null; }
