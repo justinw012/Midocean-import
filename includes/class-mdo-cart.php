@@ -98,6 +98,8 @@ class MDO_Cart {
 				'h'        => round( $h, 1 ),
 				'mode'     => $mode,
 				'rot'      => in_array( (int) ( $p['rot'] ?? 0 ), array( 0, 90, 180, 270 ), true ) ? (int) $p['rot'] : 0,
+				'al'       => in_array( $p['al'] ?? 'c', array( 'l', 'c', 'r' ), true ) ? $p['al'] : 'c',
+				'va'       => in_array( $p['va'] ?? 'm', array( 't', 'm', 'b' ), true ) ? $p['va'] : 'm',
 				'logo'     => $logo,
 				'logoname' => $logo ? sanitize_file_name( (string) ( $p['logoname'] ?? '' ) ) : '',
 				'text'     => 'text' === $mode ? mb_substr( sanitize_text_field( (string) ( $p['text'] ?? '' ) ), 0, 60 ) : '',
@@ -189,7 +191,7 @@ class MDO_Cart {
 			$cols  = $p['full'] ? 'full colour' : ( $p['colours'] . ( 1 === $p['colours'] ? ' kleur' : ' kleuren' ) );
 			$out[] = array(
 				'key'   => $p['face'],
-				'value' => $p['techname'] . ', ' . $cols . ', ' . $p['w'] . ' × ' . $p['h'] . ' mm' . ( ! empty( $p['rot'] ) ? ', ' . $p['rot'] . '° gedraaid' : '' ) . ', ' . $what,
+				'value' => $p['techname'] . ', ' . $cols . ', ' . $p['w'] . ' × ' . $p['h'] . ' mm' . ( ! empty( $p['rot'] ) ? ', ' . $p['rot'] . '° gedraaid' : '' ) . ( self::align_text( $p ) ? ', ' . self::align_text( $p ) : '' ) . ', ' . $what,
 			);
 		}
 		if ( ! $mdo['prints'] ) {
@@ -260,5 +262,19 @@ class MDO_Cart {
 		}
 		$preview = in_array( $ext, array( 'png', 'jpg', 'jpeg' ), true ) ? MDO_Settings::upload_dir()['url'] . 'logos/' . $token : '';
 		wp_send_json_success( array( 'token' => $token, 'name' => $name, 'preview' => $preview ) );
+	}
+
+	/** "uitgelijnd links boven", of leeg bij midden. */
+	public static function align_text( $p ) {
+		$parts = array();
+		$h     = array( 'l' => 'links', 'r' => 'rechts' );
+		$v     = array( 't' => 'boven', 'b' => 'onder' );
+		if ( isset( $h[ $p['al'] ?? '' ] ) ) {
+			$parts[] = $h[ $p['al'] ];
+		}
+		if ( isset( $v[ $p['va'] ?? '' ] ) ) {
+			$parts[] = $v[ $p['va'] ];
+		}
+		return $parts ? 'uitgelijnd ' . implode( ' ', $parts ) : '';
 	}
 }

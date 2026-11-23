@@ -79,7 +79,7 @@
     faces: {}
   };
   cfg.faces.forEach(function (f, i) {
-    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'poppins', ink: null, pms: '', logo: null };
+    st.faces[f.key] = { on: i === 0, mode: 'logo', colours: '1', pick: null, size: null, text: '', font: 'poppins', ink: null, pms: '', logo: null, al: 'c', va: 'm' };
   });
 
   function nColours(fs) { return fs.mode === 'text' ? 1 : (fs.colours === 'fc' ? 1 : parseInt(fs.colours, 10)); }
@@ -154,12 +154,21 @@
     if (!ch) return null;
     var p = ch.opt.pos;
     var d = dims(p, fs);
-    return { face: face, fs: fs, opt: ch.opt, opts: ch.opts, w: d.w, h: d.h, d: d, rot: fs.rot || 0, colours: nColours(fs) };
+    var canH = p.w - d.w >= 3, canV = p.h >= 25 && p.h - d.h >= 8;
+    return { face: face, fs: fs, opt: ch.opt, opts: ch.opts, w: d.w, h: d.h, d: d, rot: fs.rot || 0, colours: nColours(fs),
+      canH: canH, canV: canV, al: canH ? (fs.al || 'c') : 'c', va: canV ? (fs.va || 'm') : 'm' };
   }
   function selections() {
     var out = [];
     cfg.faces.forEach(function (f) { var fs = st.faces[f.key]; if (fs.on) { var s = selection(f, fs); if (s) out.push(s); } });
     return out;
+  }
+  var AL = { l: 'links', c: 'midden', r: 'rechts' }, VA = { t: 'boven', m: 'midden', b: 'onder' };
+  function alignText(s) {
+    var parts = [];
+    if (s.al !== 'c') parts.push(AL[s.al]);
+    if (s.va !== 'm') parts.push(VA[s.va]);
+    return parts.length ? 'uitgelijnd ' + parts.join(' ') : '';
   }
   function priceSels(sels) { return sels.map(function (s) { return { tech: s.opt.tech.id, colours: s.colours, w: s.w, h: s.h }; }); }
 
@@ -207,7 +216,8 @@
       }
       // Binnenste vlak heeft de onverdraaide maat van het ontwerp en wordt rond het midden gedraaid.
       var d = sel.d, innerW = d.vertical ? (d.len / d.thick * 100) : 100, innerH = d.vertical ? (d.thick / d.len * 100) : 100;
-      zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%"><div class="mdo-art-in" style="width:' + innerW + '%;height:' + innerH + '%;transform:translate(-50%,-50%) rotate(' + sel.rot + 'deg)">' + art + '</div></div></div>';
+      var jc = { l: 'flex-start', c: 'center', r: 'flex-end' }[sel.al], ai = { t: 'flex-start', m: 'center', b: 'flex-end' }[sel.va];
+      zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%;justify-content:' + jc + ';align-items:' + ai + '"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%"><div class="mdo-art-in" style="width:' + innerW + '%;height:' + innerH + '%;transform:translate(-50%,-50%) rotate(' + sel.rot + 'deg)">' + art + '</div></div></div>';
     }
     return '<div class="mdo-preview"><div class="mdo-photo"><img src="' + esc(url) + '" alt="' + esc(face.label) + ', ' + esc(color.name) + '" data-measure="' + esc(url) + '">' + zone + '</div>' +
       (dims ? '' : '<p class="mdo-muted">Foto laden…</p>') + '</div>';
@@ -276,6 +286,19 @@
     h += '<div class="mdo-field"><span class="mdo-lbl">Draaien</span><div class="mdo-grid mdo-grid-rot">' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
     }).join('') + '</div></div>';
+    if (sel.canH) {
+      h += '<div class="mdo-field"><span class="mdo-lbl">Uitlijnen</span><div class="mdo-grid mdo-grid-3">' + [['l', 'Links'], ['c', 'Midden'], ['r', 'Rechts']].map(function (a) {
+        return '<button type="button" data-act="al" data-v="' + a[0] + '" class="mdo-pill' + (sel.al === a[0] ? ' is-on' : '') + '">' + a[1] + '</button>';
+      }).join('') + '</div>';
+      if (sel.canV) h += '<div class="mdo-grid mdo-grid-3">' + [['t', 'Boven'], ['m', 'Midden'], ['b', 'Onder']].map(function (a) {
+        return '<button type="button" data-act="va" data-v="' + a[0] + '" class="mdo-pill' + (sel.va === a[0] ? ' is-on' : '') + '">' + a[1] + '</button>';
+      }).join('') + '</div>';
+      h += '</div>';
+    } else if (sel.canV) {
+      h += '<div class="mdo-field"><span class="mdo-lbl">Uitlijnen</span><div class="mdo-grid mdo-grid-3">' + [['t', 'Boven'], ['m', 'Midden'], ['b', 'Onder']].map(function (a) {
+        return '<button type="button" data-act="va" data-v="' + a[0] + '" class="mdo-pill' + (sel.va === a[0] ? ' is-on' : '') + '">' + a[1] + '</button>';
+      }).join('') + '</div></div>';
+    }
     var cur = sel.opt, more = sel.opts.length - 1;
     h += '<div class="mdo-field"><span class="mdo-lbl">Techniek</span>' +
       '<button type="button" class="mdo-input mdo-techbtn" data-act="techinfo" aria-haspopup="dialog">' +
@@ -319,7 +342,7 @@
       }).join('') + '</div><div data-out="preview">' + previewHtml() + '</div><div data-face="' + esc(st.face) + '">' + faceHtml(faceByKey(st.face)) + '</div></section>';
   }
   function noteHtml() {
-    return '<section class="mdo-sec"><label class="mdo-lbl" for="mdo-note">Opmerking (optioneel)</label><textarea id="mdo-note" data-act="note" class="mdo-input" rows="2" maxlength="500">' + esc(st.note) + '</textarea></section>';
+    return '<section class="mdo-sec"><div class="mdo-row-between"><label class="mdo-lbl" for="mdo-note">Opmerking (optioneel)</label><button type="button" class="mdo-info" data-act="noteinfo" aria-label="Wat kun je bij opmerking zetten?">i</button></div><textarea id="mdo-note" data-act="note" class="mdo-input" rows="2" maxlength="500">' + esc(st.note) + '</textarea></section>';
   }
   function summaryHtml() {
     var color = cfg.colors[st.color], sels = selections();
@@ -327,7 +350,7 @@
     if (!sels.length) rows.push(['Bedrukking', 'Blanco']);
     sels.forEach(function (s) {
       var what = s.fs.mode === 'text' ? '“' + (s.fs.text || 'Jouw tekst') + '”' : (s.fs.logo ? s.fs.logo.name : 'logo (later aanleveren)');
-      rows.push([s.face.label, cfg.techniques[s.opt.tech.id].name + ', ' + s.w + '×' + s.h + ' mm, ' + what]);
+      rows.push([s.face.label, cfg.techniques[s.opt.tech.id].name + ', ' + s.w + '×' + s.h + ' mm' + (alignText(s) ? ', ' + alignText(s) : '') + ', ' + what]);
     });
     return '<section class="mdo-sec mdo-summary">' + rows.map(function (r) { return '<div class="mdo-row-between"><span class="mdo-muted">' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
   }
@@ -401,6 +424,17 @@
         (inf[1].length || inf[2].length ? '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
         '</div>';
     }).join('') + '<p class="mdo-muted mdo-ti-note">Drukkosten per stuk bij ' + st.qty + ' stuks, instelkosten inbegrepen.</p>';
+  }
+  function openNoteInfo() {
+    var ov = document.createElement('div');
+    ov.className = 'mdo-sheet';
+    ov.innerHTML = '<div class="mdo-sheet-in" role="dialog" aria-modal="true" aria-label="Uitleg opmerking"><div class="mdo-row-between"><strong style="font-size:17px">Opmerking bij je bestelling</strong><button type="button" class="mdo-sheet-x" aria-label="Sluiten">×</button></div>' +
+      '<p>Met de knoppen Formaat, Draaien en Uitlijnen bepaal je de plek van je logo of tekst. Wil je het preciezer, zet het dan hier, bijvoorbeeld:</p>' +
+      '<ul class="mdo-note-ex"><li>Logo 1 cm boven de onderrand</li><li>Tekst precies tegenover het handvat</li><li>Logo even groot als op de vorige bestelling</li></ul>' +
+      '<p class="mdo-muted">We nemen je wensen mee bij het opmaken van de drukproef. Je krijgt die eerst ter goedkeuring.</p></div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.mdo-sheet-x')) ov.remove(); });
+    ov.addEventListener('keydown', function (e) { if (e.key === 'Escape') ov.remove(); });
+    document.body.appendChild(ov);
   }
   function openTechInfo() {
     var face = faceByKey(st.face), fs = st.faces[face.key], sel = selection(face, fs);
@@ -499,6 +533,9 @@
     else if (a === 'ink') fs.ink = v;
     else if (a === 'techinfo') { openTechInfo(); return; }
     else if (a === 'techpick') { if (fs.pick === v) return; fs.pick = v; fs.size = null; }
+    else if (a === 'al') fs.al = v;
+    else if (a === 'va') fs.va = v;
+    else if (a === 'noteinfo') { openNoteInfo(); return; }
     else if (a === 'rot') { fs.rot = parseInt(v, 10); fs.size = null; }
     else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
@@ -551,7 +588,7 @@
       return {
         position: s.opt.pos.id, tech: s.opt.tech.id, colours: s.colours, mode: s.fs.mode, w: s.w, h: s.h,
         logo: s.fs.logo ? s.fs.logo.token : '', logoname: s.fs.logo ? s.fs.logo.name : '',
-        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs), pms: s.fs.pms, rot: s.rot
+        text: s.fs.text, font: s.fs.font, ink: inkOf(s.fs), pms: s.fs.pms, rot: s.rot, al: s.al, va: s.va
       };
     });
     form.querySelector('[name="variation_id"]').value = color.id;
