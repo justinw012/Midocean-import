@@ -573,22 +573,25 @@
     return '<p class="mdo-from">Vanaf <strong>' + eur(qb.perPc) + '</strong> per stuk <span class="mdo-muted">incl. bedrukking · bij ' + t + ' stuks ' + eur(q.perPc) + '</span></p>';
   }
   function render() {
-    var h = '<div data-out="from">' + fromHtml() + '</div>';
+    var h = '';
     if (mobile.matches) {
-      // Stappen als tikbare tabs, zodat "Bedrukking" direct zichtbaar en bereikbaar is.
-      h += '<div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
+      // Mobiel: stappen en voorbeeld bovenaan (in stap 2 blijven ze in beeld), keuzes eronder, prijs onderaan.
+      h += '<div class="mdo-mtop' + (st.step === 1 ? ' is-sticky' : '') + '"><div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
         return '<button type="button" role="tab" aria-selected="' + (i === st.step ? 'true' : 'false') + '" data-act="goto" data-v="' + i + '" class="' + (i === st.step ? 'is-on' : '') + (i < st.step ? ' is-done' : '') + '"><span class="mdo-stepnr">' + (i + 1) + '</span>' + esc(x) + '</button>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' + (gal ? '<div data-slot="stage"></div>' : '') + '</div>';
       if (st.step === 0) h += swatchesHtml() + qtyHtml();
       if (st.step === 1) h += printHtml();
       if (st.step === 2) h += summaryHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
+      h += '<div data-out="from">' + fromHtml() + '</div>';
       h += '<div class="mdo-bar"><div class="mdo-bar-price" data-out="bar">' + barHtml() + '</div><div class="mdo-bar-btns">' +
         (st.step > 0 ? '<button type="button" data-act="prev" class="mdo-pill">Terug</button>' : '') +
         (st.step < 2 ? '<button type="button" data-act="next" class="button alt mdo-next">' + (st.step === 0 ? 'Bedrukking kiezen' : 'Naar overzicht') + '</button>' : '') + '</div></div>';
     } else {
-      h += swatchesHtml() + qtyHtml() + printHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
+      h += '<div data-out="from">' + fromHtml() + '</div>' + swatchesHtml() + qtyHtml() + printHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
     }
+    if (gal && root.contains(gal)) gal.parentNode.removeChild(gal); // niet meeslopen bij het opnieuw opbouwen
     root.innerHTML = h;
+    placeStage();
     drawWrap();
     root.classList.toggle('is-mobile', !!mobile.matches);
     measure();
@@ -706,6 +709,14 @@
       '<div class="mdo-gallery-thumbs mdo-stage-strip">' + g.map(function (x, i) {
         return '<button type="button" data-gi="' + i + '" class="' + (galView === i ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
       }).join('') + '</div>';
+  }
+  // Mobiel: het podium tussen de stappen en de keuzes; desktop: terug naar zijn eigen plek links.
+  var galHome = gal ? { parent: gal.parentNode, next: gal.nextSibling } : null;
+  function placeStage() {
+    if (!gal) return;
+    var slot = root.querySelector('[data-slot="stage"]');
+    if (mobile.matches && slot) slot.appendChild(gal);
+    else if (gal.parentNode !== galHome.parent) galHome.parent.insertBefore(gal, galHome.next);
   }
   function syncGallery() {
     if (!gal) return;
