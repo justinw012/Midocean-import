@@ -390,6 +390,7 @@ class MDO_Frontend {
 				'stock'      => $c['stock'],
 				'backorders' => $c['backorders'],
 				'scales'     => $c['scales'],
+				'attrs'      => $c['attrs'],
 			);
 			if ( null === $c['stock'] || null === $groups[ $k ]['stock'] ) {
 				$groups[ $k ]['stock'] = null;
@@ -401,9 +402,16 @@ class MDO_Frontend {
 			usort( $g['sizes'], function ( $a, $b ) {
 				return MDO_Importer::size_cmp( $a['size'], $b['size'] );
 			} );
+			// Variant-id en eigenschappen moeten bij dezelfde variant horen, anders weigert
+			// WooCommerce het met "Ongeldige waarde voor Maat".
 			$g['id']     = $g['sizes'][0]['id'];
 			$g['sku']    = $g['sizes'][0]['sku'];
 			$g['scales'] = $g['sizes'][0]['scales'];
+			$g['attrs']  = $g['sizes'][0]['attrs'];
+			foreach ( $g['sizes'] as &$sz ) {
+				unset( $sz['attrs'] );
+			}
+			unset( $sz );
 			unset( $g['size'], $g['cname'] );
 		}
 		return array_values( $groups );
