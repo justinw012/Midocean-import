@@ -35,6 +35,11 @@
     }
     return /zwart|black|navy|marine|donker|dark|bordeaux|petrol|royal|bruin|paars/.test(name);
   }
+  function isDarkHex(hex) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return true;
+    var r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 160;
+  }
   function inkOf(fs) { return fs.ink || (isDark() ? '#FFFFFF' : '#1E1E1E'); }
   /** Laser en blinddruk hebben geen inktkleur: toon een gravure-effect. */
   function effectOf(techId) {
@@ -173,6 +178,66 @@
     var round = /360|ROUND ?SCREEN|ROUNDPART|WRAP|AROUND|SUBLIMATION 360/.test(id) && !/PEN|PENCIL/.test(id);
     return { h: !round, v: true };
   }
+  // Hoe rond is het drukvlak op de foto? Geeft de halve hoek (radialen) die het vlak beslaat, of 0 voor plat.
+  function curveOf(p) {
+    var id = String(p.id || '').toUpperCase(), shape = String(p.shape || '').toLowerCase();
+    if (shape === 'ellipse' || shape === 'polygon' || /PEN|PENCIL/.test(id)) return 0;
+    if (/360|WRAP|AROUND/.test(id)) return 78 * Math.PI / 180;
+    if (/ROUND ?SCREEN|ROUNDPART/.test(id)) return 62 * Math.PI / 180;
+    return 0;
+  }
+  // ---------- rondom: logo/tekst om de cilinder (canvas) ----------
+  var wrapJob = null, wrapImgs = {};
+  function wrapImg(src) {
+    if (wrapImgs[src]) return wrapImgs[src].complete && wrapImgs[src].naturalWidth ? wrapImgs[src] : null;
+    var im = new Image();
+    im.onload = function () { drawWrap(); };
+    im.src = src;
+    wrapImgs[src] = im;
+    return null;
+  }
+  // Ontwerp onvervormd tekenen (incl. draaien), daarna kolom voor kolom om de cilinder leggen.
+  function drawWrap() {
+    var cv = root.querySelector('canvas.mdo-wrap'), j = wrapJob;
+    if (!cv || !j || !cv.getContext) return;
+    var dpr = Math.min(3, window.devicePixelRatio || 1), Zw = cv.clientWidth, Zh = cv.clientHeight;
+    if (!Zw || !Zh) return;
+    cv.width = Math.round(Zw * dpr); cv.height = Math.round(Zh * dpr);
+    var out = cv.getContext('2d'); if (!out) return;
+    out.clearRect(0, 0, cv.width, cv.height);
+    var Aw = j.aw * Zw * dpr, Ah = j.ah * Zh * dpr;
+    var src = document.createElement('canvas');
+    src.width = Math.max(1, Math.round(Aw * 1.5)); src.height = Math.max(1, Math.round(Ah * 1.5));
+    var c = src.getContext('2d'), S = 1.5;
+    c.translate(src.width / 2, src.height / 2);
+    c.rotate(j.rot * Math.PI / 180);
+    var iw = (j.vertical ? Ah : Aw) * S, ih = (j.vertical ? Aw : Ah) * S;
+    if (j.kind === 'text') {
+      var s = Math.min(iw / j.vbw, ih / 100);
+      c.scale(s, s);
+      c.font = '700 84px ' + j.family;
+      c.textAlign = 'center';
+      c.fillStyle = j.ink;
+      c.fillText(j.txt, 0, 74 - 50);
+    } else {
+      var im = wrapImg(j.src);
+      if (!im) return; // tekent opnieuw zodra het plaatje geladen is
+      var r = Math.min(iw / im.naturalWidth, ih / im.naturalHeight), w = im.naturalWidth * r, h = im.naturalHeight * r;
+      if (j.filter) c.filter = j.filter;
+      c.drawImage(im, -w / 2, -h / 2, w, h);
+    }
+    var W = cv.width, H = cv.height, sT = Math.sin(j.T), al = (1 - j.aw) / 2, sag = 0.035;
+    for (var x = 0; x < W; x++) {
+      var sv = ((x + 0.5) / W - 0.5) * 2 * sT;
+      if (Math.abs(sv) >= 1) continue;
+      var ang = Math.asin(sv), a = 0.5 + ang / (2 * j.T), sx = (a - al) / j.aw * src.width;
+      if (sx < 0 || sx >= src.width) continue;
+      var cs = Math.cos(ang);
+      out.globalAlpha = 0.5 + 0.5 * cs; // licht draait weg naar de zijkanten
+      out.drawImage(src, sx, 0, Math.max(1, src.width / (j.aw * W) * (1 / (j.T / sT * cs))), src.height, x, (j.at + sag * (1 - cs)) * H, 1, j.ah * H);
+    }
+    out.globalAlpha = 1;
+  }
   var AL = { l: 'links', c: 'midden', r: 'rechts' }, VA = { t: 'boven', m: 'midden', b: 'onder' };
   function alignText(s) {
     var parts = [];
@@ -227,7 +292,28 @@
       // Binnenste vlak heeft de onverdraaide maat van het ontwerp en wordt rond het midden gedraaid.
       var d = sel.d, innerW = d.vertical ? (d.len / d.thick * 100) : 100, innerH = d.vertical ? (d.thick / d.len * 100) : 100;
       var jc = { l: 'flex-start', c: 'center', r: 'flex-end' }[sel.al], ai = { t: 'flex-start', m: 'center', b: 'flex-end' }[sel.va];
-      zone = '<div class="mdo-zone" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%;justify-content:' + jc + ';align-items:' + ai + '"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%"><div class="mdo-art-in" style="width:' + innerW + '%;height:' + innerH + '%;transform:translate(-50%,-50%) rotate(' + sel.rot + 'deg)">' + art + '</div></div></div>';
+      var inner = '<div class="mdo-art-in" style="width:' + innerW + '%;height:' + innerH + '%;transform:translate(-50%,-50%) rotate(' + sel.rot + 'deg)">' + art + '</div>';
+      // Mengen met de foto (glans en structuur blijven zichtbaar) alleen op lichte producten met donkere inkt.
+      var lightInk = fs.mode === 'text' && !effect && !isDarkHex(inkOf(fs));
+      var blend = isDark() || lightInk ? '' : ' mdo-blend';
+      var T = curveOf(pos);
+      wrapJob = null;
+      if (T && (fs.mode === 'text' || !fs.logo || fs.logo.preview)) {
+        var aw = artW / 100, ah = artH / 100;
+        wrapJob = { T: T, aw: aw, ah: ah, at: sel.va === 't' ? 0 : sel.va === 'b' ? 1 - ah : (1 - ah) / 2, rot: sel.rot, vertical: !!d.vertical };
+        if (fs.mode === 'text') {
+          var tb2 = textBox(fs);
+          wrapJob.kind = 'text'; wrapJob.txt = tb2.txt; wrapJob.vbw = tb2.vbw; wrapJob.family = FONTS[fs.font][1]; wrapJob.ink = effectInk(effect) || inkOf(fs);
+        } else if (fs.logo) {
+          wrapJob.kind = 'img'; wrapJob.src = fs.logo.preview;
+          wrapJob.filter = effect === 'engrave' ? (isDark() ? 'grayscale(1) contrast(.6) brightness(1.6)' : 'grayscale(1) contrast(.6) brightness(.55)') : effect === 'deboss' ? (isDark() ? 'grayscale(1) brightness(2) opacity(.18)' : 'grayscale(1) brightness(0) opacity(.25)') : '';
+        } else {
+          wrapJob.kind = 'img'; wrapJob.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(demoLogo(isDark(), effect).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" '));
+        }
+        zone = '<div class="mdo-zone mdo-curved' + blend + '" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><canvas class="mdo-wrap" aria-label="Voorbeeld van je opdruk rondom"></canvas></div>';
+      } else {
+        zone = '<div class="mdo-zone' + blend + '" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%;justify-content:' + jc + ';align-items:' + ai + '"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%">' + inner + '</div></div>';
+      }
     }
     return '<div class="mdo-preview"><div class="mdo-photo"><img src="' + esc(url) + '" alt="' + esc(face.label) + ', ' + esc(color.name) + '" data-measure="' + esc(url) + '">' + zone + '</div>' +
       (dims ? '' : '<p class="mdo-muted">Foto laden…</p>') + '</div>';
@@ -382,6 +468,7 @@
       h += swatchesHtml() + qtyHtml() + printHtml() + noteHtml() + '<section class="mdo-sec mdo-price" data-out="price">' + priceHtml() + '</section>';
     }
     root.innerHTML = h;
+    drawWrap();
     root.classList.toggle('is-mobile', !!mobile.matches);
     measure();
     syncGallery();
@@ -509,7 +596,7 @@
   if (mobile.addEventListener) mobile.addEventListener('change', render);
 
   function soft() {
-    var pv = root.querySelector('[data-out="preview"]'); if (pv) pv.innerHTML = previewHtml();
+    var pv = root.querySelector('[data-out="preview"]'); if (pv) { pv.innerHTML = previewHtml(); drawWrap(); }
     var pr = root.querySelector('[data-out="price"]'); if (pr) pr.innerHTML = priceHtml();
     var br = root.querySelector('[data-out="bar"]'); if (br) br.innerHTML = barHtml();
     var face = faceByKey(st.face), fs = face && st.faces[face.key];
