@@ -76,24 +76,35 @@ class MDO_Shop {
 			}
 		}
 		// Eerste drukpositie (in de volgorde van de configurator) met een foto en drukvlak.
+		// Rondom/360 liever niet: die foto's tonen vaak meerdere aanzichten naast elkaar
+		// met één drukvlak eroverheen, waardoor het logo over alle aanzichten loopt.
+		$cands = array();
 		foreach ( MDO_Printdata::faces( $print['positions'] ) as $f ) {
 			foreach ( $f['positions'] as $pos ) {
 				if ( empty( $pos['box'] ) || empty( $pos['images'] ) ) {
 					continue;
 				}
-				$img = ( $code && ! empty( $pos['images'][ $code ] ) ) ? $pos['images'][ $code ] : reset( $pos['images'] );
-				if ( ! $img ) {
-					continue;
-				}
-				$data = array(
-					'img'   => $img,
-					'box'   => array_map( 'floatval', $pos['box'] ),
-					'id'    => (string) $pos['id'],
-					'shape' => isset( $pos['type'] ) ? (string) $pos['type'] : '',
-				);
-				echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
-				return;
+				$wrap    = (bool) preg_match( '/360|WRAP|AROUND|ROUND ?SCREEN|ROUNDPART/i', (string) $pos['id'] );
+				$cands[] = array( $wrap ? 1 : 0, count( $cands ), $pos );
 			}
+		}
+		usort( $cands, function ( $a, $b ) {
+			return $a[0] - $b[0] ? $a[0] - $b[0] : $a[1] - $b[1];
+		} );
+		foreach ( $cands as $c ) {
+			$pos = $c[2];
+			$img = ( $code && ! empty( $pos['images'][ $code ] ) ) ? $pos['images'][ $code ] : reset( $pos['images'] );
+			if ( ! $img ) {
+				continue;
+			}
+			$data = array(
+				'img'   => $img,
+				'box'   => array_map( 'floatval', $pos['box'] ),
+				'id'    => (string) $pos['id'],
+				'shape' => isset( $pos['type'] ) ? (string) $pos['type'] : '',
+			);
+			echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
+			return;
 		}
 	}
 }

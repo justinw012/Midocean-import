@@ -111,20 +111,42 @@
     wrap.className = 'mdo-hov-wrap';
     img.parentNode.insertBefore(wrap, img);
     wrap.appendChild(img);
-    var badge = document.createElement('span');
+    // Mobiel: een klein bedrukt plaatje rechtsonder; tik erop voor het grote voorbeeld.
+    var badge = document.createElement('button');
+    badge.type = 'button';
     badge.className = 'mdo-hov-badge';
-    badge.title = 'Bekijk met logo';
-    if (C.icon) badge.innerHTML = '<img src="' + C.icon + '" alt="">';
+    badge.setAttribute('aria-label', 'Bekijk met logo bedrukt');
     wrap.appendChild(badge);
-    var cv = null, busy = false;
-    function show() {
-      if (cv) { wrap.classList.add('mdo-hov-on'); return; }
+    var cv = null, busy = false, waiting = [];
+    function ready(cb) {
+      if (cv) return cb(cv);
+      waiting.push(cb);
       if (busy) return; busy = true;
       build(data, function (c) {
-        busy = false; if (!c) return;
+        busy = false; if (!c) { badge.remove(); return; }
         cv = c; wrap.appendChild(cv);
-        requestAnimationFrame(function () { wrap.classList.add('mdo-hov-on'); });
+        thumb(c);
+        waiting.forEach(function (f) { f(cv); }); waiting = [];
       });
+    }
+    // Uitsnede rond het drukvlak, zodat het logo in het kleine plaatje goed te zien is.
+    function thumb(c) {
+      var b = data.box, bw = b[2] - b[0], bh = b[3] - b[1], side = Math.min(Math.max(bw, bh) * 1.15, c.width, c.height);
+      var cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+      var sx = Math.max(0, Math.min(c.width - side, cx - side / 2)), sy = Math.max(0, Math.min(c.height - side, cy - side / 2));
+      var t = document.createElement('canvas'); t.width = t.height = 120;
+      var x = t.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 120, 120);
+      x.drawImage(c, sx, sy, side, side, 0, 0, 120, 120);
+      badge.appendChild(t);
+      badge.classList.add('has-thumb');
+    }
+    function show() { ready(function () { requestAnimationFrame(function () { wrap.classList.add('mdo-hov-on'); }); }); }
+    // Op telefoons het plaatje alvast maken zodra het product in beeld komt.
+    if (window.matchMedia && !window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { io.disconnect(); ready(function () {}); } }, { rootMargin: '200px' });
+        io.observe(wrap);
+      } else ready(function () {});
     }
     function hide() { wrap.classList.remove('mdo-hov-on'); }
     // Desktop
