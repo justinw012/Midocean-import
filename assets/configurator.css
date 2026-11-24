@@ -167,4 +167,4 @@
 /* Realistischer: rondom-opdruk in stroken om de cilinder, inkt gemengd met de foto */
 .mdo-zone.mdo-curved{display:block}
 .mdo-wrap{position:absolute;inset:0;width:100%;height:100%;display:block}
-.mdo-zone.mdo-blend .mdo-art,.mdo-zone.mdo-blend 
+.mdo-zone.mdo-blend .mdo-art,.mdo-zone.mdo-blend .mdo-wrap{mix-blend-mode:multiply}

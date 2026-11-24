@@ -186,7 +186,7 @@ class MDO_Frontend {
 	}
 
 	/** Alle foto's van een kleur: hoofdfoto + extra foto's (Variation Gallery), anders die van het product. */
-	private static function gallery_for( $v, $product ) {
+	public static function gallery_for( $v, $product ) {
 		$ids = array();
 		if ( $v->get_image_id() ) {
 			$ids[] = (int) $v->get_image_id();
