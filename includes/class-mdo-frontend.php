@@ -12,6 +12,7 @@ class MDO_Frontend {
 	public static function init() {
 		add_action( 'woocommerce_before_single_product', array( __CLASS__, 'maybe_replace' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
+		add_filter( 'woocommerce_product_tabs', array( __CLASS__, 'specs_tab' ), 20 );
 	}
 
 	public static function configurable( $product ) {
@@ -249,5 +250,91 @@ class MDO_Frontend {
 			<noscript><p>Zet JavaScript aan om dit product samen te stellen.</p></noscript>
 		</form>
 		<?php
+	}
+
+	/** Tabblad "Specificaties & downloads": materiaal, afmetingen, gewicht en de pdf's van Midocean. */
+	public static function specs_tab( $tabs ) {
+		global $product;
+		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) ) {
+			return $tabs;
+		}
+		if ( self::specs_rows( $product ) || $product->get_meta( '_mdo_documents' ) ) {
+			$tabs['mdo_specs'] = array(
+				'title'    => 'Specificaties &amp; downloads',
+				'priority' => 15,
+				'callback' => array( __CLASS__, 'specs_html' ),
+			);
+		}
+		return $tabs;
+	}
+
+	private static function specs_rows( $product ) {
+		$s    = (array) $product->get_meta( '_mdo_specs' );
+		$rows = array();
+		if ( ! empty( $s['material'] ) ) {
+			$rows['Materiaal'] = $s['material'];
+		}
+		if ( ! empty( $s['dimensions'] ) ) {
+			$rows['Afmetingen'] = $s['dimensions'];
+		}
+		if ( $product->get_weight() ) {
+			$rows['Gewicht'] = wc_format_weight( $product->get_weight() );
+		}
+		if ( ! empty( $s['origin'] ) ) {
+			$c = function_exists( 'WC' ) && WC()->countries ? WC()->countries->get_countries() : array();
+			$rows['Land van herkomst'] = $c[ strtoupper( $s['origin'] ) ] ?? $s['origin'];
+		}
+		return $rows;
+	}
+
+	/** Leesbare naam voor een documentsoort van Midocean. */
+	public static function doc_label( $subtype ) {
+		$t = strtolower( (string) $subtype );
+		// Soorten zoals Midocean ze levert, specifiek eerst.
+		$map = array(
+			'declaration_of_conformity'     => 'Conformiteitsverklaring (CE)',
+			'declaration_of_sustainability' => 'Duurzaamheidsverklaring',
+			'test_reach'                    => 'Testrapport REACH (chemische stoffen)',
+			'test_fca'                      => 'Testrapport voedselcontact',
+			'test_performance'              => 'Testrapport prestaties',
+			'size_chart'                    => 'Maattabel',
+			'manual'                        => 'Handleiding',
+			'conform'                       => 'Conformiteitsverklaring',
+			'sustainab'                     => 'Duurzaamheidsverklaring',
+			'reach'                         => 'Testrapport REACH',
+			'fca'                           => 'Testrapport voedselcontact',
+			'test'                          => 'Testrapport',
+			'instruction'                   => 'Handleiding',
+			'safety'                        => 'Veiligheidsinformatie',
+			'certificat'                    => 'Certificaat',
+		);
+		foreach ( $map as $k => $label ) {
+			if ( false !== strpos( $t, $k ) ) {
+				return $label;
+			}
+		}
+		return ucfirst( trim( str_replace( array( '_', '-' ), ' ', $t ) ) ) ?: 'Document';
+	}
+
+	public static function specs_html() {
+		global $product;
+		$rows = self::specs_rows( $product );
+		$docs = (array) $product->get_meta( '_mdo_documents' );
+		echo '<div class="mdo-specs">';
+		if ( $rows ) {
+			echo '<table class="woocommerce-product-attributes shop_attributes"><tbody>';
+			foreach ( $rows as $k => $v ) {
+				echo '<tr><th>' . esc_html( $k ) . '</th><td>' . esc_html( $v ) . '</td></tr>';
+			}
+			echo '</tbody></table>';
+		}
+		if ( $docs ) {
+			echo '<h3 style="font-size:16px;margin:18px 0 8px">Downloads</h3><ul class="mdo-docs">';
+			foreach ( $docs as $sub => $url ) {
+				echo '<li><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener nofollow">' . esc_html( self::doc_label( $sub ) ) . '</a> <span style="color:#646970">(pdf)</span></li>';
+			}
+			echo '</ul>';
+		}
+		echo '</div>';
 	}
 }

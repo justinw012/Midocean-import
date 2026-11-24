@@ -191,7 +191,9 @@
   function wrapImg(src) {
     if (wrapImgs[src]) return wrapImgs[src].complete && wrapImgs[src].naturalWidth ? wrapImgs[src] : null;
     var im = new Image();
-    im.onload = function () { drawWrap(); };
+    im.onload = function () {
+      if (!imgSize[src] && im.naturalWidth) { imgSize[src] = [im.naturalWidth, im.naturalHeight]; soft(); } else drawWrap();
+    };
     im.src = src;
     wrapImgs[src] = im;
     return null;
@@ -283,7 +285,7 @@
         var tb = textBox(fs), txt = tb.txt, vbw = tb.vbw;
         art = '<svg viewBox="0 0 ' + vbw + ' 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(txt) + '"><text x="' + (vbw / 2) + '" y="74" text-anchor="middle" font-size="84" font-weight="700" style="font-family:' + esc(FONTS[fs.font][1]) + '" fill="' + (effectInk(effect) || inkOf(fs)) + '">' + esc(txt) + '</text></svg>';
       } else if (fs.logo && fs.logo.preview) {
-        art = '<img src="' + esc(fs.logo.preview) + '" alt="Jouw logo" class="' + (effect ? 'mdo-fx-' + effect + (isDark() ? ' on-dark' : '') : '') + '">';
+        art = '<img src="' + esc(fs.logo.preview) + '" data-measure="' + esc(fs.logo.preview) + '" alt="Jouw logo" class="' + (effect ? 'mdo-fx-' + effect + (isDark() ? ' on-dark' : '') : '') + '">';
       } else if (fs.logo) {
         art = '<span class="mdo-art-file">' + esc(fs.logo.name) + '</span>';
       } else {

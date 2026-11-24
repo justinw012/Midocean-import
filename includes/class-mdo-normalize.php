@@ -113,6 +113,7 @@ class MDO_Normalize {
 			'long'        => (string) self::pick( $p, array( 'long_description', 'description' ), '' ),
 			'material'    => (string) self::pick( $p, array( 'material' ), '' ),
 			'dimensions'  => (string) self::pick( $p, array( 'dimensions' ), '' ),
+			'origin'      => (string) self::pick( $p, array( 'country_of_origin' ), '' ),
 			'weight'      => self::num( self::pick( $p, array( 'net_weight', 'gross_weight' ), 0 ) ),
 			'length'      => self::num( self::pick( $p, array( 'length' ), 0 ) ),
 			'width'       => self::num( self::pick( $p, array( 'width' ), 0 ) ),

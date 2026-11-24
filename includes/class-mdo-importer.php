@@ -205,6 +205,11 @@ class MDO_Importer {
 		}
 		$product->update_meta_data( '_mdo_master_code', $p['master_code'] );
 		$product->update_meta_data( '_mdo_documents', $p['documents'] );
+		$product->update_meta_data( '_mdo_specs', array(
+			'material'   => $p['material'],
+			'dimensions' => $p['dimensions'],
+			'origin'     => $p['origin'] ?? '',
+		) );
 		if ( $print ) {
 			$product->update_meta_data( MDO_Printdata::META, $print );
 		}
