@@ -212,7 +212,7 @@
   }
   // Ontwerp onvervormd tekenen (incl. draaien), daarna kolom voor kolom om de cilinder leggen.
   function drawWrap() {
-    var cv = root.querySelector('canvas.mdo-wrap'), j = wrapJob;
+    var cv = root.querySelector('canvas.mdo-wrap') || (gal && gal.querySelector('canvas.mdo-wrap')), j = wrapJob;
     if (!cv || !j || !cv.getContext) return;
     var dpr = Math.min(3, window.devicePixelRatio || 1), Zw = cv.clientWidth, Zh = cv.clientHeight;
     if (!Zw || !Zh) return;
@@ -313,16 +313,19 @@
     return '<svg viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Voorbeeldlogo"><circle cx="48" cy="55" r="40" fill="' + ink + '"/><path d="M30 70 L48 32 L66 70 Z" fill="' + (effect ? (isDark() ? '#1E1E1E' : '#FFFFFF') : accent) + '"/><text x="100" y="52" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Jouw</text><text x="100" y="84" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="800" fill="' + ink + '">Logo</text></svg>';
   }
 
+  function posImg(pos, color) {
+    var url = pos.images[color.code];
+    if (!url) { // kleurcode niet gevonden: zoek de code in het artikelnummer
+      Object.keys(pos.images).forEach(function (k) { if (!url && k && new RegExp('-' + k + '(-|$)', 'i').test(color.sku)) url = pos.images[k]; });
+    }
+    return url || pos.images[Object.keys(pos.images)[0]] || color.image;
+  }
   function previewHtml() {
     var face = faceByKey(st.face); if (!face) return '';
     var fs = st.faces[face.key], color = cfg.colors[st.color];
     var sel = fs.on ? selection(face, fs) : null;
     var pos = sel ? sel.opt.pos : face.positions[0];
-    var url = pos.images[color.code];
-    if (!url) { // kleurcode niet gevonden: zoek de code in het artikelnummer
-      Object.keys(pos.images).forEach(function (k) { if (!url && k && new RegExp('-' + k + '(-|$)', 'i').test(color.sku)) url = pos.images[k]; });
-    }
-    url = url || pos.images[Object.keys(pos.images)[0]] || color.image;
+    var url = posImg(pos, color);
     var dims = imgSize[url];
     var zone = '';
     if (sel && dims && pos.box) {
@@ -382,12 +385,12 @@
   }
 
   function priceHtml() {
-    var color = cfg.colors[st.color], sels = selections();
-    var q = quote(color, st.qty, priceSels(sels));
-    var next = cfg.tiers.filter(function (t) { return t > st.qty; })[0];
+    var color = cfg.colors[st.color], sels = selections(), n = dispQty();
+    var q = quote(color, n, priceSels(sels));
+    var next = cfg.tiers.filter(function (t) { return t > n; })[0];
     var tiers = cfg.tiers.map(function (t) {
       var x = quote(color, t, priceSels(sels));
-      return '<div class="mdo-tier' + (t === st.qty ? ' is-on' : '') + '"><span>' + t + ' st.</span><span>' + eur(x.perPc) + '</span></div>';
+      return '<div class="mdo-tier' + (t === n ? ' is-on' : '') + '"><span>' + t + ' st.</span><span>' + eur(x.perPc) + '</span></div>';
     }).join('');
     var short, block, stockMsg;
     if (color.sizes) {
@@ -400,7 +403,7 @@
       short = color.stock !== null && st.qty > color.stock; block = short && !color.backorders;
       stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
-    return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
+    return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
@@ -513,7 +516,7 @@
     return '<section class="mdo-sec mdo-print"><div class="mdo-lbl">Bedrukking</div><div class="mdo-tabs">' +
       cfg.faces.map(function (f) {
         return '<button type="button" data-act="face" data-v="' + esc(f.key) + '" class="' + (f.key === st.face ? 'is-on' : '') + '">' + esc(f.label) + (st.faces[f.key].on ? ' ✓' : '') + '</button>';
-      }).join('') + '</div><div data-out="preview">' + previewHtml() + '</div><div data-face="' + esc(st.face) + '">' + faceHtml(faceByKey(st.face)) + '</div></section>';
+      }).join('') + '</div>' + (gal ? '' : '<div data-out="preview">' + previewHtml() + '</div>') + '<div data-face="' + esc(st.face) + '">' + faceHtml(faceByKey(st.face)) + '</div></section>';
   }
   function noteHtml() {
     return '<section class="mdo-sec"><div class="mdo-row-between"><label class="mdo-lbl" for="mdo-note">Opmerking (optioneel)</label><button type="button" class="mdo-info" data-act="noteinfo" aria-label="Wat kun je bij opmerking zetten?">i</button></div><textarea id="mdo-note" data-act="note" class="mdo-input" rows="2" maxlength="500">' + esc(st.note) + '</textarea></section>';
@@ -530,8 +533,14 @@
     return '<section class="mdo-sec mdo-summary">' + rows.map(function (r) { return '<div class="mdo-row-between"><span class="mdo-muted">' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
   }
 
+  // Eén "vanaf"-prijs bovenaan, inclusief de gekozen bedrukking (WooCommerce-prijs is verborgen).
+  function fromHtml() {
+    var color = cfg.colors[st.color], t = cfg.tiers[0] || 50, q = quote(color, t, priceSels(selections()));
+    var big = cfg.tiers[cfg.tiers.length - 1], qb = quote(color, big, priceSels(selections()));
+    return '<p class="mdo-from">Vanaf <strong>' + eur(qb.perPc) + '</strong> per stuk <span class="mdo-muted">incl. bedrukking · bij ' + t + ' stuks ' + eur(q.perPc) + '</span></p>';
+  }
   function render() {
-    var h = '';
+    var h = '<div data-out="from">' + fromHtml() + '</div>';
     if (mobile.matches) {
       // Stappen als tikbare tabs, zodat "Bedrukking" direct zichtbaar en bereikbaar is.
       h += '<div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
@@ -553,13 +562,15 @@
     syncGallery();
   }
 
+  // Kleding zonder ingevulde maten: prijs bij het eerste staffelaantal tonen, niet bij 1 stuk.
+  function dispQty() { var c = cfg.colors[st.color]; return c.sizes && !sizeTotal() ? (cfg.tiers[0] || 50) : st.qty; }
   function barHtml() {
-    var q = quote(cfg.colors[st.color], st.qty, priceSels(selections()));
-    return '<strong>' + eur(q.total) + '</strong><span class="mdo-muted">' + eur(q.perPc) + ' per stuk</span>';
+    var n = dispQty(), q = quote(cfg.colors[st.color], n, priceSels(selections()));
+    return '<strong>' + eur(q.total) + '</strong><span class="mdo-muted">' + eur(q.perPc) + ' per stuk' + (n !== st.qty ? ' bij ' + n + ' st.' : '') + '</span>';
   }
 
   // Hoofdfoto van het thema laten meewisselen met de gekozen kleur.
-  var lastImg = null;
+
   // ---------- uitleg technieken (i-knop) ----------
   var INFO = [
     [/zeefdruk|screen/i, 'Inkt wordt door een fijn gaas op het product gedrukt.', ['Felle, egale kleuren', 'Voordelig bij grotere aantallen'], ['Elke extra kleur kost extra', 'Geen kleurverlopen of foto\'s']],
@@ -643,30 +654,44 @@
     document.body.appendChild(ov);
   }
 
-  // Eigen fotogalerij (links op de pagina): alle foto's van de gekozen kleur.
-  var gal = document.getElementById('mdo-gallery'), galIdx = 0;
+  // Podium (links op desktop, bovenaan op mobiel): groot bedrukt voorbeeld + strook met
+  // de drukposities en de gewone productfoto's van de gekozen kleur.
+  var gal = document.getElementById('mdo-gallery'), galView = 'design';
+  function stageHtml() {
+    var c = cfg.colors[st.color], g = c.gallery || [], main;
+    if (galView === 'design' || !g[galView]) {
+      main = '<div class="mdo-stage-design" data-out="preview">' + previewHtml() + '</div>';
+    } else {
+      var cur = g[galView];
+      main = '<a class="mdo-gallery-main" href="' + esc(cur.full) + '" data-act="zoom"><img src="' + esc(cur.large) + '" alt="' + esc(cur.alt || c.name) + '"></a>';
+    }
+    var strip = cfg.faces.map(function (f) {
+      var on = galView === 'design' && f.key === st.face;
+      return '<button type="button" data-gface="' + esc(f.key) + '" class="mdo-st-face' + (on ? ' is-on' : '') + '" title="' + esc(f.label) + '"><img src="' + esc(posImg(f.positions[0], c)) + '" alt=""><span>' + esc(f.label) + (st.faces[f.key].on ? ' ✓' : '') + '</span></button>';
+    }).join('') + g.map(function (x, i) {
+      return '<button type="button" data-gi="' + i + '" class="' + (galView === i ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
+    }).join('');
+    return '<div class="mdo-stage-main">' + main + '</div><div class="mdo-gallery-thumbs mdo-stage-strip">' + strip + '</div>';
+  }
   function syncGallery() {
-    var c = cfg.colors[st.color];
-    if (!gal || !c.gallery || !c.gallery.length) return;
-    var key = st.color + ':' + galIdx;
-    if (key === lastImg) return;
-    lastImg = key;
-    var g = c.gallery, cur = g[Math.min(galIdx, g.length - 1)];
-    gal.innerHTML = '<a class="mdo-gallery-main" href="' + esc(cur.full) + '" data-act="zoom"><img src="' + esc(cur.large) + '" alt="' + esc(cur.alt || c.name) + '"></a>' +
-      (g.length > 1 ? '<div class="mdo-gallery-thumbs">' + g.map(function (x, i) {
-        return '<button type="button" data-gi="' + i + '" class="' + (i === galIdx ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
-      }).join('') + '</div>' : '');
+    if (!gal) return;
+    gal.classList.toggle('is-compact', !!(mobile.matches && st.step === 1));
+    gal.innerHTML = stageHtml();
+    drawWrap();
   }
   if (gal) {
+    gal.classList.add('mdo-stage');
     gal.addEventListener('click', function (e) {
+      var f = e.target.closest('[data-gface]');
+      if (f) { galView = 'design'; st.face = f.getAttribute('data-gface'); render(); return; }
       var b = e.target.closest('[data-gi]');
-      if (b) { galIdx = parseInt(b.getAttribute('data-gi'), 10); syncGallery(); return; }
+      if (b) { galView = parseInt(b.getAttribute('data-gi'), 10); syncGallery(); return; }
       var z = e.target.closest('[data-act="zoom"]');
       if (z) {
         e.preventDefault();
         var ov = document.createElement('div');
         ov.className = 'mdo-lightbox';
-        ov.innerHTML = '<img src="' + esc(z.getAttribute('href')) + '" alt=""><button type="button" aria-label="Sluiten">×</button>';
+        ov.innerHTML = '<img src="' + esc(z.getAttribute('href')) + '" alt=""><button type="button" aria-label="Sluiten">&times;</button>';
         ov.addEventListener('click', function () { ov.remove(); });
         document.body.appendChild(ov);
       }
@@ -674,8 +699,10 @@
   }
   if (mobile.addEventListener) mobile.addEventListener('change', render);
 
+  function q$(sel) { return root.querySelector(sel) || (gal && gal.querySelector(sel)); }
   function soft() {
-    var pv = root.querySelector('[data-out="preview"]'); if (pv) { pv.innerHTML = previewHtml(); drawWrap(); }
+    var pv = q$('[data-out="preview"]'); if (pv) { pv.innerHTML = previewHtml(); drawWrap(); }
+    var fr = root.querySelector('[data-out="from"]'); if (fr) fr.innerHTML = fromHtml();
     var pr = root.querySelector('[data-out="price"]'); if (pr) pr.innerHTML = priceHtml();
     var br = root.querySelector('[data-out="bar"]'); if (br) br.innerHTML = barHtml();
     var face = faceByKey(st.face), fs = face && st.faces[face.key];
@@ -685,7 +712,7 @@
   }
 
   function measure() {
-    root.querySelectorAll('img[data-measure]').forEach(function (img) {
+    [].slice.call(root.querySelectorAll('img[data-measure]')).concat(gal ? [].slice.call(gal.querySelectorAll('img[data-measure]')) : []).forEach(function (img) {
       var u = img.getAttribute('data-measure');
       if (imgSize[u]) return;
       var done = function () { if (img.naturalWidth) { imgSize[u] = [img.naturalWidth, img.naturalHeight]; soft(); } };
@@ -698,8 +725,9 @@
 
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act],[data-act="techpick"]'); if (!b) return;
+    galView = 'design';
     var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), fs = curFace();
-    if (a === 'color') { st.color = parseInt(v, 10); galIdx = 0; if (cfg.colors[st.color].sizes) st.qty = Math.max(1, sizeTotal()); }
+    if (a === 'color') { st.color = parseInt(v, 10); galView = 'design'; if (cfg.colors[st.color].sizes) st.qty = Math.max(1, sizeTotal()); }
     else if (a === 'qty') st.qty = parseInt(v, 10);
     else if (a === 'face') st.face = v;
     else if (a === 'mode') { fs.mode = v; fs.pick = null; }

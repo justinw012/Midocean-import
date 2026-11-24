@@ -58,6 +58,8 @@ class MDO_Frontend {
 			}
 		}
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render' ), 30 );
+		// Eén prijs: de "vanaf"-prijs van de configurator (incl. bedrukking) in plaats van de kale productprijs.
+		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
 
 		// Fotogalerij vervangen door een galerij die per kleur alle foto's toont.
 		// (De standaardgalerij en Variation Gallery luisteren naar het oude bestelformulier.)
