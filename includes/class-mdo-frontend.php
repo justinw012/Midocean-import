@@ -13,6 +13,9 @@ class MDO_Frontend {
 		add_action( 'woocommerce_before_single_product', array( __CLASS__, 'maybe_replace' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'woocommerce_product_tabs', array( __CLASS__, 'specs_tab' ), 20 );
+		add_action( 'wp_ajax_mdo_doc', array( __CLASS__, 'doc' ) );
+		add_action( 'wp_ajax_nopriv_mdo_doc', array( __CLASS__, 'doc' ) );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'pdf_assets' ) );
 	}
 
 	public static function configurable( $product ) {
@@ -337,7 +340,7 @@ class MDO_Frontend {
 		if ( $docs ) {
 			echo '<h3 style="font-size:16px;margin:18px 0 8px">Downloads</h3><ul class="mdo-docs">';
 			foreach ( $docs as $sub => $url ) {
-				echo '<li><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener nofollow">' . esc_html( self::doc_label( $sub ) ) . '</a> <span style="color:#646970">(pdf)</span></li>';
+				echo '<li><a class="mdo-pdf" href="' . esc_url( self::doc_url( $product->get_id(), $sub ) ) . '" data-title="' . esc_attr( self::doc_label( $sub ) ) . '" target="_blank" rel="noopener nofollow">' . esc_html( self::doc_label( $sub ) ) . '</a> <span style="color:#646970">(pdf)</span></li>';
 			}
 			echo '</ul>';
 		}
@@ -444,9 +447,53 @@ class MDO_Frontend {
 	public static function size_chart( $product ) {
 		foreach ( (array) $product->get_meta( '_mdo_documents' ) as $sub => $url ) {
 			if ( false !== stripos( (string) $sub, 'size' ) ) {
-				return esc_url_raw( $url );
+				return self::doc_url( $product->get_id(), $sub );
 			}
 		}
 		return '';
+	}
+
+	/** Link naar een document van Midocean via de eigen site (opent in de pdf-viewer van de winkel). */
+	public static function doc_url( $product_id, $key ) {
+		return add_query_arg( array( 'action' => 'mdo_doc', 'p' => (int) $product_id, 'k' => rawurlencode( (string) $key ) ), admin_url( 'admin-ajax.php' ) );
+	}
+
+	/** Pdf van Midocean doorgeven vanaf de eigen server (alleen documenten die bij het product horen). */
+	public static function doc() {
+		$product = wc_get_product( absint( $_GET['p'] ?? 0 ) );
+		$key     = sanitize_text_field( rawurldecode( wp_unslash( $_GET['k'] ?? '' ) ) );
+		$docs    = $product ? (array) $product->get_meta( '_mdo_documents' ) : array();
+		$url     = isset( $docs[ $key ] ) ? (string) $docs[ $key ] : '';
+		$host    = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( ! $url || ! preg_match( '/(^|\.)midocean\.com$/', $host ) ) {
+			status_header( 404 );
+			exit;
+		}
+		$file = MDO_Settings::cache_dir( 'docs' ) . md5( $url ) . '.pdf';
+		if ( ! file_exists( $file ) || filemtime( $file ) < time() - 30 * DAY_IN_SECONDS ) {
+			$r = wp_safe_remote_get( $url, array( 'timeout' => 30 ) );
+			if ( is_wp_error( $r ) || 200 !== wp_remote_retrieve_response_code( $r ) || 0 !== strpos( (string) wp_remote_retrieve_body( $r ), '%PDF' ) ) {
+				wp_redirect( $url ); // valt terug op het origineel
+				exit;
+			}
+			file_put_contents( $file, wp_remote_retrieve_body( $r ) ); // phpcs:ignore
+		}
+		header( 'Content-Type: application/pdf' );
+		header( 'Content-Disposition: inline; filename="' . sanitize_file_name( $product->get_name() . ' - ' . self::doc_label( $key ) ) . '.pdf"' );
+		header( 'Cache-Control: public, max-age=86400' );
+		header( 'X-Robots-Tag: noindex' );
+		readfile( $file ); // phpcs:ignore
+		exit;
+	}
+
+	public static function pdf_assets() {
+		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+			return;
+		}
+		wp_enqueue_script( 'mdo-pdfview', MDO_URL . 'assets/pdfview.js', array(), MDO_VERSION, true );
+		wp_localize_script( 'mdo-pdfview', 'MDO_PDF', array(
+			'lib'    => MDO_URL . 'assets/pdfjs/pdf.min.js',
+			'worker' => MDO_URL . 'assets/pdfjs/pdf.worker.min.js',
+		) );
 	}
 }
