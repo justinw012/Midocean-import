@@ -191,6 +191,35 @@ class MDO_Importer {
 		$attr->set_variation( true );
 		$attrs                 = $product->get_attributes();
 		$attrs[ $ca['key'] ]   = $attr;
+		// Kleding: tweede eigenschap "Maat".
+		$sizes = array_values( array_unique( array_filter( wp_list_pluck( $p['variants'], 'size' ) ) ) );
+		$sa    = null;
+		if ( $sizes ) {
+			usort( $sizes, array( 'MDO_Importer', 'size_cmp' ) );
+			$sa    = taxonomy_exists( 'pa_maat' ) ? array( 'key' => 'pa_maat', 'taxonomy' => true ) : array( 'key' => 'maat', 'taxonomy' => false );
+			$sattr = new WC_Product_Attribute();
+			if ( $sa['taxonomy'] ) {
+				$ids = array();
+				foreach ( $sizes as $sz ) {
+					$t = term_exists( $sz, 'pa_maat' );
+					if ( ! $t ) {
+						$t = wp_insert_term( $sz, 'pa_maat' );
+					}
+					if ( ! is_wp_error( $t ) ) {
+						$ids[] = (int) ( is_array( $t ) ? $t['term_id'] : $t );
+					}
+				}
+				$sattr->set_id( wc_attribute_taxonomy_id_by_name( 'pa_maat' ) );
+				$sattr->set_name( 'pa_maat' );
+				$sattr->set_options( $ids );
+			} else {
+				$sattr->set_name( 'Maat' );
+				$sattr->set_options( $sizes );
+			}
+			$sattr->set_visible( true );
+			$sattr->set_variation( true );
+			$attrs[ $sa['key'] ] = $sattr;
+		}
 		$product->set_attributes( $attrs );
 		// Verbergen in de winkel als de categorie dat vraagt; terugzetten als dat niet meer zo is.
 		$hide = $p['variants'] && MDO_Sync::in_list( $p['variants'][0]['category'], $s['hidden_categories'] );
@@ -236,7 +265,17 @@ class MDO_Importer {
 			} else {
 				$value = $label;
 			}
-			$var->set_attributes( array( $attr_key => $value ) );
+			$va = array( $attr_key => $value );
+			if ( $sa && $v['size'] ) {
+				if ( $sa['taxonomy'] ) {
+					$st_term = get_term_by( 'name', $v['size'], 'pa_maat' );
+					$va['pa_maat'] = $st_term ? $st_term->slug : sanitize_title( $v['size'] );
+				} else {
+					$va['maat'] = $v['size'];
+				}
+			}
+			$var->set_attributes( $va );
+			$var->update_meta_data( '_mdo_size', $v['size'] );
 
 			$scales = isset( $prices[ $v['sku'] ] ) ? $prices[ $v['sku'] ] : null;
 			if ( $scales ) {
@@ -261,7 +300,7 @@ class MDO_Importer {
 		}
 		WC_Product_Variable::sync( $parent_id );
 
-		MDO_Log::info( $master . ': ' . ( $is_new ? 'aangemaakt' : 'bijgewerkt' ) . ' met ' . $count . ' kleuren.' );
+		MDO_Log::info( $master . ': ' . ( $is_new ? 'aangemaakt' : 'bijgewerkt' ) . ' met ' . $count . ( $sa ? ' varianten (kleur × maat).' : ' kleuren.' ) );
 		as_enqueue_async_action( 'mdo_import_images', array( $parent_id ), MDO_Sync::GROUP );
 	}
 
@@ -343,5 +382,24 @@ class MDO_Importer {
 		$product->update_meta_data( '_mdo_images_hash', $hash );
 		$product->save();
 		MDO_Log::info( $master . ': afbeeldingen bijgewerkt.' );
+	}
+
+	/** Volgorde van maten: XS, S, M, L, XL, XXL, 3XL ... en kindermaten op getal. */
+	public static function size_rank( $s ) {
+		$s     = strtoupper( trim( (string) $s ) );
+		$order = array( 'XXXS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', 'XXXL', '3XL', '4XL', '5XL', '6XL' );
+		$i     = array_search( $s, $order, true );
+		if ( false !== $i ) {
+			return 1000 + ( '2XL' === $s ? 7 : ( '3XL' === $s ? 9 : $i ) );
+		}
+		if ( preg_match( '/^(\d+)/', $s, $m ) ) {
+			return (int) $m[1];
+		}
+		return 5000;
+	}
+
+	public static function size_cmp( $a, $b ) {
+		$d = self::size_rank( $a ) - self::size_rank( $b );
+		return $d ? $d : strcmp( (string) $a, (string) $b );
 	}
 }

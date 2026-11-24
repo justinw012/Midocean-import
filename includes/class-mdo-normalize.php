@@ -100,6 +100,7 @@ class MDO_Normalize {
 				'color_code' => (string) self::pick( $v, array( 'color_code' ), '' ),
 				'color_name' => (string) self::pick( $v, array( 'color_description', 'color_name', 'color' ), '' ),
 				'color_group'=> (string) self::pick( $v, array( 'color_group' ), '' ),
+				'size'       => strtoupper( trim( (string) self::pick( $v, array( 'size_textile', 'size' ), '' ) ) ),
 				'category'   => self::category_path( $v ),
 				'plc'        => (string) self::pick( $v, array( 'plc_status_description' ), '' ),
 				'gtin'       => (string) self::pick( $v, array( 'gtin' ), '' ),

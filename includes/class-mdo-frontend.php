@@ -153,8 +153,11 @@ class MDO_Frontend {
 				'stock'   => $v->managing_stock() ? (int) $v->get_stock_quantity() : null,
 				'backorders' => $v->backorders_allowed(),
 				'scales'  => $sell,
+				'size'    => (string) $v->get_meta( '_mdo_size' ),
+				'cname'   => self::colour_name( $v ),
 			);
 		}
+		$colors = self::group_sizes( $colors );
 		$out_faces = array();
 		foreach ( $faces as $f ) {
 			$positions = array();
@@ -336,5 +339,70 @@ class MDO_Frontend {
 			echo '</ul>';
 		}
 		echo '</div>';
+	}
+
+	/** Alleen de kleur van een variant (zonder maat). */
+	public static function colour_name( $v ) {
+		foreach ( $v->get_variation_attributes( false ) as $key => $val ) {
+			if ( false !== stripos( $key, 'kleur' ) || false !== stripos( $key, 'colo' ) ) {
+				$term = taxonomy_exists( $key ) ? get_term_by( 'slug', $val, $key ) : null;
+				return $term ? $term->name : (string) $val;
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * Kleding: varianten per kleur samenvoegen tot één kleur met een lijst maten.
+	 * Elke maat houdt zijn eigen variant-id, artikelnummer, voorraad en prijs.
+	 */
+	public static function group_sizes( array $colors ) {
+		$has = false;
+		foreach ( $colors as $c ) {
+			if ( '' !== $c['size'] ) {
+				$has = true;
+				break;
+			}
+		}
+		if ( ! $has ) {
+			foreach ( $colors as &$c ) {
+				unset( $c['size'], $c['cname'] );
+			}
+			return $colors;
+		}
+		$groups = array();
+		foreach ( $colors as $c ) {
+			$k = $c['code'] . '|' . $c['cname'];
+			if ( ! isset( $groups[ $k ] ) ) {
+				$g          = $c;
+				$g['name']  = $c['cname'] ? $c['cname'] : $c['name'];
+				$g['sizes'] = array();
+				$g['stock'] = 0;
+				$groups[ $k ] = $g;
+			}
+			$groups[ $k ]['sizes'][] = array(
+				'size'       => $c['size'],
+				'id'         => $c['id'],
+				'sku'        => $c['sku'],
+				'stock'      => $c['stock'],
+				'backorders' => $c['backorders'],
+				'scales'     => $c['scales'],
+			);
+			if ( null === $c['stock'] || null === $groups[ $k ]['stock'] ) {
+				$groups[ $k ]['stock'] = null;
+			} else {
+				$groups[ $k ]['stock'] += $c['stock'];
+			}
+		}
+		foreach ( $groups as &$g ) {
+			usort( $g['sizes'], function ( $a, $b ) {
+				return MDO_Importer::size_cmp( $a['size'], $b['size'] );
+			} );
+			$g['id']     = $g['sizes'][0]['id'];
+			$g['sku']    = $g['sizes'][0]['sku'];
+			$g['scales'] = $g['sizes'][0]['scales'];
+			unset( $g['size'], $g['cname'] );
+		}
+		return array_values( $groups );
 	}
 }

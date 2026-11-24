@@ -235,7 +235,7 @@ class MDO_Dashboard {
 						</div>
 						<ul style="margin:10px 0 10px 18px;list-style:disc">
 							<?php foreach ( $lines as $l ) : ?>
-								<li><strong><?php echo (int) $l['qty']; ?>×</strong> <?php echo esc_html( $l['name'] ); ?> <span style="color:#646970">(<?php echo esc_html( $l['sku'] ); ?>)</span>
+								<li><strong><?php echo (int) $l['qty']; ?>×</strong> <?php echo esc_html( $l['name'] ); ?> <span style="color:#646970">(<?php echo esc_html( $l['sizes'] ? implode( ', ', array_map( function ( $s ) { return $s['qty'] . '× ' . $s['size']; }, $l['sizes'] ) ) : $l['sku'] ); ?>)</span>
 									<?php foreach ( $l['prints'] as $p ) : ?>
 										<br><span style="color:#3C434A"><?php echo esc_html( $p['face'] . ': ' . $p['techname'] . ', ' . $p['size'] ); ?>
 										<?php echo 'text' === $p['mode'] ? esc_html( ' – tekst “' . $p['text'] . '”' ) : ( $p['logo'] ? ' – <a href="' . esc_url( $p['logo'] ) . '" target="_blank" rel="noopener">logo downloaden</a>' : ' – <span style="color:#B54708">logo ontbreekt</span>' ); ?></span>

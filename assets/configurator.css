@@ -168,3 +168,8 @@
 .mdo-zone.mdo-curved{display:block}
 .mdo-wrap{position:absolute;inset:0;width:100%;height:100%;display:block}
 .mdo-zone.mdo-blend .mdo-art,.mdo-zone.mdo-blend .mdo-wrap{mix-blend-mode:multiply}
+.mdo-sizes{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.mdo-size{display:flex;flex-direction:column;align-items:stretch;gap:4px;font-weight:600;font-size:14px;text-align:center}
+#mdo-configurator .mdo-size input{width:100%!important;text-align:center;padding:6px 4px!important;min-height:40px}
+.mdo-size.is-short input{border-color:#B42318!important}
+.mdo-size-total{margin:8px 0 0;font-size:13px}

@@ -68,9 +68,20 @@
     }
     return [unit, setup];
   }
+  // Kleding: totaal aantal over alle maten.
+  function sizeTotal() { var n = 0; Object.keys(st.sizes).forEach(function (k) { n += st.sizes[k] | 0; }); return n; }
+  // Productprijs: bij kleding het gewogen gemiddelde van de maten (bijv. XXL duurder), staffel op het totaal.
+  function productPrice(color, q) {
+    if (color.sizes && sizeTotal() > 0) {
+      var sum = 0, n = 0;
+      color.sizes.forEach(function (sz) { var k = st.sizes[sz.size] | 0; if (k > 0) { sum += k * scaleAt(sz.scales, q)[1]; n += k; } });
+      if (n) return sum / n;
+    }
+    return scaleAt(color.scales, q)[1];
+  }
   function quote(color, q, sels) {
     q = Math.max(1, q | 0);
-    var unit = scaleAt(color.scales, q)[1], setup = 0;
+    var unit = productPrice(color, q), setup = 0;
     sels.forEach(function (s) { var r = printCost(cfg.techniques[s.tech], s.colours, s.w * s.h / 100, q); unit += r[0]; setup += r[1]; });
     if (sels.length) unit += cfg.manip;
     var total = unit * q + setup;
@@ -80,7 +91,7 @@
 
   // ---------- staat ----------
   var st = {
-    color: 0, qty: 100, face: cfg.faces.length ? cfg.faces[0].key : null, view: 'design', note: '',
+    color: 0, qty: 100, face: cfg.faces.length ? cfg.faces[0].key : null, view: 'design', note: '', sizes: {},
     faces: {}
   };
   cfg.faces.forEach(function (f, i) {
@@ -329,8 +340,17 @@
       var x = quote(color, t, priceSels(sels));
       return '<div class="mdo-tier' + (t === st.qty ? ' is-on' : '') + '"><span>' + t + ' st.</span><span>' + eur(x.perPc) + '</span></div>';
     }).join('');
-    var short = color.stock !== null && st.qty > color.stock, block = short && !color.backorders;
-    var stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
+    var short, block, stockMsg;
+    if (color.sizes) {
+      var shortSz = color.sizes.filter(function (sz) { return sz.stock !== null && (st.sizes[sz.size] | 0) > sz.stock; });
+      short = shortSz.length > 0;
+      block = shortSz.some(function (sz) { return !sz.backorders; }) || sizeTotal() === 0;
+      stockMsg = (sizeTotal() === 0 ? '<p class="mdo-warn">Vul bij minstens één maat een aantal in.</p>' : '') +
+        (!short ? '' : '<p class="mdo-warn">Niet genoeg voorraad in ' + shortSz.map(function (sz) { return esc(sz.size) + ' (nog ' + Math.max(0, sz.stock) + ')'; }).join(', ') + '.' + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>');
+    } else {
+      short = color.stock !== null && st.qty > color.stock; block = short && !color.backorders;
+      stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
+    }
     return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg +
@@ -428,6 +448,13 @@
       }).join('') + '</div></section>';
   }
   function qtyHtml() {
+    var color = cfg.colors[st.color];
+    if (color.sizes) {
+      return '<section class="mdo-sec"><div class="mdo-lbl">Aantal per maat</div><div class="mdo-sizes">' + color.sizes.map(function (sz) {
+        var q = st.sizes[sz.size] || '', out = sz.stock !== null && (q | 0) > sz.stock;
+        return '<label class="mdo-size' + (out ? ' is-short' : '') + '"><span>' + esc(sz.size) + '</span><input type="number" min="0" inputmode="numeric" data-act="sizeqty" data-v="' + esc(sz.size) + '" class="mdo-input" value="' + q + '" placeholder="0"></label>';
+      }).join('') + '</div><p class="mdo-muted mdo-size-total">Totaal: <strong>' + sizeTotal() + '</strong> stuks. De staffelprijs geldt voor het totaal.</p></section>';
+    }
     return '<section class="mdo-sec"><div class="mdo-lbl">Aantal</div><div class="mdo-row">' + cfg.tiers.map(function (t) {
       return '<button type="button" data-act="qty" data-v="' + t + '" class="mdo-pill' + (t === st.qty ? ' is-on' : '') + '">' + t + '</button>';
     }).join('') + '<input type="number" min="1" data-act="qtyin" class="mdo-input mdo-qty" value="' + st.qty + '" aria-label="Aantal"></div></section>';
@@ -445,6 +472,7 @@
   function summaryHtml() {
     var color = cfg.colors[st.color], sels = selections();
     var rows = [['Kleur', color.name], ['Aantal', st.qty + ' stuks']];
+    if (color.sizes) rows.push(['Maten', color.sizes.filter(function (sz) { return (st.sizes[sz.size] | 0) > 0; }).map(function (sz) { return st.sizes[sz.size] + '× ' + sz.size; }).join(', ') || '–']);
     if (!sels.length) rows.push(['Bedrukking', 'Blanco']);
     sels.forEach(function (s) {
       var what = s.fs.mode === 'text' ? '“' + (s.fs.text || 'Jouw tekst') + '”' : (s.fs.logo ? s.fs.logo.name : 'logo (later aanleveren)');
@@ -514,7 +542,7 @@
     return sel.opts.map(function (o, i) {
       var inf = infoFor(o.tech.id), d = dims(o.pos, fs), on = o.key === sel.opt.key;
       var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
-      var printPc = q.perPc - scaleAt(color.scales, st.qty)[1] - cfg.manip;
+      var printPc = q.perPc - productPrice(color, st.qty) - cfg.manip;
       var size = o.pos.id !== face.positions[0].id ? ' <span class="mdo-muted">(' + o.pos.w + ' × ' + o.pos.h + ' mm)</span>' : '';
       return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-act="techpick" data-v="' + esc(o.key) + '" role="radio" tabindex="0" aria-checked="' + on + '">' +
         '<div class="mdo-row-between"><strong><span class="mdo-ti-dot"></span>' + esc(cfg.techniques[o.tech.id].name) + size + '</strong><span class="mdo-ti-price">+ ' + eur(printPc) + ' p.st.</span></div>' +
@@ -542,7 +570,7 @@
     var rows = sel.opts.map(function (o) {
       var inf = infoFor(o.tech.id), d = dims(o.pos, fs);
       var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
-      var printPc = q.perPc - scaleAt(color.scales, st.qty)[1] - cfg.manip;
+      var printPc = q.perPc - productPrice(color, st.qty) - cfg.manip;
       var on = o.key === sel.opt.key;
       return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-pick="' + esc(o.key) + '" role="button" tabindex="0" aria-pressed="' + on + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong><span class="mdo-muted">+ ' + eur(printPc) + ' per stuk bij ' + st.qty + ' st.</span></div>' +
         (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
@@ -622,7 +650,7 @@
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act],[data-act="techpick"]'); if (!b) return;
     var a = b.getAttribute('data-act'), v = b.getAttribute('data-v'), fs = curFace();
-    if (a === 'color') { st.color = parseInt(v, 10); galIdx = 0; }
+    if (a === 'color') { st.color = parseInt(v, 10); galIdx = 0; if (cfg.colors[st.color].sizes) st.qty = Math.max(1, sizeTotal()); }
     else if (a === 'qty') st.qty = parseInt(v, 10);
     else if (a === 'face') st.face = v;
     else if (a === 'mode') { fs.mode = v; fs.pick = null; }
@@ -655,6 +683,12 @@
     else if (a === 'fontsel') { fs.font = t.value; render(); loadFont(fs.font); }
     else if (a === 'inkpick') { fs.ink = t.value; render(); }
     else if (a === 'qtyin') { var q = parseInt(t.value, 10); if (q > 0) { st.qty = q; render(); } }
+    else if (a === 'sizeqty') {
+      var n = Math.max(0, parseInt(t.value, 10) || 0), k = t.getAttribute('data-v');
+      if (n) st.sizes[k] = n; else delete st.sizes[k];
+      st.qty = Math.max(1, sizeTotal());
+      render();
+    }
     else if (a === 'logo' && t.files && t.files[0]) upload(t.files[0], fs);
   });
 
@@ -691,8 +725,15 @@
       };
     });
     form.querySelector('[name="variation_id"]').value = color.id;
+    var cfgOut = { prints: prints, note: st.note };
+    if (color.sizes) {
+      if (!sizeTotal()) return;
+      cfgOut.sizes = {};
+      color.sizes.forEach(function (sz) { if ((st.sizes[sz.size] | 0) > 0) cfgOut.sizes[sz.size] = st.sizes[sz.size] | 0; });
+      st.qty = sizeTotal();
+    }
+    form.querySelector('[name="mdo_config"]').value = JSON.stringify(cfgOut);
     form.querySelector('[name="quantity"]').value = st.qty;
-    form.querySelector('[name="mdo_config"]').value = JSON.stringify({ prints: prints, note: st.note });
     form.querySelectorAll('.mdo-attr').forEach(function (n) { n.remove(); });
     Object.keys(color.attrs).forEach(function (k) {
       var i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = color.attrs[k]; i.className = 'mdo-attr'; form.appendChild(i);
@@ -700,6 +741,7 @@
     form.submit();
   });
 
+  if (cfg.colors[st.color] && cfg.colors[st.color].sizes) st.qty = 1;
   render();
   loadFont('poppins');
 })();

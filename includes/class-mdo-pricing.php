@@ -58,10 +58,26 @@ class MDO_Pricing {
 	 * @param int   $qty
 	 * @param array $selections elk: tech, colours, w, h (mm)
 	 */
-	public static function quote( array $cfg, array $color, $qty, array $selections ) {
+	public static function quote( array $cfg, array $color, $qty, array $selections, array $sizes = array() ) {
 		$qty   = max( 1, (int) $qty );
 		$ps    = self::scale_at( $color['scales'], $qty );
 		$unit  = (float) $ps[1];
+		// Kleding: productprijs per maat (bijv. XXL duurder), staffel op het totaal.
+		if ( $sizes && ! empty( $color['sizes'] ) ) {
+			$sum = 0.0;
+			$n   = 0;
+			foreach ( $color['sizes'] as $sz ) {
+				$q = (int) ( $sizes[ $sz['size'] ] ?? 0 );
+				if ( $q > 0 ) {
+					$sum += $q * (float) self::scale_at( $sz['scales'], $qty )[1];
+					$n   += $q;
+				}
+			}
+			if ( $n > 0 ) {
+				$unit  = $sum / $n;
+				$ps[1] = $unit;
+			}
+		}
 		$setup = 0.0;
 		$lines = array();
 		foreach ( $selections as $sel ) {

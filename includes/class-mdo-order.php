@@ -53,6 +53,7 @@ class MDO_Order {
 			$out[] = array(
 				'name'   => $item->get_name(),
 				'sku'    => $product ? $product->get_sku() : '',
+				'sizes'  => $cfg['sizes'] ?? array(),
 				'qty'    => $item->get_quantity(),
 				'prints' => $prints,
 				'note'   => $cfg['note'] ?? '',
@@ -64,7 +65,15 @@ class MDO_Order {
 	public static function as_text( array $lines ) {
 		$t = array();
 		foreach ( $lines as $l ) {
-			$t[] = $l['sku'] . ' × ' . $l['qty'] . ' (' . $l['name'] . ')';
+			if ( ! empty( $l['sizes'] ) ) {
+				// Kleding: één regel per maat (eigen artikelnummer), de bedrukking geldt voor allemaal.
+				$t[] = $l['name'] . ' – totaal ' . $l['qty'] . ' stuks:';
+				foreach ( $l['sizes'] as $sz ) {
+					$t[] = '  ' . $sz['sku'] . ' × ' . $sz['qty'] . ' (maat ' . $sz['size'] . ')';
+				}
+			} else {
+				$t[] = $l['sku'] . ' × ' . $l['qty'] . ' (' . $l['name'] . ')';
+			}
 			if ( ! $l['prints'] ) {
 				$t[] = '  Blanco';
 			}
@@ -96,7 +105,10 @@ class MDO_Order {
 		}
 		echo '<table class="widefat striped"><thead><tr><th>Artikel</th><th>Aantal</th><th>Bedrukking (Midocean-codes)</th><th>Ontwerp</th></tr></thead><tbody>';
 		foreach ( $lines as $l ) {
-			echo '<tr><td><strong>' . esc_html( $l['sku'] ) . '</strong><br>' . esc_html( $l['name'] ) . '</td><td>' . (int) $l['qty'] . '</td><td>';
+			$skus = $l['sizes'] ? implode( '<br>', array_map( function ( $s ) {
+				return esc_html( $s['sku'] . ' × ' . $s['qty'] . ' (' . $s['size'] . ')' );
+			}, $l['sizes'] ) ) : esc_html( $l['sku'] );
+			echo '<tr><td><strong>' . $skus . '</strong><br>' . esc_html( $l['name'] ) . '</td><td>' . (int) $l['qty'] . '</td><td>'; // phpcs:ignore
 			if ( ! $l['prints'] ) {
 				echo 'Blanco';
 			}

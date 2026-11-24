@@ -31,6 +31,9 @@ class MDO_Cart {
 		add_action( 'woocommerce_before_calculate_totals', array( __CLASS__, 'set_prices' ), 9999 );
 		add_filter( 'woocommerce_get_item_data', array( __CLASS__, 'show' ), 10, 2 );
 		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'order_meta' ), 10, 4 );
+		add_filter( 'woocommerce_add_cart_item', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
+		add_filter( 'woocommerce_get_cart_item_from_session', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
+		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'fixed_qty' ), 10, 3 );
 		add_action( 'wp_ajax_mdo_logo', array( __CLASS__, 'upload' ) );
 		add_action( 'wp_ajax_nopriv_mdo_logo', array( __CLASS__, 'upload' ) );
 	}
@@ -108,7 +111,20 @@ class MDO_Cart {
 				'pms'      => mb_substr( preg_replace( '/[^\p{L}\p{N} ,.\-\/]/u', '', (string) ( $p['pms'] ?? '' ) ), 0, 60 ),
 			);
 		}
-		return array( 'cfg' => $cfg, 'color' => $color, 'prints' => $sels, 'note' => mb_substr( sanitize_textarea_field( (string) ( $data['note'] ?? '' ) ), 0, 500 ) );
+		// Kleding: aantallen per maat, alleen maten die bij deze kleur bestaan.
+		$sizes = array();
+		if ( ! empty( $color['sizes'] ) ) {
+			foreach ( $color['sizes'] as $sz ) {
+				$q = (int) ( $data['sizes'][ $sz['size'] ] ?? 0 );
+				if ( $q > 0 ) {
+					$sizes[] = array( 'size' => $sz['size'], 'sku' => $sz['sku'], 'qty' => min( 100000, $q ) );
+				}
+			}
+			if ( ! $sizes ) {
+				return new WP_Error( 'mdo', 'Vul bij minstens één maat een aantal in.' );
+			}
+		}
+		return array( 'cfg' => $cfg, 'color' => $color, 'prints' => $sels, 'sizes' => $sizes, 'note' => mb_substr( sanitize_textarea_field( (string) ( $data['note'] ?? '' ) ), 0, 500 ) );
 	}
 
 	public static function validate( $ok, $product_id, $qty ) {
@@ -136,6 +152,9 @@ class MDO_Cart {
 			return $data;
 		}
 		$data['mdo'] = array( 'prints' => $r['prints'], 'note' => $r['note'] );
+		if ( $r['sizes'] ) {
+			$data['mdo']['sizes'] = $r['sizes'];
+		}
 		$data['mdo_key'] = md5( wp_json_encode( $data['mdo'] ) . microtime() );
 		return $data;
 	}
@@ -167,7 +186,20 @@ class MDO_Cart {
 			if ( ! $color ) {
 				continue;
 			}
-			$q = MDO_Pricing::quote( $cfg, $color, $item['quantity'], $item['mdo']['prints'] );
+			$sizes = array();
+			if ( ! empty( $item['mdo']['sizes'] ) ) {
+				$total = 0;
+				foreach ( $item['mdo']['sizes'] as $sz ) {
+					$sizes[ $sz['size'] ] = (int) $sz['qty'];
+					$total               += (int) $sz['qty'];
+				}
+				// Aantal hoort bij de maten; zet het terug als het ergens anders veranderd is.
+				if ( (int) $item['quantity'] !== $total ) {
+					$cart->cart_contents[ $key ]['quantity'] = $total;
+					$item['quantity']                        = $total;
+				}
+			}
+			$q = MDO_Pricing::quote( $cfg, $color, $item['quantity'], $item['mdo']['prints'], $sizes );
 			if ( is_wp_error( $q ) ) {
 				continue;
 			}
@@ -179,6 +211,11 @@ class MDO_Cart {
 
 	private static function lines( array $mdo ) {
 		$out = array();
+		if ( ! empty( $mdo['sizes'] ) ) {
+			$out[] = array( 'key' => 'Maten', 'value' => implode( ', ', array_map( function ( $s ) {
+				return $s['qty'] . '× ' . $s['size'];
+			}, $mdo['sizes'] ) ) );
+		}
 		foreach ( $mdo['prints'] as $p ) {
 			$font = isset( self::FONTS[ $p['font'] ] ) ? self::FONTS[ $p['font'] ] : $p['font'];
 			$pms  = ! empty( $p['pms'] ) ? 'PMS ' . $p['pms'] : '';
@@ -276,5 +313,25 @@ class MDO_Cart {
 			$parts[] = $v[ $p['va'] ];
 		}
 		return $parts ? 'uitgelijnd ' . implode( ' ', $parts ) : '';
+	}
+
+	/** Kleding: de maat van de eerste variant niet tonen; de maten staan in de regel "Maten". */
+	public static function drop_size_attr( $item ) {
+		if ( ! empty( $item['mdo']['sizes'] ) && ! empty( $item['variation'] ) ) {
+			foreach ( array_keys( $item['variation'] ) as $k ) {
+				if ( false !== stripos( $k, 'maat' ) || false !== stripos( $k, 'size' ) ) {
+					unset( $item['variation'][ $k ] );
+				}
+			}
+		}
+		return $item;
+	}
+
+	/** Kleding: aantal in de winkelwagen niet los aanpasbaar (het hoort bij de maten). */
+	public static function fixed_qty( $html, $key, $item ) {
+		if ( ! empty( $item['mdo']['sizes'] ) ) {
+			return '<span class="mdo-fixed-qty">' . (int) $item['quantity'] . '</span><input type="hidden" name="cart[' . esc_attr( $key ) . '][qty]" value="' . (int) $item['quantity'] . '">';
+		}
+		return $html;
 	}
 }
