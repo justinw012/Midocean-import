@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Midocean Import & Configurator
  * Description:       Synchroniseert Midocean-producten, prijzen, voorraad en printdata naar WooCommerce en voegt een bedrukkingsconfigurator toe aan de productpagina.
- * Version:           0.5.2
+ * Version:           0.5.3
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            PromoFun
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MDO_VERSION', '0.5.2' );
+define( 'MDO_VERSION', '0.5.3' );
 define( 'MDO_FILE', __FILE__ );
 define( 'MDO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MDO_URL', plugin_dir_url( __FILE__ ) );

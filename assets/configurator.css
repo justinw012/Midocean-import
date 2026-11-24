@@ -173,3 +173,5 @@
 #mdo-configurator .mdo-size input{width:100%!important;text-align:center;padding:6px 4px!important;min-height:40px}
 .mdo-size.is-short input{border-color:#B42318!important}
 .mdo-size-total{margin:8px 0 0;font-size:13px}
+.mdo-art img.mdo-mono-b{filter:brightness(0)}
+.mdo-art img.mdo-mono-w{filter:brightness(0) invert(1)}

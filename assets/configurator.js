@@ -157,6 +157,7 @@
   function aspect(fs) {
     if (fs.mode === 'text') return textBox(fs).aspect;
     if (fs.logo && fs.logo.preview && imgSize[fs.logo.preview]) { var d = imgSize[fs.logo.preview]; return d[1] / d[0]; }
+    if (!fs.logo && demoSrc && imgSize[demoSrc]) { var e = imgSize[demoSrc]; return e[1] / e[0]; }
     return 0.5;
   }
   function chosen(face, fs) {
@@ -268,6 +269,44 @@
     if (effect === 'deboss') return isDark() ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.28)';
     return null;
   }
+  // Voorbeeldlogo: ons eigen logo (zonder slogan) in plaats van "Jouw logo".
+  var demoSrc = null;
+  function loadDemo() {
+    if (!cfg.demoLogo) return;
+    var im = new Image();
+    im.onload = function () {
+      try {
+        var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+        var x = c.getContext('2d'); x.drawImage(im, 0, 0);
+        var d = x.getImageData(0, 0, c.width, c.height).data, rows = [], y, i, s = -1, blocks = [];
+        for (y = 0; y < c.height; y++) { var ink = 0; for (i = 0; i < c.width; i += 2) if (d[(y * c.width + i) * 4 + 3] > 24) { ink = 1; break; } rows.push(ink); }
+        for (y = 0; y <= rows.length; y++) { if (rows[y] && s < 0) s = y; if (!rows[y] && s >= 0) { blocks.push([s, y]); s = -1; } }
+        var merged = [];
+        blocks.forEach(function (b) { var l = merged[merged.length - 1]; if (l && b[0] - l[1] < c.height * 0.03) l[1] = b[1]; else merged.push(b.slice()); });
+        merged.sort(function (a, b) { return (b[1] - b[0]) - (a[1] - a[0]); });
+        var top = merged[0] || [0, c.height], h = top[1] - top[0], l = c.width, r = 0;
+        for (y = top[0]; y < top[1]; y += 2) for (i = 0; i < c.width; i++) if (d[(y * c.width + i) * 4 + 3] > 24) { if (i < l) l = i; if (i > r) r = i; }
+        if (r <= l) { l = 0; r = c.width - 1; }
+        var t = document.createElement('canvas'); t.width = r - l + 1; t.height = h;
+        t.getContext('2d').drawImage(c, l, top[0], t.width, h, 0, 0, t.width, h);
+        demoSrc = t.toDataURL('image/png');
+        imgSize[demoSrc] = [t.width, t.height];
+      } catch (e) { demoSrc = cfg.demoLogo; imgSize[demoSrc] = [im.naturalWidth, im.naturalHeight]; }
+      render();
+    };
+    im.src = cfg.demoLogo;
+  }
+  // Kan de gekozen techniek/het aantal kleuren geen kleur? Dan het voorbeeldlogo in één kleur.
+  function demoMono(fs) { return fs.colours !== 'fc'; }
+  function demoClass(fs, effect) {
+    if (effect) return 'mdo-fx-' + effect + (isDark() ? ' on-dark' : '');
+    return demoMono(fs) ? (isDark() ? 'mdo-mono-w' : 'mdo-mono-b') : '';
+  }
+  function demoFilter(fs, effect) {
+    if (effect === 'engrave') return isDark() ? 'grayscale(1) contrast(.6) brightness(1.6)' : 'grayscale(1) contrast(.6) brightness(.55)';
+    if (effect === 'deboss') return isDark() ? 'grayscale(1) brightness(2) opacity(.18)' : 'grayscale(1) brightness(0) opacity(.25)';
+    return demoMono(fs) ? (isDark() ? 'brightness(0) invert(1)' : 'brightness(0)') : '';
+  }
   function demoLogo(dark, effect) {
     var ink = effectInk(effect) || (dark ? '#FFFFFF' : '#1D1A2E');
     var accent = effect ? ink : '#DF3550';
@@ -299,6 +338,8 @@
         art = '<img src="' + esc(fs.logo.preview) + '" data-measure="' + esc(fs.logo.preview) + '" alt="Jouw logo" class="' + (effect ? 'mdo-fx-' + effect + (isDark() ? ' on-dark' : '') : '') + '">';
       } else if (fs.logo) {
         art = '<span class="mdo-art-file">' + esc(fs.logo.name) + '</span>';
+      } else if (demoSrc) {
+        art = '<img src="' + esc(demoSrc) + '" alt="Voorbeeldlogo" class="' + demoClass(fs, effect) + '">';
       } else {
         art = demoLogo(isDark(), effect);
       }
@@ -320,6 +361,8 @@
         } else if (fs.logo) {
           wrapJob.kind = 'img'; wrapJob.src = fs.logo.preview;
           wrapJob.filter = effect === 'engrave' ? (isDark() ? 'grayscale(1) contrast(.6) brightness(1.6)' : 'grayscale(1) contrast(.6) brightness(.55)') : effect === 'deboss' ? (isDark() ? 'grayscale(1) brightness(2) opacity(.18)' : 'grayscale(1) brightness(0) opacity(.25)') : '';
+        } else if (demoSrc) {
+          wrapJob.kind = 'img'; wrapJob.src = demoSrc; wrapJob.filter = demoFilter(fs, effect);
         } else {
           wrapJob.kind = 'img'; wrapJob.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(demoLogo(isDark(), effect).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" '));
         }
@@ -704,10 +747,12 @@
   function upload(file, fs) {
     var fd = new FormData();
     fd.append('action', 'mdo_logo'); fd.append('nonce', cfg.nonce); fd.append('file', file);
-    fs.logo = { name: file.name + ' (uploaden…)', token: '', preview: '' };
+    // Direct een voorbeeld tonen van het eigen bestand; het uploaden loopt op de achtergrond.
+    var local = /^image\/(png|jpe?g|gif|webp|svg\+xml)$/.test(file.type) && window.URL ? URL.createObjectURL(file) : '';
+    fs.logo = { name: file.name + ' (uploaden…)', token: '', preview: local };
     render();
     fetch(cfg.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) {
-      if (r && r.success) { fs.logo = { name: r.data.name, token: r.data.token, preview: r.data.preview }; }
+      if (r && r.success) { fs.logo = { name: r.data.name, token: r.data.token, preview: local || r.data.preview }; }
       else { fs.logo = null; alert((r && r.data) || 'Upload mislukt.'); }
       render();
     }).catch(function () { fs.logo = null; alert('Upload mislukt.'); render(); });
@@ -716,6 +761,8 @@
   // ---------- bestellen ----------
   root.addEventListener('click', function (e) {
     if (!e.target.closest('.mdo-buy')) return;
+    var pending = selections().some(function (s) { return s.fs.logo && !s.fs.logo.token; });
+    if (pending) { alert('Je logo wordt nog geüpload. Wacht een paar seconden en probeer het dan opnieuw.'); return; }
     var color = cfg.colors[st.color];
     var prints = selections().map(function (s) {
       return {
@@ -744,4 +791,5 @@
   if (cfg.colors[st.color] && cfg.colors[st.color].sizes) st.qty = 1;
   render();
   loadFont('poppins');
+  loadDemo();
 })();

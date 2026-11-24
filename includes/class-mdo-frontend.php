@@ -186,6 +186,7 @@ class MDO_Frontend {
 			'decimalSep'     => wc_get_price_decimal_separator(),
 			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'mdo_logo' ),
+			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',
 		);
 	}
 
