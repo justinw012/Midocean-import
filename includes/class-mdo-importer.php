@@ -206,9 +206,13 @@ class MDO_Importer {
 						$t = wp_insert_term( $sz, 'pa_maat' );
 					}
 					if ( ! is_wp_error( $t ) ) {
-						$ids[] = (int) ( is_array( $t ) ? $t['term_id'] : $t );
+						$tid   = (int) ( is_array( $t ) ? $t['term_id'] : $t );
+						$ids[] = $tid;
+						// Volgorde XS, S, M, L, XL, 3XL in plaats van alfabetisch (3XL vooraan).
+						update_term_meta( $tid, 'order', self::size_rank( $sz ) );
 					}
 				}
+				self::size_attribute_custom_order();
 				$sattr->set_id( wc_attribute_taxonomy_id_by_name( 'pa_maat' ) );
 				$sattr->set_name( 'pa_maat' );
 				$sattr->set_options( $ids );
@@ -401,5 +405,40 @@ class MDO_Importer {
 	public static function size_cmp( $a, $b ) {
 		$d = self::size_rank( $a ) - self::size_rank( $b );
 		return $d ? $d : strcmp( (string) $a, (string) $b );
+	}
+
+	/** Eenmalig: bestaande maten (al geïmporteerd) meteen goed sorteren. */
+	public static function fix_size_order() {
+		if ( get_option( 'mdo_size_order_v1' ) || ! taxonomy_exists( 'pa_maat' ) ) {
+			return;
+		}
+		$terms = get_terms( array( 'taxonomy' => 'pa_maat', 'hide_empty' => false ) );
+		if ( ! is_wp_error( $terms ) ) {
+			foreach ( $terms as $t ) {
+				update_term_meta( $t->term_id, 'order', self::size_rank( $t->name ) );
+			}
+		}
+		self::size_attribute_custom_order();
+		update_option( 'mdo_size_order_v1', 1, false );
+	}
+
+	/** Eigenschap "Maat" laten sorteren op eigen volgorde (eenmalig instellen). */
+	private static function size_attribute_custom_order() {
+		static $done = false;
+		if ( $done || ! function_exists( 'wc_get_attribute' ) ) {
+			return;
+		}
+		$done = true;
+		$id   = wc_attribute_taxonomy_id_by_name( 'pa_maat' );
+		$attr = $id ? wc_get_attribute( $id ) : null;
+		if ( $attr && 'menu_order' !== $attr->order_by ) {
+			wc_update_attribute( $id, array(
+				'name'         => $attr->name,
+				'slug'         => preg_replace( '/^pa_/', '', $attr->slug ),
+				'type'         => $attr->type,
+				'order_by'     => 'menu_order',
+				'has_archives' => $attr->has_archives,
+			) );
+		}
 	}
 }

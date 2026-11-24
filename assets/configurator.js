@@ -499,7 +499,7 @@
   function qtyHtml() {
     var color = cfg.colors[st.color];
     if (color.sizes) {
-      return '<section class="mdo-sec"><div class="mdo-lbl">Aantal per maat</div><div class="mdo-sizes">' + color.sizes.map(function (sz) {
+      return '<section class="mdo-sec"><div class="mdo-row-between"><div class="mdo-lbl">Aantal per maat</div>' + (cfg.sizeChart ? '<a class="mdo-sizechart" href="' + esc(cfg.sizeChart) + '" target="_blank" rel="noopener">Maattabel (pdf)</a>' : '') + '</div><div class="mdo-sizes">' + color.sizes.map(function (sz) {
         var q = st.sizes[sz.size] || '', out = sz.stock !== null && (q | 0) > sz.stock;
         return '<label class="mdo-size' + (out ? ' is-short' : '') + '"><span>' + esc(sz.size) + '</span><input type="number" min="0" inputmode="numeric" data-act="sizeqty" data-v="' + esc(sz.size) + '" class="mdo-input" value="' + q + '" placeholder="0"></label>';
       }).join('') + '</div><p class="mdo-muted mdo-size-total">Totaal: <strong>' + sizeTotal() + '</strong> stuks. De staffelprijs geldt voor het totaal.</p></section>';

@@ -188,6 +188,7 @@ class MDO_Frontend {
 			'nonce'          => wp_create_nonce( 'mdo_logo' ),
 			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',
 			'diameter'       => self::diameter( $product ),
+			'sizeChart'      => self::size_chart( $product ),
 		);
 	}
 
@@ -429,5 +430,15 @@ class MDO_Frontend {
 			return round( ( $l + $w ) / 2 * ( 'mm' === get_option( 'woocommerce_dimension_unit' ) ? 1 : 10 ), 1 );
 		}
 		return 0;
+	}
+
+	/** Maattabel (pdf) van Midocean, als die er is. */
+	public static function size_chart( $product ) {
+		foreach ( (array) $product->get_meta( '_mdo_documents' ) as $sub => $url ) {
+			if ( false !== stripos( (string) $sub, 'size' ) ) {
+				return esc_url_raw( $url );
+			}
+		}
+		return '';
 	}
 }
