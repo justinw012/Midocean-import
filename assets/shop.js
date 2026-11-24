@@ -1,0 +1,155 @@
+/* PromoFun – bedrukt voorbeeld in de winkel. Desktop: aanwijzen. Mobiel: foto vasthouden. */
+(function () {
+  'use strict';
+  var C = window.MDO_SHOP || {};
+  if (!C.logo) return;
+  var logo = null, logoWait = [];
+
+  // Logo laden; desgewenst alleen de bovenste (grootste) regel, zonder slogan.
+  function getLogo(cb) {
+    if (logo) return cb(logo);
+    logoWait.push(cb);
+    if (logoWait.length > 1) return;
+    var im = new Image();
+    im.onload = function () {
+      var out = im;
+      if (C.trimLine) {
+        try {
+          var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+          var x = c.getContext('2d'); x.drawImage(im, 0, 0);
+          var d = x.getImageData(0, 0, c.width, c.height).data, rows = [], y, i;
+          for (y = 0; y < c.height; y++) {
+            var ink = 0;
+            for (i = 0; i < c.width; i += 2) if (d[(y * c.width + i) * 4 + 3] > 24) { ink = 1; break; }
+            rows.push(ink);
+          }
+          var blocks = [], s = -1;
+          for (y = 0; y <= rows.length; y++) {
+            if (rows[y] && s < 0) s = y;
+            if (!rows[y] && s >= 0) { blocks.push([s, y]); s = -1; }
+          }
+          // Losse regels (minstens 3% hoogte gat ertussen) samenvoegen tot blokken; neem het hoogste blok.
+          var merged = [];
+          blocks.forEach(function (b) {
+            var last = merged[merged.length - 1];
+            if (last && b[0] - last[1] < c.height * 0.03) last[1] = b[1]; else merged.push(b.slice());
+          });
+          if (merged.length > 1) {
+            merged.sort(function (a, b) { return (b[1] - b[0]) - (a[1] - a[0]); });
+            var top = merged[0], h = top[1] - top[0];
+            var t = document.createElement('canvas'); t.width = c.width; t.height = h;
+            t.getContext('2d').drawImage(c, 0, top[0], c.width, h, 0, 0, c.width, h);
+            out = trimX(t);
+          }
+        } catch (e) { out = im; }
+      }
+      logo = out;
+      logoWait.forEach(function (f) { f(logo); });
+    };
+    im.src = C.logo;
+  }
+  function trimX(cv) {
+    var x = cv.getContext('2d'), d = x.getImageData(0, 0, cv.width, cv.height).data, l = cv.width, r = 0;
+    for (var y = 0; y < cv.height; y += 2) for (var i = 0; i < cv.width; i++) if (d[(y * cv.width + i) * 4 + 3] > 24) { if (i < l) l = i; if (i > r) r = i; }
+    if (r <= l) return cv;
+    var o = document.createElement('canvas'); o.width = r - l + 1; o.height = cv.height;
+    o.getContext('2d').drawImage(cv, l, 0, o.width, o.height, 0, 0, o.width, o.height);
+    return o;
+  }
+
+  function curveOf(id, shape) {
+    id = String(id || '').toUpperCase(); shape = String(shape || '').toLowerCase();
+    if (shape === 'ellipse' || shape === 'polygon' || /PEN|PENCIL/.test(id)) return 0;
+    if (/360|WRAP|AROUND/.test(id)) return 78 * Math.PI / 180;
+    if (/ROUND ?SCREEN|ROUNDPART/.test(id)) return 62 * Math.PI / 180;
+    return 0;
+  }
+
+  // Foto + logo samenstellen op een canvas (de foto komt van Midocean; tonen mag, opslaan hoeft niet).
+  function build(data, done) {
+    var photo = new Image();
+    photo.onload = function () {
+      getLogo(function (lg) {
+        var W = photo.naturalWidth, H = photo.naturalHeight, b = data.box;
+        var cv = document.createElement('canvas'); cv.width = W; cv.height = H; cv.className = 'mdo-hov-img';
+        var x = cv.getContext('2d');
+        x.drawImage(photo, 0, 0);
+        var bw = b[2] - b[0], bh = b[3] - b[1], round = /ellipse/i.test(data.shape);
+        var lw = lg.width || lg.naturalWidth, lh = lg.height || lg.naturalHeight;
+        var fit = round ? 0.62 : 0.86, s = Math.min(bw * fit / lw, bh * fit / lh), aw = lw * s, ah = lh * s;
+        var T = curveOf(data.id, data.shape), top = b[1] + (bh - ah) / 2;
+        if (!T) {
+          x.drawImage(lg, b[0] + (bw - aw) / 2, top, aw, ah);
+        } else {
+          var sT = Math.sin(T), awN = aw / bw, a0 = 0.5 - awN / 2, sag = 0.03 * bh;
+          for (var px = Math.floor(b[0]); px < Math.ceil(b[2]); px++) {
+            var sv = ((px + 0.5 - b[0]) / bw - 0.5) * 2 * sT;
+            if (Math.abs(sv) >= 1) continue;
+            var ang = Math.asin(sv), a = 0.5 + ang / (2 * T), sx = (a - a0) / awN * lw;
+            if (sx < 0 || sx >= lw) continue;
+            var cs = Math.cos(ang), sw = Math.max(0.5, lw * sT / (awN * bw * T * cs));
+            x.globalAlpha = 0.5 + 0.5 * cs;
+            x.drawImage(lg, sx, 0, Math.min(sw, lw - sx), lh, px, top + sag * (1 - cs), 1, ah);
+          }
+          x.globalAlpha = 1;
+        }
+        done(cv);
+      });
+    };
+    photo.onerror = function () { done(null); };
+    photo.src = data.img;
+  }
+
+  function setup(mark) {
+    var item = mark.closest('li.product, .product, .wc-block-grid__product') || mark.parentNode;
+    var img = item && item.querySelector('img');
+    if (!img || item.getAttribute('data-mdo-hov-ready')) return;
+    item.setAttribute('data-mdo-hov-ready', '1');
+    var data; try { data = JSON.parse(mark.getAttribute('data-mdo-hov')); } catch (e) { return; }
+    // Eigen omhulsel precies om de foto, zodat titel en prijs vrij blijven.
+    var wrap = document.createElement('span');
+    wrap.className = 'mdo-hov-wrap';
+    img.parentNode.insertBefore(wrap, img);
+    wrap.appendChild(img);
+    var badge = document.createElement('span');
+    badge.className = 'mdo-hov-badge';
+    badge.title = 'Bekijk met logo';
+    if (C.icon) badge.innerHTML = '<img src="' + C.icon + '" alt="">';
+    wrap.appendChild(badge);
+    var cv = null, busy = false;
+    function show() {
+      if (cv) { wrap.classList.add('mdo-hov-on'); return; }
+      if (busy) return; busy = true;
+      build(data, function (c) {
+        busy = false; if (!c) return;
+        cv = c; wrap.appendChild(cv);
+        requestAnimationFrame(function () { wrap.classList.add('mdo-hov-on'); });
+      });
+    }
+    function hide() { wrap.classList.remove('mdo-hov-on'); }
+    // Desktop
+    item.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') show(); });
+    item.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hide(); });
+    // Mobiel: vasthouden toont het voorbeeld; loslaten verbergt het (en opent dan geen product).
+    var timer = 0, held = false;
+    wrap.addEventListener('touchstart', function () {
+      held = false;
+      timer = setTimeout(function () { held = true; show(); }, 350);
+    }, { passive: true });
+    function end() { clearTimeout(timer); if (held) setTimeout(hide, 120); }
+    wrap.addEventListener('touchend', end); wrap.addEventListener('touchcancel', end);
+    wrap.addEventListener('touchmove', function () { clearTimeout(timer); }, { passive: true });
+    wrap.addEventListener('click', function (e) { if (held) { e.preventDefault(); e.stopPropagation(); held = false; } }, true);
+    wrap.addEventListener('contextmenu', function (e) { if (held || timer) e.preventDefault(); });
+    // Tikken op het rondje: voorbeeld aan/uit.
+    badge.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (wrap.classList.contains('mdo-hov-on')) hide(); else show();
+    });
+  }
+
+  function scan() { [].forEach.call(document.querySelectorAll('[data-mdo-hov]'), setup); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+  // Producten die later geladen worden (oneindig scrollen, filters).
+  if (window.MutationObserver) new MutationObserver(function () { scan(); }).observe(document.body, { childList: true, subtree: true });
+})();

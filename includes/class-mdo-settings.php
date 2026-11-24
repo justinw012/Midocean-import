@@ -21,6 +21,9 @@ class MDO_Settings {
 			'update_slug'      => 1,
 			'backorders'       => 'no', // no | notify
 			'configurator'     => 1,
+			'shop_hover'       => 1,
+			'hover_logo'       => 0,
+			'hover_trim'       => 1,
 		);
 	}
 

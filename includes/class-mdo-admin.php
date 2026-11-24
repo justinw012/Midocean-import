@@ -38,6 +38,9 @@ class MDO_Admin {
 			'update_slug'      => empty( $in['update_slug'] ) ? 0 : 1,
 			'backorders'       => ( 'notify' === ( $in['backorders'] ?? '' ) ) ? 'notify' : 'no',
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
+			'shop_hover'       => empty( $in['shop_hover'] ) ? 0 : 1,
+			'hover_logo'       => absint( $in['hover_logo'] ?? 0 ),
+			'hover_trim'       => empty( $in['hover_trim'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
 			'hidden_categories'=> array_values( array_map( 'sanitize_text_field', (array) ( $in['hidden_categories'] ?? array() ) ) ),
 		);
@@ -299,6 +302,12 @@ class MDO_Admin {
 					</td></tr>
 					<tr><th>Teksten bestaande producten</th><td><label><input type="checkbox" name="overwrite_texts" value="1" <?php checked( $s['overwrite_texts'] ); ?>> Naam en omschrijving overschrijven met Midocean</label></td></tr>
 					<tr><th>Configurator</th><td><label><input type="checkbox" name="configurator" value="1" <?php checked( $s['configurator'] ); ?>> Configurator tonen op Midocean-producten</label></td></tr>
+					<tr><th>Voorbeeld met logo in de winkel</th><td>
+						<label><input type="checkbox" name="shop_hover" value="1" <?php checked( $s['shop_hover'] ); ?>> Product tonen met ons logo erop bij aanwijzen (computer) of vasthouden (telefoon)</label><br>
+						<label><input type="checkbox" name="hover_trim" value="1" <?php checked( $s['hover_trim'] ); ?>> Alleen de grote regel van het logo gebruiken (zonder slogan)</label><br>
+						<label>Ander logo (media-ID, leeg = sitelogo): <input type="number" name="hover_logo" min="0" value="<?php echo $s['hover_logo'] ? (int) $s['hover_logo'] : ''; ?>" style="width:110px"></label>
+						<?php $lu = MDO_Shop::logo_url(); if ( $lu ) : ?><br><img src="<?php echo esc_url( $lu ); ?>" alt="" style="max-width:260px;max-height:70px;margin-top:6px;background:#eee;padding:4px"><?php endif; ?>
+					</td></tr>
 				</table>
 				<?php submit_button( 'Instellingen opslaan' ); ?>
 			</form>
