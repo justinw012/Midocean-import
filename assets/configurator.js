@@ -219,7 +219,7 @@
     cv.width = Math.round(Zw * dpr); cv.height = Math.round(Zh * dpr);
     var out = cv.getContext('2d'); if (!out) return;
     out.clearRect(0, 0, cv.width, cv.height);
-    var Aw = j.aw * Zw * dpr, Ah = j.ah * Zh * dpr;
+    var Aw = j.aw * (j.views ? (j.b1 - j.b0) : 1) * Zw * dpr, Ah = j.ah * Zh * dpr;
     var src = document.createElement('canvas');
     src.width = Math.max(1, Math.round(Aw * 1.5)); src.height = Math.max(1, Math.round(Ah * 1.5));
     var c = src.getContext('2d'), S = 1.5;
@@ -241,6 +241,25 @@
       c.drawImage(im, -w / 2, -h / 2, w, h);
     }
     var W = cv.width, H = cv.height, sT = Math.sin(j.T), al = (1 - j.aw) / 2, sag = 0.035;
+    if (j.views) {
+      // Drie aanzichten: elk derde van de foto is hetzelfde product, 120° verder gedraaid.
+      var third = W / 3, sil = 0.9, span = j.b1 - j.b0;
+      for (var xv = 0; xv < W; xv++) {
+        var k = Math.min(2, Math.floor(xv / third)), xl = ((xv + 0.5 - k * third) / third - 0.5) * 2 / sil;
+        if (Math.abs(xl) >= 1) continue;
+        var angv = Math.asin(xl), cosv = Math.cos(angv);
+        var cpos = (k + 0.5) / 3 + angv / (2 * Math.PI);
+        var av = (cpos - j.b0) / span;
+        if (av < 0 || av > 1) continue; // buiten het drukvlak
+        var sxv = (av - al) / j.aw * src.width;
+        if (sxv < 0 || sxv >= src.width) continue;
+        var dsrc = (2 / sil) / third / (cosv * 2 * Math.PI) / span / j.aw * src.width;
+        out.globalAlpha = 0.45 + 0.55 * cosv;
+        out.drawImage(src, sxv, 0, Math.max(1, Math.min(dsrc, src.width - sxv)), src.height, xv, (j.at + sag * (1 - cosv)) * H, 1, j.ah * H);
+      }
+      out.globalAlpha = 1;
+      return;
+    }
     for (var x = 0; x < W; x++) {
       var sv = ((x + 0.5) / W - 0.5) * 2 * sT;
       if (Math.abs(sv) >= 1) continue;
@@ -375,7 +394,15 @@
         } else {
           wrapJob.kind = 'img'; wrapJob.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(demoLogo(isDark(), effect).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" '));
         }
-        zone = '<div class="mdo-zone mdo-curved' + blend + '" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><canvas class="mdo-wrap" aria-label="Voorbeeld van je opdruk rondom"></canvas></div>';
+        // Midocean toont rondom-posities vaak als drie aanzichten van hetzelfde product naast elkaar,
+        // met het drukvlak als uitgerolde band eroverheen. Dan elk aanzicht apart om de cilinder tekenen.
+        if (zw > 50) {
+          wrapJob.views = 3; wrapJob.b0 = zl / 100; wrapJob.b1 = (zl + zw) / 100; wrapJob.aw = sel.w / (pos.w || sel.w);
+          zone = '<div class="mdo-zone mdo-zone-line" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"></div>' +
+            '<div class="mdo-zone mdo-curved mdo-wrapfull' + blend + '" style="left:0;top:' + zt + '%;width:100%;height:' + zh + '%"><canvas class="mdo-wrap" aria-label="Voorbeeld van je opdruk rondom"></canvas></div>';
+        } else {
+          zone = '<div class="mdo-zone mdo-curved' + blend + '" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%"><canvas class="mdo-wrap" aria-label="Voorbeeld van je opdruk rondom"></canvas></div>';
+        }
       } else {
         zone = '<div class="mdo-zone' + blend + '" style="left:' + zl + '%;top:' + zt + '%;width:' + zw + '%;height:' + zh + '%;justify-content:' + jc + ';align-items:' + ai + '"><div class="mdo-art" style="width:' + artW + '%;height:' + artH + '%">' + inner + '</div></div>';
       }
@@ -658,20 +685,21 @@
   // de drukposities en de gewone productfoto's van de gekozen kleur.
   var gal = document.getElementById('mdo-gallery'), galView = 'design';
   function stageHtml() {
-    var c = cfg.colors[st.color], g = c.gallery || [], main;
-    if (galView === 'design' || !g[galView]) {
-      main = '<div class="mdo-stage-design" data-out="preview">' + previewHtml() + '</div>';
-    } else {
-      var cur = g[galView];
-      main = '<a class="mdo-gallery-main" href="' + esc(cur.full) + '" data-act="zoom"><img src="' + esc(cur.large) + '" alt="' + esc(cur.alt || c.name) + '"></a>';
+    var c = cfg.colors[st.color], g = c.gallery || [], design = galView === 'design' || !g[galView], face = faceByKey(st.face);
+    var tabs = '<div class="mdo-stage-tabs" role="tablist">' +
+      '<button type="button" role="tab" data-gview="design" class="' + (design ? 'is-on' : '') + '">Jouw ontwerp</button>' +
+      (g.length ? '<button type="button" role="tab" data-gview="photos" class="' + (!design ? 'is-on' : '') + '">Productfoto\'s (' + g.length + ')</button>' : '') + '</div>';
+    if (design) {
+      var fs = face && st.faces[face.key];
+      var cap = !face ? '' : (fs && fs.on ? 'Voorbeeld op: <strong>' + esc(face.label) + '</strong>' : '<strong>' + esc(face.label) + '</strong> – niet bedrukt');
+      return tabs + '<div class="mdo-stage-main"><div class="mdo-stage-design" data-out="preview">' + previewHtml() + '</div></div>' +
+        (cap ? '<p class="mdo-stage-cap">' + cap + '<span class="mdo-muted"> · indicatie, je krijgt eerst een drukproef</span></p>' : '');
     }
-    var strip = cfg.faces.map(function (f) {
-      var on = galView === 'design' && f.key === st.face;
-      return '<button type="button" data-gface="' + esc(f.key) + '" class="mdo-st-face' + (on ? ' is-on' : '') + '" title="' + esc(f.label) + '"><img src="' + esc(posImg(f.positions[0], c)) + '" alt=""><span>' + esc(f.label) + (st.faces[f.key].on ? ' ✓' : '') + '</span></button>';
-    }).join('') + g.map(function (x, i) {
-      return '<button type="button" data-gi="' + i + '" class="' + (galView === i ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
-    }).join('');
-    return '<div class="mdo-stage-main">' + main + '</div><div class="mdo-gallery-thumbs mdo-stage-strip">' + strip + '</div>';
+    var cur = g[galView];
+    return tabs + '<div class="mdo-stage-main"><a class="mdo-gallery-main" href="' + esc(cur.full) + '" data-act="zoom"><img src="' + esc(cur.large) + '" alt="' + esc(cur.alt || c.name) + '"></a></div>' +
+      '<div class="mdo-gallery-thumbs mdo-stage-strip">' + g.map(function (x, i) {
+        return '<button type="button" data-gi="' + i + '" class="' + (galView === i ? 'is-on' : '') + '" aria-label="Foto ' + (i + 1) + '"><img src="' + esc(x.thumb) + '" alt=""></button>';
+      }).join('') + '</div>';
   }
   function syncGallery() {
     if (!gal) return;
@@ -682,8 +710,8 @@
   if (gal) {
     gal.classList.add('mdo-stage');
     gal.addEventListener('click', function (e) {
-      var f = e.target.closest('[data-gface]');
-      if (f) { galView = 'design'; st.face = f.getAttribute('data-gface'); render(); return; }
+      var v = e.target.closest('[data-gview]');
+      if (v) { galView = v.getAttribute('data-gview') === 'design' ? 'design' : 0; syncGallery(); return; }
       var b = e.target.closest('[data-gi]');
       if (b) { galView = parseInt(b.getAttribute('data-gi'), 10); syncGallery(); return; }
       var z = e.target.closest('[data-act="zoom"]');
