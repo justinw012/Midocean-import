@@ -68,6 +68,7 @@
       $('mdo-mock-results').innerHTML = '';
       $('mdo-mock-form').hidden = false;
       $('mdo-mock-name').textContent = st.prod.name;
+      $('mdo-mock-dia').value = st.prod.diameter > 0 ? Math.round(st.prod.diameter) : '';
       $('mdo-mock-color').innerHTML = st.prod.colors.map(function (c, i) { return '<option value="' + i + '">' + esc(c.name) + '</option>'; }).join('');
       photos();
     });
@@ -80,7 +81,7 @@
     st.prod.positions.forEach(function (p) {
       var u = p.images[c.code];
       if (!u) Object.keys(p.images).forEach(function (k) { if (!u && k && new RegExp('-' + k + '(-|$)', 'i').test(c.sku)) u = p.images[k]; });
-      if (u) out.push({ url: u, label: p.label, box: p.box ? p.box.slice() : null, curve: curveFor(p.id) });
+      if (u) out.push({ url: u, label: p.label, box: p.box ? p.box.slice() : null, curve: curveFor(p.id), w: p.w || 0 });
     });
     c.photos.forEach(function (u, i) { out.push({ url: u, label: 'Foto ' + (i + 1), box: null, curve: 0 }); });
     return out;
@@ -104,7 +105,7 @@
       st.photo = p; st.photoImg = im;
       cv.width = im.naturalWidth; cv.height = im.naturalHeight;
       if (!p.box) { var W = im.naturalWidth, H = im.naturalHeight; p.box = [W * 0.3, H * 0.35, W * 0.7, H * 0.6]; }
-      st.curve = p.curve; $('mdo-mock-curve').value = p.curve;
+      st.curve = autoCurve(p); $('mdo-mock-curve').value = st.curve;
       st.cx = 0.5; st.cy = 0.5;
       msg('');
       draw();
@@ -112,6 +113,22 @@
     im.onerror = function () { msg('Deze foto kon niet geladen worden.'); };
     im.src = p.url;
   }
+
+  // Kromming uit de diameter: een drukvlak van w mm op een cilinder met diameter D beslaat
+  // aan weerszijden w/D radialen. Zonder bekende drukbreedte (gewone foto): zet het vlak van rand
+  // tot rand over het product, dan is het precies een halve omtrek (90°).
+  function autoCurve(p) {
+    var D = parseFloat($('mdo-mock-dia').value) || 0;
+    var hint = $('mdo-mock-curve-hint');
+    if (D > 0 && (p.curve > 0 || !p.w)) {
+      var deg = p.w ? Math.min(90, p.w / D * 180 / Math.PI) : 90;
+      hint.textContent = p.w ? 'Berekend: drukvlak ' + p.w + ' mm op Ø ' + D + ' mm = ' + Math.round(deg) + '° naar elke kant.' : 'Berekend voor Ø ' + D + ' mm: zet het drukvlak van rand tot rand over het product.';
+      return Math.round(deg);
+    }
+    hint.textContent = '0 = plat. Vul de diameter in, dan wordt de kromming exact berekend.';
+    return p.curve;
+  }
+  $('mdo-mock-dia').addEventListener('input', function () { if (st.photo) { st.curve = autoCurve(st.photo); $('mdo-mock-curve').value = st.curve; draw(); } });
 
   // ---------- invoer ----------
   [].forEach.call(document.querySelectorAll('.mdo-mock-tabs [data-mode]'), function (b) {

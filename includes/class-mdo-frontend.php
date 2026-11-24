@@ -187,6 +187,7 @@ class MDO_Frontend {
 			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'mdo_logo' ),
 			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',
+			'diameter'       => self::diameter( $product ),
 		);
 	}
 
@@ -405,5 +406,28 @@ class MDO_Frontend {
 			unset( $g['size'], $g['cname'] );
 		}
 		return array_values( $groups );
+	}
+
+	/**
+	 * Diameter van een rond product in mm, voor de kromming van rondom-opdrukken.
+	 * Uit de afmetingen van Midocean ("Ø8X25 CM"), anders uit lengte = breedte.
+	 */
+	public static function diameter( $product ) {
+		$own = (float) $product->get_meta( '_mdo_diameter' );
+		if ( $own > 0 ) {
+			return $own;
+		}
+		$s   = (array) $product->get_meta( '_mdo_specs' );
+		$dim = strtoupper( (string) ( $s['dimensions'] ?? '' ) );
+		if ( preg_match( '/(?:Ø|DIA\.?|DIAMETER)\s*([\d.,]+)/u', $dim, $m ) ) {
+			$v = (float) str_replace( ',', '.', $m[1] );
+			return false !== strpos( $dim, 'MM' ) ? $v : $v * 10;
+		}
+		$l = (float) $product->get_length();
+		$w = (float) $product->get_width();
+		if ( $l > 0 && $w > 0 && abs( $l - $w ) < 0.05 * max( $l, $w ) ) {
+			return round( ( $l + $w ) / 2 * ( 'mm' === get_option( 'woocommerce_dimension_unit' ) ? 1 : 10 ), 1 );
+		}
+		return 0;
 	}
 }

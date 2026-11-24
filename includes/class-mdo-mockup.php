@@ -128,6 +128,7 @@ class MDO_Mockup {
 		}
 		wp_send_json_success( array(
 			'name'      => $product->get_name(),
+			'diameter'  => MDO_Frontend::diameter( $product ),
 			'colors'    => $colors,
 			'positions' => $positions,
 		) );
@@ -203,9 +204,11 @@ class MDO_Mockup {
 						<input type="range" id="mdo-mock-size" min="3" max="100" value="35">
 						<label class="mdo-mock-lbl">Draaien</label>
 						<div class="mdo-mock-rot"><button type="button" class="button is-on" data-rot="0">0°</button><button type="button" class="button" data-rot="90">90°</button><button type="button" class="button" data-rot="180">180°</button><button type="button" class="button" data-rot="270">270°</button></div>
+						<label class="mdo-mock-lbl" for="mdo-mock-dia">Diameter (mm) – voor ronde producten</label>
+						<input type="number" id="mdo-mock-dia" min="0" step="1" placeholder="bijv. 80" style="width:120px">
 						<label class="mdo-mock-lbl" for="mdo-mock-curve">Rondom (kromming)</label>
 						<input type="range" id="mdo-mock-curve" min="0" max="85" value="0">
-						<p class="description" id="mdo-mock-curve-hint">0 = plat. Bij bekers en flessen staat dit al goed; schuif bij als het niet past.</p>
+						<p class="description" id="mdo-mock-curve-hint">0 = plat. Vul de diameter in, dan wordt de kromming exact berekend.</p>
 						<label class="mdo-mock-lbl" for="mdo-mock-arc">Boog (bovenaanzicht)</label>
 						<input type="range" id="mdo-mock-arc" min="-10" max="10" value="3">
 						<label class="mdo-mock-lbl" for="mdo-mock-opacity">Dekking</label>

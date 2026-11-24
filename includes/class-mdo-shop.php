@@ -105,6 +105,8 @@ class MDO_Shop {
 				'id'    => (string) $pos['id'],
 				'shape' => isset( $pos['type'] ) ? (string) $pos['type'] : '',
 				'ink'   => self::ink_for( $pos, $cname ),
+				'w'     => (float) $pos['w'],
+				'dia'   => MDO_Frontend::diameter( $product ),
 			);
 			echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
 			return;

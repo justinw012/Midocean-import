@@ -354,6 +354,12 @@
       wrapJob = null;
       if (T && (fs.mode === 'text' || !fs.logo || fs.logo.preview)) {
         var aw = artW / 100, ah = artH / 100;
+        // Met bekende diameter precies: het drukvlak (breedte w mm) beslaat een hoek van w/D rad om de as.
+        if (cfg.diameter > 0 && pos.w > 0) {
+          T = Math.min(Math.PI / 2, pos.w / cfg.diameter);
+          var arc = T >= Math.PI / 2 - 1e-6 ? Math.PI * cfg.diameter / 2 : pos.w;
+          aw = sel.w / arc;
+        }
         wrapJob = { T: T, aw: aw, ah: ah, at: sel.va === 't' ? 0 : sel.va === 'b' ? 1 - ah : (1 - ah) / 2, rot: sel.rot, vertical: !!d.vertical };
         if (fs.mode === 'text') {
           var tb2 = textBox(fs);

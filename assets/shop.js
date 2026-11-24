@@ -89,6 +89,7 @@
         var lw = lg.width || lg.naturalWidth, lh = lg.height || lg.naturalHeight;
         var fit = round ? 0.62 : 0.86, s = Math.min(bw * fit / lw, bh * fit / lh), aw = lw * s, ah = lh * s;
         var T = curveOf(data.id, data.shape), top = b[1] + (bh - ah) / 2;
+        if (T && data.dia > 0 && data.w > 0) T = Math.min(Math.PI / 2, data.w / data.dia);
         if (!T) {
           x.drawImage(lg, b[0] + (bw - aw) / 2, top, aw, ah);
         } else {
