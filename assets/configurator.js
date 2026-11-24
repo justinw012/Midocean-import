@@ -116,7 +116,7 @@
   function dims(p, fs) {
     var a = aspect(fs), vertical = ((fs.rot || 0) % 180) !== 0;
     var maxLen = Math.max(5, Math.floor(vertical ? Math.min(p.h, p.w / a) : Math.min(p.w, p.h / a)));
-    var len = Math.max(5, Math.min(maxLen, fs.size || Math.round(maxLen * 0.6)));
+    var len = Math.max(5, Math.min(maxLen, fs.size || Math.round(maxLen * 0.85)));
     var thick = Math.max(2, Math.round(len * a));
     return { len: len, thick: thick, max: maxLen, vertical: vertical, w: vertical ? thick : len, h: vertical ? len : thick };
   }
