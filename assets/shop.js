@@ -65,11 +65,22 @@
     return 0;
   }
 
+  // Logo in één kleur (zwart, wit of gravure-grijs) als de techniek geen kleuren kan drukken.
+  var inkCache = {};
+  function tinted(lg, ink) {
+    if (!ink) return lg;
+    if (inkCache[ink]) return inkCache[ink];
+    var c = document.createElement('canvas'); c.width = lg.width || lg.naturalWidth; c.height = lg.height || lg.naturalHeight;
+    var x = c.getContext('2d'); x.drawImage(lg, 0, 0);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = ink; x.fillRect(0, 0, c.width, c.height);
+    return (inkCache[ink] = c);
+  }
   // Foto + logo samenstellen op een canvas (de foto komt van Midocean; tonen mag, opslaan hoeft niet).
   function build(data, done) {
     var photo = new Image();
     photo.onload = function () {
-      getLogo(function (lg) {
+      getLogo(function (lg0) {
+        var lg = tinted(lg0, data.ink);
         var W = photo.naturalWidth, H = photo.naturalHeight, b = data.box;
         var cv = document.createElement('canvas'); cv.width = W; cv.height = H; cv.className = 'mdo-hov-img';
         var x = cv.getContext('2d');

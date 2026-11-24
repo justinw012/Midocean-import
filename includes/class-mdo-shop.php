@@ -58,6 +58,7 @@ class MDO_Shop {
 		}
 		// Kleurcode van de standaardvariant (of de eerste), zodat het voorbeeld dezelfde kleur heeft.
 		$code   = '';
+		$cname  = '';
 		$master = (string) $product->get_meta( '_mdo_master_code' );
 		if ( $product->is_type( 'variable' ) ) {
 			$children = $product->get_children();
@@ -68,7 +69,8 @@ class MDO_Shop {
 					continue;
 				}
 				if ( ! $code || ( $default && ! array_diff_assoc( $default, array_map( 'strval', $v->get_attributes() ) ) ) ) {
-					$code = MDO_Frontend::color_code( $v, $master );
+					$code  = MDO_Frontend::color_code( $v, $master );
+					$cname = MDO_Frontend::colour_name( $v );
 					if ( $default && ! array_diff_assoc( $default, array_map( 'strval', $v->get_attributes() ) ) ) {
 						break;
 					}
@@ -102,9 +104,36 @@ class MDO_Shop {
 				'box'   => array_map( 'floatval', $pos['box'] ),
 				'id'    => (string) $pos['id'],
 				'shape' => isset( $pos['type'] ) ? (string) $pos['type'] : '',
+				'ink'   => self::ink_for( $pos, $cname ),
 			);
 			echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
 			return;
 		}
+	}
+
+	/**
+	 * Welke versie van het logo past bij deze drukpositie?
+	 * - kleur mogelijk (een techniek zonder kleurlimiet, bijv. digitaal/transfer): logo in kleur ('')
+	 * - alleen gravering/blinddruk: grijs, zoals gegraveerd materiaal
+	 * - alleen beperkt aantal kleuren (zeefdruk/tampondruk): logo in één kleur, zwart of wit op donker
+	 */
+	private static function ink_for( array $pos, $colour_name ) {
+		$names  = array_merge( (array) get_option( 'mdo_technique_names', array() ), array_filter( (array) get_option( 'mdo_technique_labels', array() ) ) );
+		$dark   = (bool) preg_match( '/zwart|black|navy|marine|donker|dark|bordeaux|petrol|royal|bruin|paars|antraciet|kobalt/i', (string) $colour_name );
+		$effect = true;
+		foreach ( (array) $pos['techs'] as $t ) {
+			$n = strtolower( (string) ( $names[ $t['id'] ] ?? $t['id'] ) );
+			$fx = (bool) preg_match( '/laser|graveer|gravure|engrav|blind|deboss|emboss|reli/', $n );
+			if ( ! $fx && 0 === (int) ( $t['max'] ?? 0 ) ) {
+				return '';
+			}
+			if ( ! $fx ) {
+				$effect = false;
+			}
+		}
+		if ( $effect && $pos['techs'] ) {
+			return $dark ? '#C9CDD2' : '#5A5E64';
+		}
+		return $dark ? '#FFFFFF' : '#1E1E1E';
 	}
 }
