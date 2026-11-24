@@ -202,3 +202,4 @@
 }
 .mdo-zone.mdo-wrapfull{border:0!important;background:none!important}
 .mdo-configured .summary > .price,.mdo-configured .summary > p.price{display:none!important}
+.mdo-tip{margin:4px 0 0;padding:8px 10px;background:#FFF7E6;border-radius:8px;font-size:13px;line-height:1.4}

@@ -480,6 +480,12 @@
     var p = sel.opt.pos;
     h += '<label class="mdo-size"><span class="mdo-row-between"><span class="mdo-lbl">Formaat</span><span class="mdo-muted" data-out="size">' + sel.w + ' × ' + sel.h + ' mm · max. ' + p.w + ' × ' + p.h + '</span></span>' +
       '<input type="range" data-act="size" min="5" max="' + sel.d.max + '" step="1" value="' + sel.d.len + '"></label>';
+    // Tip: in een smal, hoog vlak past een breed logo veel groter als het gedraaid wordt (en andersom).
+    var pNow = sel.opt.pos, curD = dims(pNow, fs), altRot = ((fs.rot || 0) % 180) ? 0 : 90;
+    var altD = dims(pNow, { mode: fs.mode, logo: fs.logo, text: fs.text, font: fs.font, rot: altRot, size: 0 });
+    if (altD.max > curD.max * 1.6) {
+      h += '<p class="mdo-tip">Tip: gedraaid past je ' + (fs.mode === 'text' ? 'tekst' : 'logo') + ' veel groter, tot ' + (altRot ? Math.max(2, Math.round(altD.max * aspect(fs))) + ' × ' + altD.max : altD.max + ' × ' + Math.max(2, Math.round(altD.max * aspect(fs)))) + ' mm in plaats van ' + curD.w + ' × ' + curD.h + ' mm. <button type="button" data-act="rot" data-v="' + altRot + '" class="mdo-linkbtn">' + (altRot ? '90° draaien' : 'Rechtop zetten') + '</button></p>';
+    }
     h += '<div class="mdo-field"><span class="mdo-lbl">Draaien</span><div class="mdo-grid mdo-grid-rot">' + [0, 90, 180, 270].map(function (r) {
       return '<button type="button" data-act="rot" data-v="' + r + '" class="mdo-pill mdo-rot' + (sel.rot === r ? ' is-on' : '') + '" aria-label="Draai ' + r + ' graden"><span class="mdo-rot-ico" style="transform:rotate(' + r + 'deg)">A</span>' + r + '°</button>';
     }).join('') + '</div></div>';
