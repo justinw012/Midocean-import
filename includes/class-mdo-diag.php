@@ -185,7 +185,7 @@ class MDO_Diag {
 		}
 		$t[] = '';
 		$t[] = '=== einde ===';
-		return MDO_Log::scrub( implode( "\n", $t ) );
+		return MDO_Log::scrub( implode( "\n", $t ), 0 ); // anonimiseren, maar niet inkorten
 	}
 
 	public static function page() {

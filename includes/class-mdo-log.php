@@ -35,7 +35,7 @@ class MDO_Log {
 	/**
 	 * Haalt alles weg dat op een sleutel, token, e-mailadres of URL-parameter lijkt.
 	 */
-	public static function scrub( $text ) {
+	public static function scrub( $text, $max = 300 ) {
 		$key = MDO_Settings::get( 'api_key' );
 		if ( $key ) {
 			$text = str_replace( $key, '[sleutel]', $text );
@@ -43,7 +43,7 @@ class MDO_Log {
 		$text = preg_replace( '/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/', '[e-mail]', $text );
 		$text = preg_replace( '/([?&][^=\s]+=)[^&\s]+/', '$1[…]', $text );
 		$text = preg_replace( '/\b[A-Fa-f0-9]{24,}\b/', '[id]', $text );
-		return mb_substr( $text, 0, 300 );
+		return $max ? mb_substr( $text, 0, $max ) : $text;
 	}
 
 	public static function all() {
