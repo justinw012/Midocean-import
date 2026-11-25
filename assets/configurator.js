@@ -435,7 +435,7 @@
     }
     return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
-      '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() +
+      '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() + (cfg.qtyNote ? '<p class="mdo-qtynote">' + esc(cfg.qtyNote) + '</p>' : '') +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
   }
 

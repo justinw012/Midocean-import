@@ -44,6 +44,7 @@ class MDO_Admin {
 			'lead_margin'      => max( 0, min( 15, (int) ( $in['lead_margin'] ?? 1 ) ) ),
 			'lead_table'       => trim( sanitize_textarea_field( wp_unslash( $in['lead_table'] ?? '' ) ) ) ?: MDO_Settings::LEAD_DEFAULT,
 			'badge_new_days'   => max( 0, min( 365, (int) ( $in['badge_new_days'] ?? 90 ) ) ),
+			'qty_note'         => sanitize_text_field( wp_unslash( $in['qty_note'] ?? '' ) ),
 			'hover_logo'       => absint( $in['hover_logo'] ?? 0 ),
 			'hover_trim'       => empty( $in['hover_trim'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
@@ -316,6 +317,7 @@ class MDO_Admin {
 						<textarea id="mdo-lead" name="lead_table" rows="9" class="large-text code"><?php echo esc_textarea( $s['lead_table'] ); ?></textarea></p>
 						<p class="description">Standaard overgenomen van Midocean ("Challenging all lead times"). Boven 3000 stuks komt er per 500 stuks een dag bij. Leeg laten = standaardtabel.</p>
 					</td></tr>
+					<tr><th>Melding hoeveelheid</th><td><input type="text" name="qty_note" value="<?php echo esc_attr( $s['qty_note'] ); ?>" class="large-text"><p class="description">Staat bij de prijs in de configurator. Leeg = niet tonen. Midocean levert volgens hun voorwaarden 5–10% meer of minder.</p></td></tr>
 					<tr><th>Labels in de winkel</th><td>
 						<label>"Nieuw" tonen bij producten die de laatste <input type="number" name="badge_new_days" min="0" max="365" value="<?php echo (int) $s['badge_new_days']; ?>" style="width:70px"> dagen zijn uitgekomen (0 = uit).</label><br>
 						<span class="description">"Op = op" verschijnt vanzelf als Midocean een einddatum voor alle kleuren van een product heeft.</span>
@@ -444,6 +446,8 @@ class MDO_Admin {
 					<?php submit_button( 'Vertalingen opslaan' ); ?>
 				</form>
 			<?php endif; ?>
+
+			<?php MDO_Shipping::render(); ?>
 
 			<?php MDO_Preview::render(); ?>
 

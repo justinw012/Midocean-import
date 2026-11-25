@@ -27,6 +27,7 @@ class MDO_Settings {
 			'lead_margin'      => 1,
 			'lead_table'       => self::LEAD_DEFAULT,
 			'badge_new_days'   => 90,
+			'qty_note'         => 'Bij bedrukte artikelen kan de geleverde hoeveelheid tot 10% afwijken; het verschil verrekenen we achteraf.',
 			'hover_logo'       => 0,
 			'hover_trim'       => 1,
 		);

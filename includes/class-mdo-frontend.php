@@ -196,6 +196,7 @@ class MDO_Frontend {
 			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',
 			'diameter'       => self::diameter( $product ),
 			'sizeChart'      => self::size_chart( $product ),
+			'qtyNote'        => (string) $s['qty_note'],
 			'lead'           => self::lead_table(),
 			'leadExtra'      => array( (int) $s['lead_proof'], (int) $s['lead_transport'], (int) $s['lead_margin'] ),
 		);
