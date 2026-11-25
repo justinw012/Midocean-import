@@ -319,8 +319,14 @@ class MDO_Frontend {
 		if ( ! empty( $s['packaging'] ) ) {
 			$rows['Verpakking na bedrukken'] = $s['packaging'];
 		}
-		if ( ! empty( $s['inner_qty'] ) || ! empty( $s['outer_qty'] ) ) {
-			$rows['Per doos'] = trim( ( ! empty( $s['inner_qty'] ) ? $s['inner_qty'] . ' st. (binnendoos)' : '' ) . ( ! empty( $s['inner_qty'] ) && ! empty( $s['outer_qty'] ) ? ', ' : '' ) . ( ! empty( $s['outer_qty'] ) ? $s['outer_qty'] . ' st. (omdoos)' : '' ) );
+		// Midocean: inner_carton = kleine doos, outer_carton = grote (verzend)doos met daarin de kleine dozen.
+		$in  = (int) ( $s['inner_qty'] ?? 0 );
+		$out = (int) ( $s['outer_qty'] ?? 0 );
+		if ( $in && $out && $in !== $out ) {
+			$rows['Stuks per doos']      = $in;
+			$rows['Stuks per grote doos'] = $out;
+		} elseif ( $in || $out ) {
+			$rows['Stuks per doos'] = $in ? $in : $out;
 		}
 		if ( ! empty( $s['origin'] ) ) {
 			$c = function_exists( 'WC' ) && WC()->countries ? WC()->countries->get_countries() : array();
