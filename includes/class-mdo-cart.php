@@ -205,7 +205,7 @@ class MDO_Cart {
 				continue;
 			}
 			// Instelkosten zitten verdeeld in de stukprijs, zodat ze meeschalen met het aantal.
-			$item['data']->set_price( round( $q['per_pc'], 4 ) );
+			$item['data']->set_price( round( MDO_Frontend::to_store_price( $q['per_pc'], $item['data'] ), 4 ) );
 			$cart->cart_contents[ $key ]['mdo_quote'] = array( 'setup' => $q['setup'], 'unit' => $q['unit'] );
 		}
 	}

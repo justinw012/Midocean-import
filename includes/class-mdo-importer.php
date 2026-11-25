@@ -297,7 +297,7 @@ class MDO_Importer {
 
 			$scales = isset( $prices[ $v['sku'] ] ) ? $prices[ $v['sku'] ] : null;
 			if ( $scales ) {
-				$var->set_regular_price( wc_format_decimal( $scales[0][1] * (float) $s['margin_product'], 2 ) );
+				$var->set_regular_price( wc_format_decimal( MDO_Frontend::to_store_price( $scales[0][1] * (float) $s['margin_product'], $product ), 2 ) );
 				$var->update_meta_data( '_mdo_scales', $scales );
 			}
 			if ( isset( $stock[ $v['sku'] ] ) ) {

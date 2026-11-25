@@ -196,6 +196,11 @@ class MDO_Admin {
 		?>
 		<div class="wrap">
 			<h1>PromoFun – Instellingen</h1>
+			<?php if ( function_exists( 'wc_tax_enabled' ) && ! wc_tax_enabled() ) : ?>
+				<div class="notice notice-error inline"><p><strong>Btw staat uit in WooCommerce.</strong> De plugin rekent met inkoopprijzen exclusief btw; klanten betalen nu dus geen btw. Zet bij WooCommerce → Instellingen → Algemeen "Btw-tarieven en -berekeningen inschakelen" aan, en vul bij het tabblad Btw → Standaardtarieven NL 21% in. Kies bij Btw: prijzen ingevoerd <em>exclusief</em> btw, en prijzen tonen <em>inclusief</em> btw.</p></div>
+			<?php elseif ( function_exists( 'wc_prices_include_tax' ) && 'incl' !== get_option( 'woocommerce_tax_display_shop' ) ) : ?>
+				<div class="notice notice-warning inline"><p>Prijzen in de winkel worden <strong>exclusief btw</strong> getoond (WooCommerce → Instellingen → Btw → "Prijzen in de winkel weergeven"). Voor particulieren en de meeste klanten is "inclusief btw" gebruikelijk.</p></div>
+			<?php endif; ?>
 			<?php if ( $msg ) : ?>
 				<div class="notice notice-info"><p><?php echo esc_html( $msg ); ?></p></div>
 			<?php endif; ?>

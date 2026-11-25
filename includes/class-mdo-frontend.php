@@ -197,6 +197,8 @@ class MDO_Frontend {
 			'diameter'       => self::diameter( $product ),
 			'sizeChart'      => self::size_chart( $product ),
 			'qtyNote'        => (string) $s['qty_note'],
+			'tax'            => self::tax_factor( $product ),
+			'taxLabel'       => self::tax_label(),
 			'lead'           => self::lead_table(),
 			'leadExtra'      => array( (int) $s['lead_proof'], (int) $s['lead_transport'], (int) $s['lead_margin'] ),
 		);
@@ -553,5 +555,42 @@ class MDO_Frontend {
 			}
 		}
 		return $out;
+	}
+
+	/** Btw-tarief (bijv. 0.21) voor dit product op het winkeladres; 0 als btw uit staat. */
+	public static function tax_rate( $product ) {
+		if ( ! function_exists( 'wc_tax_enabled' ) || ! wc_tax_enabled() || ! $product ) {
+			return 0.0;
+		}
+		$rates = WC_Tax::get_base_tax_rates( $product->get_tax_class() );
+		$sum   = 0.0;
+		foreach ( $rates as $r ) {
+			$sum += (float) $r['rate'];
+		}
+		return $sum / 100;
+	}
+
+	/** Factor waarmee de configurator zijn (exclusieve) bedragen toont: incl. btw als de winkel dat zo toont. */
+	public static function tax_factor( $product ) {
+		$rate = self::tax_rate( $product );
+		return ( $rate > 0 && 'incl' === get_option( 'woocommerce_tax_display_shop' ) ) ? round( 1 + $rate, 4 ) : 1;
+	}
+
+	public static function tax_label() {
+		if ( ! function_exists( 'wc_tax_enabled' ) || ! wc_tax_enabled() ) {
+			return '';
+		}
+		return 'incl' === get_option( 'woocommerce_tax_display_shop' ) ? 'incl. btw' : 'excl. btw';
+	}
+
+	/**
+	 * De plugin rekent alle prijzen exclusief btw (zoals Midocean). Staat WooCommerce op
+	 * "prijzen invoeren inclusief btw", dan moet de btw er bij het opslaan nog bij.
+	 */
+	public static function to_store_price( $excl, $product ) {
+		if ( function_exists( 'wc_prices_include_tax' ) && wc_prices_include_tax() ) {
+			return $excl * ( 1 + self::tax_rate( $product ) );
+		}
+		return $excl;
 	}
 }

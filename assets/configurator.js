@@ -87,7 +87,8 @@
     var total = unit * q + setup;
     return { unit: unit, setup: setup, total: total, perPc: total / q };
   }
-  function eur(n) { return cfg.currency + ' ' + n.toFixed(2).replace('.', cfg.decimalSep); }
+  // Prijzen rekenen exclusief btw (zoals de winkelwagen); tonen zoals WooCommerce ze toont (meestal incl. btw).
+  function eur(n) { return cfg.currency + ' ' + (n * (cfg.tax || 1)).toFixed(2).replace('.', cfg.decimalSep); }
 
   // ---------- staat ----------
   var st = {
@@ -433,7 +434,7 @@
       if (later) block = false;
       stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
-    return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
+    return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (cfg.taxLabel ? ' (' + cfg.taxLabel + ')' : '') + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() + (cfg.qtyNote ? '<p class="mdo-qtynote">' + esc(cfg.qtyNote) + '</p>' : '') +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
@@ -629,7 +630,7 @@
   function fromHtml() {
     var color = cfg.colors[st.color], t = cfg.tiers[0] || 50, q = quote(color, t, priceSels(selections()));
     var big = cfg.tiers[cfg.tiers.length - 1], qb = quote(color, big, priceSels(selections()));
-    return '<p class="mdo-from">Vanaf <strong>' + eur(qb.perPc) + '</strong> per stuk <span class="mdo-muted">incl. bedrukking · bij ' + t + ' stuks ' + eur(q.perPc) + '</span></p>';
+    return '<p class="mdo-from">Vanaf <strong>' + eur(qb.perPc) + '</strong> per stuk <span class="mdo-muted">incl. bedrukking' + (cfg.taxLabel ? ', ' + cfg.taxLabel : '') + ' · bij ' + t + ' stuks ' + eur(q.perPc) + '</span></p>';
   }
   function render() {
     var h = '';
