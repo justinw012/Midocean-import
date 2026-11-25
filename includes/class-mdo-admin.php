@@ -39,6 +39,11 @@ class MDO_Admin {
 			'backorders'       => ( 'notify' === ( $in['backorders'] ?? '' ) ) ? 'notify' : 'no',
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
 			'shop_hover'       => empty( $in['shop_hover'] ) ? 0 : 1,
+			'lead_proof'       => max( 0, min( 10, (int) ( $in['lead_proof'] ?? 1 ) ) ),
+			'lead_transport'   => max( 0, min( 15, (int) ( $in['lead_transport'] ?? 2 ) ) ),
+			'lead_margin'      => max( 0, min( 15, (int) ( $in['lead_margin'] ?? 1 ) ) ),
+			'lead_table'       => trim( sanitize_textarea_field( wp_unslash( $in['lead_table'] ?? '' ) ) ) ?: MDO_Settings::LEAD_DEFAULT,
+			'badge_new_days'   => max( 0, min( 365, (int) ( $in['badge_new_days'] ?? 90 ) ) ),
 			'hover_logo'       => absint( $in['hover_logo'] ?? 0 ),
 			'hover_trim'       => empty( $in['hover_trim'] ) ? 0 : 1,
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
@@ -302,6 +307,19 @@ class MDO_Admin {
 					</td></tr>
 					<tr><th>Teksten bestaande producten</th><td><label><input type="checkbox" name="overwrite_texts" value="1" <?php checked( $s['overwrite_texts'] ); ?>> Naam en omschrijving overschrijven met Midocean</label></td></tr>
 					<tr><th>Configurator</th><td><label><input type="checkbox" name="configurator" value="1" <?php checked( $s['configurator'] ); ?>> Configurator tonen op Midocean-producten</label></td></tr>
+					<tr><th>Levertijd</th><td>
+						<p style="margin-top:0">De klant ziet "Verwacht in huis: rond …". Berekening in werkdagen: drukproef + productie (tabel hieronder, per techniek en aantal) + verzending + marge. Is er te weinig voorraad, dan telt de plugin vanaf de verwachte binnenkomst bij Midocean.</p>
+						<label>Drukproef <input type="number" name="lead_proof" min="0" max="10" value="<?php echo (int) $s['lead_proof']; ?>" style="width:60px"> dag(en)</label> &nbsp;
+						<label>Verzending <input type="number" name="lead_transport" min="0" max="15" value="<?php echo (int) $s['lead_transport']; ?>" style="width:60px"> dag(en)</label> &nbsp;
+						<label>Marge <input type="number" name="lead_margin" min="0" max="15" value="<?php echo (int) $s['lead_margin']; ?>" style="width:60px"> dag(en)</label>
+						<p><label for="mdo-lead">Productiedagen per techniek (zoekwoorden in de techniek­naam = dagen bij t/m 250, 500, 750 … 3000 stuks; <code>*</code> = alle andere):</label><br>
+						<textarea id="mdo-lead" name="lead_table" rows="9" class="large-text code"><?php echo esc_textarea( $s['lead_table'] ); ?></textarea></p>
+						<p class="description">Standaard overgenomen van Midocean ("Challenging all lead times"). Boven 3000 stuks komt er per 500 stuks een dag bij. Leeg laten = standaardtabel.</p>
+					</td></tr>
+					<tr><th>Labels in de winkel</th><td>
+						<label>"Nieuw" tonen bij producten die de laatste <input type="number" name="badge_new_days" min="0" max="365" value="<?php echo (int) $s['badge_new_days']; ?>" style="width:70px"> dagen zijn uitgekomen (0 = uit).</label><br>
+						<span class="description">"Op = op" verschijnt vanzelf als Midocean een einddatum voor alle kleuren van een product heeft.</span>
+					</td></tr>
 					<tr><th>Voorbeeld met logo in de winkel</th><td>
 						<label><input type="checkbox" name="shop_hover" value="1" <?php checked( $s['shop_hover'] ); ?>> Product tonen met ons logo erop bij aanwijzen (computer) of vasthouden (telefoon)</label><br>
 						<label><input type="checkbox" name="hover_trim" value="1" <?php checked( $s['hover_trim'] ); ?>> Alleen de grote regel van het logo gebruiken (zonder slogan)</label><br>

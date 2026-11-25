@@ -159,6 +159,8 @@ class MDO_Frontend {
 				'backorders' => $v->backorders_allowed(),
 				'scales'  => $sell,
 				'size'    => (string) $v->get_meta( '_mdo_size' ),
+				'pms'     => (string) $v->get_meta( '_mdo_pms' ),
+				'arrivals' => array_values( (array) $v->get_meta( '_mdo_arrivals' ) ),
 				'cname'   => self::colour_name( $v ),
 			);
 		}
@@ -194,6 +196,8 @@ class MDO_Frontend {
 			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',
 			'diameter'       => self::diameter( $product ),
 			'sizeChart'      => self::size_chart( $product ),
+			'lead'           => self::lead_table(),
+			'leadExtra'      => array( (int) $s['lead_proof'], (int) $s['lead_transport'], (int) $s['lead_margin'] ),
 		);
 	}
 
@@ -290,6 +294,33 @@ class MDO_Frontend {
 		}
 		if ( $product->get_weight() ) {
 			$rows['Gewicht'] = wc_format_weight( $product->get_weight() );
+		}
+		if ( ! empty( $s['gender'] ) ) {
+			$g = array( 'men' => 'Heren', 'man' => 'Heren', 'women' => 'Dames', 'woman' => 'Dames', 'unisex' => 'Unisex', 'kids' => 'Kinderen', 'children' => 'Kinderen' );
+			$rows['Pasvorm'] = $g[ strtolower( $s['gender'] ) ] ?? $s['gender'];
+		}
+		if ( ! empty( $s['sleeve'] ) ) {
+			$sl = array( 'short' => 'Korte mouw', 'long' => 'Lange mouw', 'sleeveless' => 'Mouwloos' );
+			$rows['Mouw'] = $sl[ strtolower( $s['sleeve'] ) ] ?? $s['sleeve'];
+		}
+		$pms = array();
+		foreach ( $product->get_children() as $vid ) {
+			$v = wc_get_product( $vid );
+			$p = $v ? (string) $v->get_meta( '_mdo_pms' ) : '';
+			if ( $p ) {
+				$pms[ self::colour_name( $v ) ?: $v->get_sku() ] = $p;
+			}
+		}
+		if ( $pms ) {
+			$rows['PMS-kleur'] = implode( ', ', array_map( function ( $k, $v ) {
+				return $k . ': ' . $v;
+			}, array_keys( $pms ), $pms ) );
+		}
+		if ( ! empty( $s['packaging'] ) ) {
+			$rows['Verpakking na bedrukken'] = $s['packaging'];
+		}
+		if ( ! empty( $s['inner_qty'] ) || ! empty( $s['outer_qty'] ) ) {
+			$rows['Per doos'] = trim( ( ! empty( $s['inner_qty'] ) ? $s['inner_qty'] . ' st. (binnendoos)' : '' ) . ( ! empty( $s['inner_qty'] ) && ! empty( $s['outer_qty'] ) ? ', ' : '' ) . ( ! empty( $s['outer_qty'] ) ? $s['outer_qty'] . ' st. (omdoos)' : '' ) );
 		}
 		if ( ! empty( $s['origin'] ) ) {
 			$c = function_exists( 'WC' ) && WC()->countries ? WC()->countries->get_countries() : array();
@@ -396,6 +427,7 @@ class MDO_Frontend {
 				'backorders' => $c['backorders'],
 				'scales'     => $c['scales'],
 				'attrs'      => $c['attrs'],
+				'arrivals'   => $c['arrivals'],
 			);
 			if ( null === $c['stock'] || null === $groups[ $k ]['stock'] ) {
 				$groups[ $k ]['stock'] = null;
@@ -497,5 +529,22 @@ class MDO_Frontend {
 			'lib'    => MDO_URL . 'assets/pdfjs/pdf.min.js',
 			'worker' => MDO_URL . 'assets/pdfjs/pdf.worker.min.js',
 		) );
+	}
+
+	/** Productiedagen per techniek uit de instelling: [[ [trefwoorden], [dagen per 250 st.] ], ...]. */
+	public static function lead_table() {
+		$out = array();
+		foreach ( preg_split( '/\r?\n/', (string) MDO_Settings::get( 'lead_table' ) ) as $line ) {
+			if ( ! preg_match( '/^\s*(.+?)\s*=\s*([\d,\s]+)$/', $line, $m ) ) {
+				continue;
+			}
+			$days = array_values( array_filter( array_map( 'intval', explode( ',', $m[2] ) ), function ( $d ) {
+				return $d > 0;
+			} ) );
+			if ( $days ) {
+				$out[] = array( array_map( 'trim', explode( '|', strtolower( $m[1] ) ) ), $days );
+			}
+		}
+		return $out;
 	}
 }

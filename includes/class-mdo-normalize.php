@@ -103,6 +103,9 @@ class MDO_Normalize {
 				'size'       => strtoupper( trim( (string) self::pick( $v, array( 'size_textile', 'size' ), '' ) ) ),
 				'category'   => self::category_path( $v ),
 				'plc'        => (string) self::pick( $v, array( 'plc_status_description' ), '' ),
+				'pms'        => trim( (string) self::pick( $v, array( 'pms_color' ), '' ) ),
+				'release'    => (string) self::pick( $v, array( 'release_date' ), '' ),
+				'discontinued' => (string) self::pick( $v, array( 'discontinued_date' ), '' ),
 				'gtin'       => (string) self::pick( $v, array( 'gtin' ), '' ),
 				'images'     => self::images( self::pick( $v, array( 'digital_assets' ), array() ) ),
 			);
@@ -115,6 +118,12 @@ class MDO_Normalize {
 			'material'    => (string) self::pick( $p, array( 'material' ), '' ),
 			'dimensions'  => (string) self::pick( $p, array( 'dimensions' ), '' ),
 			'origin'      => (string) self::pick( $p, array( 'country_of_origin' ), '' ),
+			'packaging'   => (string) self::pick( $p, array( 'packaging_after_printing' ), '' ),
+			'commercial'  => (string) self::pick( $p, array( 'commercial_description' ), '' ),
+			'gender'      => (string) self::pick( $p, array( 'gender' ), '' ),
+			'sleeve'      => (string) self::pick( $p, array( 'sleeve' ), '' ),
+			'inner_qty'   => (int) self::num( self::pick( $p, array( 'inner_carton_quantity' ), 0 ) ),
+			'outer_qty'   => (int) self::num( self::pick( $p, array( 'outer_carton_quantity' ), 0 ) ),
 			'weight'      => self::num( self::pick( $p, array( 'net_weight', 'gross_weight' ), 0 ) ),
 			'length'      => self::num( self::pick( $p, array( 'length' ), 0 ) ),
 			'width'       => self::num( self::pick( $p, array( 'width' ), 0 ) ),
@@ -152,7 +161,21 @@ class MDO_Normalize {
 		return array(
 			(string) self::pick( $e, array( 'sku' ), '' ),
 			(int) self::num( self::pick( $e, array( 'qty', 'quantity', 'stock', 'qty_available', 'available', 'free_stock' ), 0 ) ),
+			self::arrivals( $e ),
 		);
+	}
+
+	/** Verwachte leveringen bij Midocean: [[datum, aantal], ...] (alleen toekomstige datums). */
+	public static function arrivals( array $e ) {
+		$out = array();
+		foreach ( array( 'first', 'next' ) as $k ) {
+			$d = (string) self::pick( $e, array( $k . '_arrival_date' ), '' );
+			$q = (int) self::num( self::pick( $e, array( $k . '_arrival_qty' ), 0 ) );
+			if ( preg_match( '/^\d{4}-\d{2}-\d{2}/', $d ) && $q > 0 ) {
+				$out[] = array( substr( $d, 0, 10 ), $q );
+			}
+		}
+		return $out;
 	}
 
 	/** De hele printprijslijst (klein bestand). */

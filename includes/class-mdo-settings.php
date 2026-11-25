@@ -22,6 +22,11 @@ class MDO_Settings {
 			'backorders'       => 'no', // no | notify
 			'configurator'     => 1,
 			'shop_hover'       => 1,
+			'lead_proof'       => 1,
+			'lead_transport'   => 2,
+			'lead_margin'      => 1,
+			'lead_table'       => self::LEAD_DEFAULT,
+			'badge_new_days'   => 90,
 			'hover_logo'       => 0,
 			'hover_trim'       => 1,
 		);
@@ -48,6 +53,12 @@ class MDO_Settings {
 			'url'  => trailingslashit( $up['baseurl'] ) . 'midocean-import/',
 		);
 	}
+
+	/**
+	 * Productiedagen (werkdagen) volgens Midocean, per 250 stuks oplopend tot 3000.
+	 * Bron: midocean.com, pagina "Challenging all lead times" (stand november 2026). Aan te passen bij Instellingen.
+	 */
+	const LEAD_DEFAULT = "tampondruk metaal|tampondruk glas|keramiek = 2,3,4,4,5,5,6,6,7,7,7,7\ntampondruk = 1,2,3,3,4,4,5,5,6,6,6,6\nzeefdruk textiel = 1,1,3,3,4,4,5,5,6,6,6,6\nzeefdruk|rondzeefdruk = 2,3,4,4,5,5,6,6,7,7,7,7\nlaser|graveer|gravure = 1,2,3,3,4,4,5,5,6,6,7,7\ndoming = 5,6,7,7,8,8,9,9,10,10,11,11\ndigita|label|inlay = 1,2,3,3,4,4,5,5,6,6,7,7\n* = 2,3,4,4,5,5,6,6,7,7,7,7";
 
 	public static function cache_dir( $sub = '' ) {
 		$dir = self::upload_dir()['base'] . 'cache/' . ( $sub ? trailingslashit( $sub ) : '' );

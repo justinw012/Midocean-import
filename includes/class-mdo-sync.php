@@ -310,8 +310,11 @@ class MDO_Sync {
 					if ( 0 === $s['st_total'] ) {
 						MDO_Log::info( 'Voorraadfeed, velden per regel: ' . implode( ', ', array_keys( $raw ) ) . '.' );
 					}
-					list( $sku, $qty ) = MDO_Normalize::stock( $raw );
+					list( $sku, $qty, $arrivals ) = MDO_Normalize::stock( $raw );
 					$s['st_total']++;
+					if ( $arrivals && isset( $s['skus'][ $sku ] ) ) {
+						$s['arr'][ $sku ] = $arrivals;
+					}
 					if ( $qty > 0 ) {
 						$s['st_nonzero']++;
 					}
@@ -329,7 +332,8 @@ class MDO_Sync {
 						MDO_Log::info( 'Voorraad: ' . $s['st_nonzero'] . ' van ' . $s['st_total'] . ' artikelen op voorraad bij Midocean.' );
 					}
 					file_put_contents( $dir . 'stock-selected.json', wp_json_encode( $s['stock'] ) );
-					unset( $s['stock'], $s['st_total'], $s['st_nonzero'] );
+					file_put_contents( $dir . 'stock-arrivals.json', wp_json_encode( $s['arr'] ?? array() ) );
+					unset( $s['stock'], $s['arr'], $s['st_total'], $s['st_nonzero'] );
 					$s['stage'] = 'queue';
 				}
 				break;
@@ -400,13 +404,16 @@ class MDO_Sync {
 		}
 		$updated = (int) $st['updated'];
 		$r       = MDO_Json_Stream::each( MDO_Settings::cache_dir() . 'stock.json', $st['offset'], time() + self::BUDGET, function ( $raw ) use ( &$updated ) {
-			list( $sku, $qty ) = MDO_Normalize::stock( $raw );
+			list( $sku, $qty, $arrivals ) = MDO_Normalize::stock( $raw );
 			$id = $sku ? wc_get_product_id_by_sku( $sku ) : 0;
 			if ( $id && get_post_meta( wp_get_post_parent_id( $id ) ?: $id, '_mdo_master_code', true ) ) {
 				$p = wc_get_product( $id );
 				if ( $p && (int) $p->get_stock_quantity() !== $qty ) {
 					wc_update_product_stock( $p, $qty );
 					$updated++;
+				}
+				if ( get_post_meta( $id, '_mdo_arrivals', true ) != $arrivals ) { // phpcs:ignore -- losse vergelijking bewust
+					update_post_meta( $id, '_mdo_arrivals', $arrivals );
 				}
 			}
 		} );

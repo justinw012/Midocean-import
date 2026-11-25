@@ -423,16 +423,19 @@
     if (color.sizes) {
       var shortSz = color.sizes.filter(function (sz) { return sz.stock !== null && (st.sizes[sz.size] | 0) > sz.stock; });
       short = shortSz.length > 0;
-      block = shortSz.some(function (sz) { return !sz.backorders; }) || sizeTotal() === 0;
+      block = shortSz.some(function (sz) { return !sz.backorders && !readyFrom(sz.stock, sz.arrivals, st.sizes[sz.size] | 0); }) || sizeTotal() === 0;
       stockMsg = (sizeTotal() === 0 ? '<p class="mdo-warn">Vul bij minstens één maat een aantal in.</p>' : '') +
-        (!short ? '' : '<p class="mdo-warn">Niet genoeg voorraad in ' + shortSz.map(function (sz) { return esc(sz.size) + ' (nog ' + Math.max(0, sz.stock) + ')'; }).join(', ') + '.' + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>');
+        (!short ? '' : '<p class="mdo-warn">Niet genoeg voorraad in ' + shortSz.map(function (sz) { return esc(sz.size) + ' (nog ' + Math.max(0, sz.stock) + (sz.arrivals && sz.arrivals.length ? ', meer rond ' + fmtDate(parseDate(sz.arrivals[0][0])) : '') + ')'; }).join(', ') + '.' + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>');
     } else {
       short = color.stock !== null && st.qty > color.stock; block = short && !color.backorders;
-      stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
+      // Met een geplande levering bij de leverancier mag er besteld worden; de levertijd schuift dan op.
+      var later = short && readyFrom(color.stock, color.arrivals, st.qty);
+      if (later) block = false;
+      stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
     return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
-      '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg +
+      '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
   }
 
@@ -525,7 +528,7 @@
 
   function swatchesHtml() {
     var color = cfg.colors[st.color];
-    return '<section class="mdo-sec"><div class="mdo-lbl">Kleur: <strong>' + esc(color.name) + '</strong></div><div class="mdo-swatches">' +
+    return '<section class="mdo-sec"><div class="mdo-lbl">Kleur: <strong>' + esc(color.name) + '</strong>' + (color.pms ? ' <span class="mdo-pms">PMS ' + esc(color.pms) + '</span>' : '') + '</div><div class="mdo-swatches">' +
       cfg.colors.map(function (c, i) {
         var on = i === st.color ? ' is-on' : '';
         if (c.thumb) return '<button type="button" data-act="color" data-v="' + i + '" class="mdo-swatch' + on + '" aria-label="' + esc(c.name) + '" title="' + esc(c.name) + '"><img src="' + esc(c.thumb) + '" alt=""></button>';
@@ -564,6 +567,62 @@
       rows.push([s.face.label, cfg.techniques[s.opt.tech.id].name + ', ' + s.w + '×' + s.h + ' mm' + (alignText(s) ? ', ' + alignText(s) : '') + ', ' + what]);
     });
     return '<section class="mdo-sec mdo-summary">' + rows.map(function (r) { return '<div class="mdo-row-between"><span class="mdo-muted">' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
+  }
+
+  // ---------- Levertijd ----------
+  var MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'], DAYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+  function fmtDate(d) { return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function parseDate(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addWorkdays(d, n) {
+    d = new Date(d.getTime());
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    while (n > 0) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) n--; }
+    return d;
+  }
+  // Wanneer is er genoeg voorraad? null = nu al; Date = na een levering; false = onbekend.
+  function readyFrom(stock, arrivals, need) {
+    if (stock === null || need <= stock) return null;
+    var have = Math.max(0, stock);
+    for (var i = 0; i < (arrivals || []).length; i++) {
+      have += arrivals[i][1];
+      if (have >= need) return parseDate(arrivals[i][0]);
+    }
+    return false;
+  }
+  function prodDays(techName, qty) {
+    var n = String(techName || '').toLowerCase(), row = null;
+    (cfg.lead || []).forEach(function (r) {
+      if (row) return;
+      if (r[0].some(function (k) { return k && k !== '*' && n.indexOf(k) >= 0; })) row = r[1];
+    });
+    if (!row) (cfg.lead || []).forEach(function (r) { if (!row && r[0].indexOf('*') >= 0) row = r[1]; });
+    if (!row) return 0;
+    var idx = Math.ceil(qty / 250) - 1;
+    if (idx < row.length) return row[Math.max(0, idx)];
+    return row[row.length - 1] + Math.ceil((qty - 3000) / 500);
+  }
+  // Geeft { date, from } of { unknown: true }.
+  function delivery() {
+    var color = cfg.colors[st.color], start = new Date(), from = null;
+    var parts = color.sizes ? color.sizes.filter(function (sz) { return (st.sizes[sz.size] | 0) > 0; }).map(function (sz) { return [sz.stock, sz.arrivals, st.sizes[sz.size] | 0]; }) : [[color.stock, color.arrivals, st.qty]];
+    for (var i = 0; i < parts.length; i++) {
+      var r = readyFrom(parts[i][0], parts[i][1], parts[i][2]);
+      if (r === false) return { unknown: true };
+      if (r && (!from || r > from)) from = r;
+    }
+    if (from && from > start) start = from;
+    var ex = cfg.leadExtra || [1, 2, 1], prod = 0;
+    selections().forEach(function (s) { prod = Math.max(prod, prodDays(cfg.techniques[s.opt.tech.id].name, st.qty)); });
+    return { date: addWorkdays(start, ex[0] + prod + ex[1] + ex[2]), from: from };
+  }
+  function deliveryHtml() {
+    if (!cfg.lead || !cfg.lead.length) return '';
+    var d = delivery();
+    if (d.unknown) return '<p class="mdo-lead">Levertijd: <strong>op aanvraag</strong> <span class="mdo-muted">(niet genoeg voorraad en nog geen levering gepland bij de leverancier)</span></p>';
+    return '<p class="mdo-lead">Verwacht in huis: <strong>rond ' + fmtDate(d.date) + '</strong> <span class="mdo-muted">· indicatie, na goedkeuring van de drukproef' + (d.from ? '; voorraad weer binnen rond ' + fmtDate(d.from) : '') + '</span></p>';
+  }
+  function arrivalsText(arr) {
+    return (arr || []).length ? ' Verwacht: ' + arr.map(function (a) { return a[1].toLocaleString('nl-NL') + ' st. rond ' + fmtDate(parseDate(a[0])); }).join(', ') + '.' : '';
   }
 
   // Eén "vanaf"-prijs bovenaan, inclusief de gekozen bedrukking (WooCommerce-prijs is verborgen).

@@ -9,6 +9,10 @@ defined( 'ABSPATH' ) || exit;
 class MDO_Shop {
 
 	public static function init() {
+		if ( ! is_admin() ) {
+			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'badges' ), 15 );
+			add_action( 'wp_head', array( __CLASS__, 'badge_css' ) );
+		}
 		if ( is_admin() || ! MDO_Settings::get( 'shop_hover' ) ) {
 			return;
 		}
@@ -137,5 +141,31 @@ class MDO_Shop {
 			return $dark ? '#C9CDD2' : '#5A5E64';
 		}
 		return $dark ? '#FFFFFF' : '#1E1E1E';
+	}
+
+	/** Labels "Nieuw" en "Op = op" op de productfoto in de winkel. */
+	public static function badges() {
+		global $product;
+		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) ) {
+			return;
+		}
+		$out  = array();
+		$days = (int) MDO_Settings::get( 'badge_new_days' );
+		$rel  = (string) $product->get_meta( '_mdo_release' );
+		if ( $days && $rel && strtotime( $rel ) > time() - $days * DAY_IN_SECONDS && strtotime( $rel ) <= time() + 30 * DAY_IN_SECONDS ) {
+			$out[] = '<span class="mdo-badge mdo-badge-new">Nieuw</span>';
+		}
+		if ( (string) $product->get_meta( '_mdo_discontinued' ) ) {
+			$out[] = '<span class="mdo-badge mdo-badge-last">Op = op</span>';
+		}
+		if ( $out ) {
+			echo '<span class="mdo-badges">' . implode( '', $out ) . '</span>'; // phpcs:ignore
+		}
+	}
+
+	public static function badge_css() {
+		if ( function_exists( 'is_woocommerce' ) && ( is_woocommerce() || is_front_page() ) ) {
+			echo '<style>li.product{position:relative}.mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;pointer-events:none}.mdo-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:#fff;background:#5B2EE5;box-shadow:0 1px 3px rgba(0,0,0,.15)}.mdo-badge-last{background:#B42318}</style>';
+		}
 	}
 }

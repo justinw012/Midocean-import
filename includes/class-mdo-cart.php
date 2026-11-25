@@ -32,6 +32,7 @@ class MDO_Cart {
 		add_filter( 'woocommerce_get_item_data', array( __CLASS__, 'show' ), 10, 2 );
 		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'order_meta' ), 10, 4 );
 		add_filter( 'woocommerce_add_cart_item', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
+		add_filter( 'woocommerce_product_backorders_allowed', array( __CLASS__, 'allow_backorder' ), 10, 3 );
 		add_filter( 'woocommerce_get_cart_item_from_session', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
 		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'fixed_qty' ), 10, 3 );
 		add_action( 'wp_ajax_mdo_logo', array( __CLASS__, 'upload' ) );
@@ -333,5 +334,19 @@ class MDO_Cart {
 			return '<span class="mdo-fixed-qty">' . (int) $item['quantity'] . '</span><input type="hidden" name="cart[' . esc_attr( $key ) . '][qty]" value="' . (int) $item['quantity'] . '">';
 		}
 		return $html;
+	}
+
+	/**
+	 * Nabestellen toestaan als Midocean al een levering gepland heeft, en bij kleding
+	 * (daar controleert de configurator de voorraad per maat; WooCommerce ziet alleen één maat).
+	 */
+	public static function allow_backorder( $allowed, $product_id, $product = null ) {
+		if ( $allowed || ! $product || ! $product->is_type( 'variation' ) ) {
+			return $allowed;
+		}
+		if ( $product->get_meta( '_mdo_arrivals' ) || '' !== (string) $product->get_meta( '_mdo_size' ) ) {
+			return true;
+		}
+		return $allowed;
 	}
 }

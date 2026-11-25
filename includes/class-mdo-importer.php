@@ -115,6 +115,7 @@ class MDO_Importer {
 		$p      = json_decode( file_get_contents( $file ), true );
 		$prices = self::cache_json( 'prices.json' );
 		$stock  = self::cache_json( 'stock-selected.json' );
+		$arr    = self::cache_json( 'stock-arrivals.json' );
 		$pf     = MDO_Settings::cache_dir( 'print' ) . sanitize_file_name( $master ) . '.json';
 		$print  = file_exists( $pf ) ? json_decode( file_get_contents( $pf ), true ) : null;
 		$s      = MDO_Settings::all();
@@ -242,7 +243,20 @@ class MDO_Importer {
 			'material'   => $p['material'],
 			'dimensions' => $p['dimensions'],
 			'origin'     => $p['origin'] ?? '',
+			'packaging'  => $p['packaging'] ?? '',
+			'gender'     => $p['gender'] ?? '',
+			'sleeve'     => $p['sleeve'] ?? '',
+			'inner_qty'  => $p['inner_qty'] ?? 0,
+			'outer_qty'  => $p['outer_qty'] ?? 0,
 		) );
+		// Nieuw / op = op: vroegste uitkomstdatum en of er varianten uit de collectie gaan.
+		$rel  = array_filter( wp_list_pluck( $p['variants'], 'release' ) );
+		$disc = array_filter( wp_list_pluck( $p['variants'], 'discontinued' ) );
+		$product->update_meta_data( '_mdo_release', $rel ? min( $rel ) : '' );
+		$product->update_meta_data( '_mdo_discontinued', $disc && count( $disc ) === count( $p['variants'] ) ? min( $disc ) : '' );
+		if ( ! empty( $p['commercial'] ) ) {
+			$product->update_meta_data( '_mdo_commercial', $p['commercial'] );
+		}
 		if ( $print ) {
 			$product->update_meta_data( MDO_Printdata::META, $print );
 		}
@@ -292,6 +306,8 @@ class MDO_Importer {
 				$var->set_backorders( MDO_Settings::get( 'backorders' ) );
 			}
 			$var->update_meta_data( '_mdo_color_code', $v['color_code'] );
+			$var->update_meta_data( '_mdo_pms', $v['pms'] ?? '' );
+			$var->update_meta_data( '_mdo_arrivals', isset( $arr[ $v['sku'] ] ) ? $arr[ $v['sku'] ] : array() );
 			if ( $v['gtin'] && method_exists( $var, 'set_global_unique_id' ) && ! $var->get_global_unique_id() ) {
 				try {
 					$var->set_global_unique_id( $v['gtin'] );
