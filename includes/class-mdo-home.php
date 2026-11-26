@@ -17,6 +17,7 @@ class MDO_Home {
 
 	private static function assets() {
 		wp_enqueue_style( 'mdo-home', MDO_URL . 'assets/home.css', array(), MDO_VERSION );
+		wp_enqueue_script( 'mdo-home', MDO_URL . 'assets/home.js', array(), MDO_VERSION, true );
 		// Voorbeeld met logo en fotoachtergrond (zelfde script als in de winkel).
 		MDO_Shop::assets();
 	}
@@ -129,33 +130,61 @@ class MDO_Home {
 		return ob_get_clean();
 	}
 
-	/** Grote productfoto met ons logo er vast op gedrukt (wordt in de browser getekend). */
-	private static function hero_product( array $popular ) {
-		$want = absint( MDO_Settings::get( 'home_hero' ) );
-		// Zonder eigen keuze: liefst een tas (groot, plat drukvlak: het logo valt goed op).
-		$bags = $want ? array() : get_posts( array(
-			'post_type'      => 'product',
-			'post_status'    => 'publish',
-			's'              => 'tas',
-			'fields'         => 'ids',
-			'posts_per_page' => 30,
-			'no_found_rows'  => true,
-		) );
-		$bags = array_values( array_filter( (array) $bags, function ( $id ) {
-			return (bool) preg_match( '/\b(tas|tasje|shopper|draagtas|boodschappentas|strandtas)\b|tas\b/i', html_entity_decode( get_the_title( $id ) ) );
-		} ) );
-		foreach ( array_merge( $want ? array( $want ) : array(), $bags, $popular ) as $id ) {
-			$p = wc_get_product( $id );
-			if ( ! $p ) {
-				continue;
-			}
-			$hov = MDO_Shop::mark_data( $p );
-			// Geen rondom-opdruk: die foto's tonen meerdere aanzichten naast elkaar.
-			if ( $hov && MDO_Shop::logo_url() && ! preg_match( '/360|WRAP|AROUND|ROUND/i', (string) $hov['id'] ) ) {
-				return array( $p, $hov );
+	/**
+	 * Producten die bovenaan rouleren, elk met ons logo er vast op gedrukt (getekend in de browser).
+	 * Eigen keuze (product-ID's) → anders een tas, de populaire producten en uit elke hoofdcategorie één,
+	 * met zo veel mogelijk verschillende categorieën.
+	 */
+	private static function hero_products( array $popular, $max = 5 ) {
+		if ( ! MDO_Shop::logo_url() ) {
+			return array();
+		}
+		$want = array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) MDO_Settings::get( 'home_hero' ) ) ) );
+		$cand = $want;
+		if ( ! $want ) {
+			$bags = get_posts( array( 'post_type' => 'product', 'post_status' => 'publish', 's' => 'tas', 'fields' => 'ids', 'posts_per_page' => 30, 'no_found_rows' => true ) );
+			$bags = array_values( array_filter( (array) $bags, function ( $id ) {
+				return (bool) preg_match( '/\b(tas|tasje|shopper|draagtas|boodschappentas|strandtas)\b|tas\b/i', html_entity_decode( get_the_title( $id ) ) );
+			} ) );
+			$cand = array_merge( array_slice( $bags, 0, 1 ), $popular );
+			$tops = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC', 'number' => 10 ) );
+			foreach ( is_wp_error( $tops ) ? array() : $tops as $t ) {
+				$cand = array_merge( $cand, wc_get_products( array( 'status' => 'publish', 'visibility' => 'catalog', 'limit' => 2, 'category' => array( $t->slug ), 'orderby' => 'popularity', 'return' => 'ids' ) ) );
 			}
 		}
-		return null;
+		$out  = array();
+		$used = array();
+		foreach ( array( true, false ) as $spread ) { // eerst één per categorie, dan aanvullen
+			foreach ( array_unique( $cand ) as $id ) {
+				if ( count( $out ) >= $max ) {
+					break 2;
+				}
+				if ( isset( $out[ $id ] ) ) {
+					continue;
+				}
+				$p = wc_get_product( $id );
+				if ( ! $p || 'publish' !== $p->get_status() ) {
+					continue;
+				}
+				$top = 0;
+				foreach ( $p->get_category_ids() as $cid ) {
+					$anc = get_ancestors( $cid, 'product_cat' );
+					$top = $anc ? (int) end( $anc ) : (int) $cid;
+					break;
+				}
+				if ( $spread && ! $want && isset( $used[ $top ] ) ) {
+					continue;
+				}
+				$hov = MDO_Shop::mark_data( $p );
+				// Geen rondom-opdruk: die foto's tonen meerdere aanzichten naast elkaar.
+				if ( ! $hov || preg_match( '/360|WRAP|AROUND|ROUND/i', (string) $hov['id'] ) ) {
+					continue;
+				}
+				$out[ $id ]   = array( $p, $hov );
+				$used[ $top ] = 1;
+			}
+		}
+		return array_values( $out );
 	}
 
 	public static function render() {
@@ -165,7 +194,7 @@ class MDO_Home {
 		self::assets();
 		$s       = MDO_Settings::all();
 		$popular = self::popular_ids( 8 );
-		$hero    = self::hero_product( $popular );
+		$hero    = self::hero_products( $popular );
 		$cats    = self::categories( 8 );
 		$lines   = array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $s['home_title'] ) ) ) );
 		$ship    = class_exists( 'MDO_Shipping' ) ? MDO_Shipping::get() : array( 'cost' => '' );
@@ -206,12 +235,21 @@ class MDO_Home {
 					</dl>
 					<?php endif; ?>
 				</div>
-				<?php if ( $hero ) : list( $hp, $hov ) = $hero; ?>
-				<a class="mdo-h-show product" href="<?php echo esc_url( get_permalink( $hp->get_id() ) ); ?>">
-					<img src="<?php echo esc_url( $hov['img'] ); ?>" alt="<?php echo esc_attr( html_entity_decode( $hp->get_name() ) ); ?> met PromoFun-logo">
-					<span class="mdo-hov" hidden data-mdo-always="1" data-mdo-hov="<?php echo esc_attr( wp_json_encode( $hov ) ); ?>"></span>
-					<span class="mdo-h-note"><b>Zo ziet jouw logo eruit</b> op <?php echo esc_html( html_entity_decode( $hp->get_name() ) ); ?></span>
-				</a>
+				<?php if ( $hero ) : ?>
+				<div class="mdo-h-show" data-mdo-rotate>
+					<?php foreach ( $hero as $i => $h ) : list( $hp, $hov ) = $h; $nm = html_entity_decode( $hp->get_name() ); ?>
+					<a class="mdo-h-slide product<?php echo 0 === $i ? ' is-on' : ''; ?>" href="<?php echo esc_url( get_permalink( $hp->get_id() ) ); ?>"<?php echo 0 === $i ? '' : ' aria-hidden="true" tabindex="-1"'; ?>>
+						<img src="<?php echo esc_url( $hov['img'] ); ?>" alt="<?php echo esc_attr( $nm ); ?> met PromoFun-logo"<?php echo 0 === $i ? '' : ' loading="lazy"'; ?>>
+						<span class="mdo-hov" hidden data-mdo-always="1" data-mdo-hov="<?php echo esc_attr( wp_json_encode( $hov ) ); ?>"></span>
+						<span class="mdo-h-note"><b>Zo ziet jouw logo eruit</b> op <?php echo esc_html( $nm ); ?></span>
+					</a>
+					<?php endforeach; ?>
+					<?php if ( count( $hero ) > 1 ) : ?>
+					<div class="mdo-h-dots">
+						<?php foreach ( $hero as $i => $h ) : ?><button type="button" aria-label="Voorbeeld <?php echo (int) $i + 1; ?>"<?php echo 0 === $i ? ' aria-current="true"' : ''; ?>></button><?php endforeach; ?>
+					</div>
+					<?php endif; ?>
+				</div>
 				<?php endif; ?>
 			</section>
 

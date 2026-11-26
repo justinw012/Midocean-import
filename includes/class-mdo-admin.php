@@ -54,7 +54,7 @@ class MDO_Admin {
 			'home_text'        => sanitize_text_field( wp_unslash( $in['home_text'] ?? '' ) ),
 			'home_stats'       => empty( $in['home_stats'] ) ? 0 : 1,
 			'home_products'    => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_products'] ?? '' ) ) ) ) ),
-			'home_hero'        => absint( $in['home_hero'] ?? 0 ),
+			'home_hero'        => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_hero'] ?? '' ) ) ) ) ),
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
 			'hidden_categories'=> array_values( array_map( 'sanitize_text_field', (array) ( $in['hidden_categories'] ?? array() ) ) ),
 		);
@@ -351,7 +351,7 @@ class MDO_Admin {
 						<p><label>Tekst onder de kop<br><input type="text" name="home_text" value="<?php echo esc_attr( $s['home_text'] ); ?>" class="large-text"></label></p>
 						<p><label><input type="checkbox" name="home_stats" value="1" <?php checked( $s['home_stats'] ); ?>> Bezoekers vandaag en deze week tonen (uit Koko Analytics). Het aantal producten staat er altijd.</label></p>
 						<p><label>Populaire producten (product-ID's, met komma's; leeg = vanzelf: meest bekeken, anders meest verkocht)<br><input type="text" name="home_products" value="<?php echo esc_attr( $s['home_products'] ); ?>" class="regular-text"></label></p>
-						<p><label>Product groot bovenaan met ons logo erop (product-ID; leeg = vanzelf een tas)<br><input type="number" name="home_hero" min="0" value="<?php echo $s['home_hero'] ? (int) $s['home_hero'] : ''; ?>" style="width:110px"></label></p>
+						<p><label>Producten die bovenaan rouleren met ons logo erop (product-ID's met komma's; leeg = vanzelf: een tas plus populaire producten uit verschillende categorieën)<br><input type="text" name="home_hero" value="<?php echo esc_attr( $s['home_hero'] ? $s['home_hero'] : '' ); ?>" class="regular-text"></label></p>
 						<p class="description">Zet <code>[promofun_home]</code> in een Shortcode-blok op de pagina die je homepage is.</p>
 					</td></tr>
 				</table>

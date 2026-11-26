@@ -37,7 +37,7 @@ class MDO_Settings {
 			'home_text'        => 'Kies een product, plaats je logo en zie de totaalprijs inclusief bedrukking. Zonder offerte aan te vragen.',
 			'home_stats'       => 0,
 			'home_products'    => '',
-			'home_hero'        => 0,
+			'home_hero'        => '',
 		);
 	}
 
