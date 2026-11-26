@@ -121,3 +121,4 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 .mdo-tree-2,.mdo-tree-3{padding-left:28px!important;font-size:13.5px}
 .mdo-tree li.is-off{opacity:.5}
 @media (max-width:900px){.mdo-f-subs .mdo-chip{padding:7px 12px;min-height:36px;font-size:13px}}
+.mdo-f-subs .mdo-chip.is-off{opacity:.5}

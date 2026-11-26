@@ -146,7 +146,7 @@
     // Categorieën (alle niveaus onder deze pagina), met het aantal producten bij de huidige filters
     if (C.tree && C.tree.length) {
       list = subset(null);
-      h += grp('Categorie', '<ul class="mdo-tree">' + C.tree.map(function (t) {
+      h += grp('Categorie', '<ul class="mdo-tree">' + C.tree.filter(hasProducts).map(function (t) {
         var n = list.filter(function (r) { return (r.cats || []).indexOf(t.id) >= 0; }).length;
         return '<li class="mdo-tree-' + Math.min(t.d, 3) + (n ? '' : ' is-off') + '"><a href="' + esc(t.url) + '">' + esc(t.name) + '</a> <span class="mdo-n">' + n + '</span></li>';
       }).join('') + '</ul>', C.tree.length <= 25);
@@ -305,11 +305,14 @@
       tiers.map(function (q) { return chip('q', q, q.toLocaleString('nl-NL'), st.q === q); }).join('') +
       '</div><span class="mdo-f-qnote">Prijzen, voorraad en levertijd gelden voor ' + st.q.toLocaleString('nl-NL') + ' stuks, incl. bedrukking in 1 kleur' + (C.taxLabel ? ', ' + esc(C.taxLabel) : '') + '.</span></div>';
   }
+  // Lege categorieën (zonder enig product, los van de filters) niet tonen.
+  function hasProducts(t) { return rows.some(function (r) { return (r.cats || []).indexOf(t.id) >= 0; }); }
   function subsHtml() {
-    if (!C.subs || !C.subs.length) return '';
-    return '<nav class="mdo-f-subs" aria-label="Subcategorieën">' + C.subs.map(function (s) {
+    var subs = (C.subs || []).filter(hasProducts);
+    if (!subs.length) return '';
+    return '<nav class="mdo-f-subs" aria-label="Subcategorieën">' + subs.map(function (s) {
       var n = rows.filter(function (r) { return (r.cats || []).indexOf(s.id) >= 0 && pass(r, null); }).length;
-      return '<a class="mdo-chip" href="' + esc(s.url) + '">' + esc(s.name) + (rows.length ? ' <span class="mdo-n">' + n + '</span>' : '') + '</a>';
+      return '<a class="mdo-chip' + (n ? '' : ' is-off') + '" href="' + esc(s.url) + '">' + esc(s.name) + ' <span class="mdo-n">' + n + '</span></a>';
     }).join('') + '</nav>';
   }
 
