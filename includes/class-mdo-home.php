@@ -30,7 +30,8 @@ class MDO_Home {
 			return null;
 		}
 		$i = array_search( 250, MDO_Frontend::TIERS, true );
-		return array( (float) $row['pr'][ $i ] * (float) ( $row['tx'] ?? 1 ), ! empty( $row['pp'] ), $row );
+		$tx = 'incl' === get_option( 'woocommerce_tax_display_shop' ) ? (float) ( $row['tx'] ?? 1 ) : 1.0;
+		return array( (float) $row['pr'][ $i ] * $tx, ! empty( $row['pp'] ), $row );
 	}
 
 	/** Welke producten tonen we als "Populair"? Eigen keuze → meest bekeken (Koko) → meest verkocht → nieuwste. */
@@ -217,6 +218,7 @@ class MDO_Home {
 				<li><?php echo $tax ? 'Prijs incl. bedrukking en btw direct zichtbaar' : 'Prijs incl. bedrukking direct zichtbaar'; ?></li>
 				<?php if ( $cost ) : ?><li>Verzending NL &amp; BE: <?php echo wp_strip_all_tags( wc_price( $cost ) ); ?><?php echo $tax ? ' incl. btw' : ''; ?> per bestelling<?php echo $ship['free_from'] ? ', gratis vanaf ' . wp_strip_all_tags( wc_price( (float) $ship['free_from'] ) ) : ''; ?></li><?php endif; ?>
 				<li>Levertijd per product berekend</li>
+				<?php $btw = MDO_Tax::html(); if ( $btw ) : ?><li class="mdo-h-btw">Prijzen <?php echo $btw; // phpcs:ignore ?></li><?php endif; ?>
 			</ul>
 
 			<section class="mdo-h-hero">

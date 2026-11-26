@@ -87,7 +87,7 @@
     if (r.x || !r.c) return (memo[key] = out);
     var i = ti(), base = r.pr[i], best = null, now0 = today();
     colours(r).forEach(function (c) {
-      var p = (base + (c.p ? c.p[i] : 0)) * (r.tx || 1);
+      var p = (base + (c.p ? c.p[i] : 0)) * (C.incl ? (r.tx || 1) : 1);
       if (out.price === null || p < out.price) out.price = p;
       var rf = readyFrom(c.s, c.a, st.q);
       if (rf === false) return;
@@ -303,7 +303,7 @@
   function qtyHtml() {
     return '<div class="mdo-f-qty"><b id="mdo-q-l">Hoeveel stuks heb je nodig?</b><div class="mdo-chips" role="group" aria-labelledby="mdo-q-l">' +
       tiers.map(function (q) { return chip('q', q, q.toLocaleString('nl-NL'), st.q === q); }).join('') +
-      '</div><span class="mdo-f-qnote">Prijzen, voorraad en levertijd gelden voor ' + st.q.toLocaleString('nl-NL') + ' stuks, incl. bedrukking in 1 kleur' + (C.taxLabel ? ', ' + esc(C.taxLabel) : '') + '.</span></div>';
+      '</div><span class="mdo-f-qnote">Prijzen, voorraad en levertijd gelden voor ' + st.q.toLocaleString('nl-NL') + ' stuks, incl. bedrukking in 1 kleur' + (C.taxLabel ? ', ' + esc(C.taxLabel) : '') + '.</span>' + (C.btw || '') + '</div>';
   }
   // Lege categorieën (zonder enig product, los van de filters) niet tonen.
   function hasProducts(t) { return rows.some(function (r) { return (r.cats || []).indexOf(t.id) >= 0; }); }
@@ -415,6 +415,22 @@
       document.body.classList.remove('mdo-filter-on');
     });
   }
+  // Incl./excl. btw omzetten zonder herladen (bij producten van buiten Midocean wel herladen: die prijs komt van WooCommerce).
+  function applyBtw(mode) {
+    C.incl = mode === 'incl' ? 1 : 0;
+    C.taxLabel = C.taxLabel ? (C.incl ? 'incl. btw' : 'excl. btw') : '';
+    C.btw = String(C.btw || '').replace(/ class="is-on" aria-current="true"/g, '').replace(new RegExp('(mdo_btw=' + mode + '[^"]*")'), '$1 class="is-on" aria-current="true"');
+    st.max = null;
+  }
+  document.addEventListener('mdo-btw', function (e) {
+    if (rows.some(function (r) { return r.x; })) return;
+    e.preventDefault();
+    applyBtw(e.detail);
+    render();
+  });
+  // Pagina uit een cache met een andere keuze: de cookie is leidend.
+  var ck = /(?:^|; )mdo_btw=(incl|excl)/.exec(document.cookie);
+  if (ck && C.btw && (ck[1] === 'incl') !== !!C.incl) applyBtw(ck[1]);
   render();
   load(0);
 })();

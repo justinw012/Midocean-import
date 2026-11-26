@@ -157,6 +157,8 @@ class MDO_Filter {
 			'tree'     => ( $ctx['tag'] || '' !== $ctx['s'] || ! empty( $ctx['tax'] ) ) ? array() : self::tree( $ctx['cat'] ),
 			'tiers'    => MDO_Frontend::TIERS,
 			'taxLabel' => MDO_Frontend::tax_label(),
+			'incl'     => 'incl' === get_option( 'woocommerce_tax_display_shop' ) ? 1 : 0,
+			'btw'      => MDO_Tax::html(),
 			'currency' => html_entity_decode( get_woocommerce_currency_symbol() ),
 			'dec'      => wc_get_price_decimal_separator(),
 			'newDays'  => (int) MDO_Settings::get( 'badge_new_days' ),
@@ -186,7 +188,7 @@ class MDO_Filter {
 				$s['lead_proof'], $s['lead_transport'], $s['lead_margin'], $s['lead_table'],
 				md5( maybe_serialize( get_option( 'mdo_printprices', array() ) ) ),
 				get_option( 'mdo_technique_names', array() ), get_option( 'mdo_technique_labels', array() ),
-				get_option( 'woocommerce_tax_display_shop' ), get_option( 'woocommerce_calc_taxes' ),
+				get_option( 'woocommerce_calc_taxes' ),
 			) ) ), 0, 12 );
 		}
 		return $k;
@@ -385,7 +387,7 @@ class MDO_Filter {
 			'c'    => array_values( $colors ),
 			'pr'   => $pr,
 			'pp'   => (bool) $print_min[0],
-			'tx'   => MDO_Frontend::tax_factor( $product ),
+			'tx'   => round( 1 + MDO_Frontend::tax_rate( $product ), 4 ), // weergave (incl./excl.) bepaalt de browser
 			'ld'   => $ld,
 			't'    => $t,
 			'mat'  => $mat,
@@ -493,6 +495,9 @@ class MDO_Filter {
 				break;
 			}
 			$r = self::row( $id, $built );
+			if ( $r && ! empty( $r['x'] ) && ( $xp = wc_get_product( $id ) ) ) {
+				$r['ph'] = wp_strip_all_tags( html_entity_decode( $xp->get_price_html() ) ); // volgt incl./excl. btw
+			}
 			if ( $r ) {
 				unset( $r['_k'], $r['_m'] );
 				$rows[] = $r;

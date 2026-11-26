@@ -122,3 +122,5 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 .mdo-tree li.is-off{opacity:.5}
 @media (max-width:900px){.mdo-f-subs .mdo-chip{padding:7px 12px;min-height:36px;font-size:13px}}
 .mdo-f-subs .mdo-chip.is-off{opacity:.5}
+.mdo-f-qty .mdo-btw{margin-left:auto}
+@media (max-width:900px){.mdo-f-qty .mdo-btw{margin-left:0}}

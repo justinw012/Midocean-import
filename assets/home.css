@@ -6,6 +6,7 @@
 
 .mdo-h-usp{list-style:none;margin:0 0 8px;padding:10px 0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 28px;font-size:14px;color:var(--h-muted);border-bottom:1px solid #ECEAE5}
 .mdo-h-usp li{margin:0;display:flex;align-items:center;gap:8px}
+.mdo-h-usp li.mdo-h-btw::before{display:none}
 .mdo-h-usp li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--h-grad)}
 
 .mdo-h-hero{display:flex;flex-wrap:wrap;align-items:center;gap:40px;padding:40px 0 56px}

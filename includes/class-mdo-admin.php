@@ -53,6 +53,7 @@ class MDO_Admin {
 			'home_title'       => sanitize_textarea_field( wp_unslash( $in['home_title'] ?? '' ) ),
 			'home_text'        => sanitize_text_field( wp_unslash( $in['home_text'] ?? '' ) ),
 			'home_stats'       => empty( $in['home_stats'] ) ? 0 : 1,
+			'tax_toggle'       => empty( $in['tax_toggle'] ) ? 0 : 1,
 			'home_products'    => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_products'] ?? '' ) ) ) ) ),
 			'home_hero'        => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_hero'] ?? '' ) ) ) ) ),
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
@@ -344,6 +345,7 @@ class MDO_Admin {
 					<tr><th>Winkel en filters</th><td>
 						<label><input type="checkbox" name="filter_on" value="1" <?php checked( $s['filter_on'] ); ?>> PromoFun-filters op shop-, categorie- en zoekpagina's (eerst aantal kiezen; prijs en levertijd bij dat aantal)</label><br>
 						<label><input type="checkbox" name="filter_sidebar" value="1" <?php checked( $s['filter_sidebar'] ); ?>> Zijbalk van het thema daar verbergen (de oude filters)</label><br>
+						<label><input type="checkbox" name="tax_toggle" value="1" <?php checked( $s['tax_toggle'] ); ?>> Klant kiest zelf: prijzen incl. of excl. btw (schakelaar in de shop, bij het product en op de homepage; ook als <code>[promofun_btw]</code>)</label><br>
 						<label>Achtergrond achter productfoto's: <input type="text" name="img_bg" value="<?php echo esc_attr( $s['img_bg'] ); ?>" placeholder="#F3F1EC" style="width:100px"></label> <span class="description">Leeg = geen. Witte productfoto's krijgen dan deze kleur.</span>
 					</td></tr>
 					<tr><th>Homepage <code>[promofun_home]</code></th><td>

@@ -434,7 +434,7 @@
       if (later) block = false;
       stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
-    return '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (cfg.taxLabel ? ' (' + cfg.taxLabel + ')' : '') + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
+    return (cfg.btw ? '<div class="mdo-btw-row">Prijzen ' + cfg.btw + '</div>' : '') + '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (cfg.taxLabel ? ' (' + cfg.taxLabel + ')' : '') + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() + (cfg.qtyNote ? '<p class="mdo-qtynote">' + esc(cfg.qtyNote) + '</p>' : '') +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
@@ -939,4 +939,14 @@
   render();
   loadFont('poppins');
   loadDemo();
+  // Incl./excl. btw omzetten zonder herladen (je ontwerp blijft staan).
+  function applyBtw(mode) {
+    var incl = mode === 'incl';
+    cfg.tax = incl && cfg.taxRate > 0 ? Math.round((1 + cfg.taxRate) * 10000) / 10000 : 1;
+    cfg.taxLabel = cfg.taxRate > 0 ? (incl ? 'incl. btw' : 'excl. btw') : '';
+    cfg.btw = String(cfg.btw || '').replace(/ class="is-on" aria-current="true"/g, '').replace(new RegExp('(mdo_btw=' + mode + '[^"]*")'), '$1 class="is-on" aria-current="true"');
+  }
+  document.addEventListener('mdo-btw', function (e) { e.preventDefault(); applyBtw(e.detail); render(); });
+  var ck = /(?:^|; )mdo_btw=(incl|excl)/.exec(document.cookie);
+  if (ck && cfg.btw && (ck[1] === 'incl') !== ((cfg.tax || 1) > 1)) { applyBtw(ck[1]); render(); }
 })();

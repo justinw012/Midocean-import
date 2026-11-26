@@ -199,6 +199,8 @@ class MDO_Frontend {
 			'qtyNote'        => (string) $s['qty_note'],
 			'tax'            => self::tax_factor( $product ),
 			'taxLabel'       => self::tax_label(),
+			'taxRate'        => self::tax_rate( $product ),
+			'btw'            => class_exists( 'MDO_Tax' ) ? MDO_Tax::html() : '',
 			'lead'           => self::lead_table(),
 			'leadExtra'      => array( (int) $s['lead_proof'], (int) $s['lead_transport'], (int) $s['lead_margin'] ),
 		);
