@@ -15,7 +15,7 @@ class MDO_Shipping {
 		add_action( 'admin_post_mdo_shipping', array( __CLASS__, 'handle' ) );
 	}
 
-	private static function get() {
+	public static function get() {
 		return wp_parse_args( (array) get_option( self::OPTION, array() ), array(
 			'cost'      => '12.30',
 			'free_from' => '',

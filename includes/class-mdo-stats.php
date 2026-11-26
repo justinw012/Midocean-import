@@ -56,6 +56,27 @@ class MDO_Stats {
 		return array( count( $orders ), $sum );
 	}
 
+	/** Voor de homepage: bezoekers vandaag en de laatste 7 dagen (null zonder Koko). */
+	public static function visitors() {
+		$c = get_transient( 'mdo_home_visitors' );
+		if ( is_array( $c ) ) {
+			return $c;
+		}
+		$t = self::visits( self::day( 0 ), self::day( 0 ) );
+		$w = self::visits( self::day( -6 ), self::day( 0 ) );
+		$c = array( $t ? $t[0] : null, $w ? $w[0] : null );
+		set_transient( 'mdo_home_visitors', $c, 10 * MINUTE_IN_SECONDS );
+		return $c;
+	}
+
+	/** Meest bekeken producten van de laatste 30 dagen (ids), uit Koko. */
+	public static function top_products( $n = 8 ) {
+		$d = self::data();
+		return array_slice( array_map( function ( $r ) {
+			return (int) $r[2];
+		}, $d['products'] ), 0, $n );
+	}
+
 	private static function data() {
 		$cached = get_transient( 'mdo_stats' );
 		if ( is_array( $cached ) ) {

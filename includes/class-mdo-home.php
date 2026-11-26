@@ -1,0 +1,236 @@
+<?php
+/**
+ * Homepage-blok: [promofun_home]
+ *
+ * Opbouw: voordelenbalk, kop met een product waar ons logo op gedrukt staat, bezoekers (Koko),
+ * "Wat zoek je?" met de hoofdcategorieën, hoe het werkt, populaire producten.
+ * Kleuren en letters sluiten aan op het thema (Poppins, paars) en het logo (verloop blauw → roze).
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+class MDO_Home {
+
+	public static function init() {
+		add_shortcode( 'promofun_home', array( __CLASS__, 'render' ) );
+	}
+
+	private static function assets() {
+		wp_enqueue_style( 'mdo-home', MDO_URL . 'assets/home.css', array(), MDO_VERSION );
+		// Voorbeeld met logo en fotoachtergrond (zelfde script als in de winkel).
+		MDO_Shop::assets();
+	}
+
+	/** Prijs per stuk bij 250 stuks (incl. goedkoopste bedrukking in 1 kleur, zoals de winkel hem toont). */
+	private static function price_250( $id ) {
+		$built = 0;
+		$row   = MDO_Filter::row( $id, $built );
+		if ( ! $row || ! empty( $row['x'] ) || empty( $row['pr'] ) ) {
+			return null;
+		}
+		$i = array_search( 250, MDO_Frontend::TIERS, true );
+		return array( (float) $row['pr'][ $i ] * (float) ( $row['tx'] ?? 1 ), ! empty( $row['pp'] ), $row );
+	}
+
+	/** Welke producten tonen we als "Populair"? Eigen keuze → meest bekeken (Koko) → meest verkocht → nieuwste. */
+	private static function popular_ids( $n = 8 ) {
+		$own = array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) MDO_Settings::get( 'home_products' ) ) ) );
+		$ids = $own;
+		if ( count( $ids ) < $n && class_exists( 'MDO_Stats' ) && MDO_Stats::koko_active() ) {
+			$ids = array_merge( $ids, MDO_Stats::top_products( $n * 2 ) );
+		}
+		if ( count( $ids ) < $n ) {
+			$ids = array_merge( $ids, wc_get_products( array( 'status' => 'publish', 'visibility' => 'catalog', 'limit' => $n * 2, 'orderby' => 'popularity', 'return' => 'ids' ) ) );
+		}
+		$out = array();
+		foreach ( array_unique( $ids ) as $id ) {
+			$p = wc_get_product( $id );
+			if ( $p && 'publish' === $p->get_status() && $p->is_visible() ) {
+				$out[] = (int) $id;
+			}
+			if ( count( $out ) >= $n ) {
+				break;
+			}
+		}
+		return $out;
+	}
+
+	/** Hoofdcategorieën met producten, met een foto: de categorie-afbeelding of een product eruit. */
+	private static function categories( $n = 8 ) {
+		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC' ) );
+		$out   = array();
+		if ( is_wp_error( $terms ) ) {
+			return $out;
+		}
+		foreach ( $terms as $t ) {
+			if ( in_array( $t->slug, array( 'uncategorized', 'geen-categorie' ), true ) ) {
+				continue;
+			}
+			$img   = '';
+			$thumb = (int) get_term_meta( $t->term_id, 'thumbnail_id', true );
+			if ( $thumb ) {
+				$src = wp_get_attachment_image_src( $thumb, 'woocommerce_thumbnail' );
+				$img = $src ? $src[0] : '';
+			}
+			if ( ! $img ) {
+				$ids = wc_get_products( array( 'status' => 'publish', 'visibility' => 'catalog', 'limit' => 1, 'category' => array( $t->slug ), 'orderby' => 'popularity', 'return' => 'ids' ) );
+				if ( $ids ) {
+					$src = wp_get_attachment_image_src( get_post_thumbnail_id( $ids[0] ), 'woocommerce_thumbnail' );
+					$img = $src ? $src[0] : '';
+				}
+			}
+			if ( ! $img ) {
+				continue; // zonder zichtbaar product geen tegel
+			}
+			$out[] = array( html_entity_decode( $t->name ), get_term_link( $t ), $img );
+			if ( count( $out ) >= $n ) {
+				break;
+			}
+		}
+		return $out;
+	}
+
+	private static function card( $id ) {
+		$p = wc_get_product( $id );
+		if ( ! $p ) {
+			return '';
+		}
+		$pr   = self::price_250( $id );
+		$src  = wp_get_attachment_image_src( $p->get_image_id(), 'woocommerce_thumbnail' );
+		$img  = $src ? $src[0] : wc_placeholder_img_src( 'woocommerce_thumbnail' );
+		$hov  = ( $pr && ! empty( $pr[2]['hov'] ) ) ? $pr[2]['hov'] : null;
+		$dots = '';
+		if ( $pr && ! empty( $pr[2]['c'] ) ) {
+			$seen = array();
+			foreach ( $pr[2]['c'] as $c ) {
+				if ( isset( $seen[ $c['g'] ] ) || count( $seen ) >= 8 ) {
+					continue;
+				}
+				$seen[ $c['g'] ] = 1;
+				$g               = MDO_Filter::GROUPS[ $c['g'] ] ?? array( '', '' );
+				$dots           .= '<span class="mdo-dot' . ( 'transparant' === $c['g'] ? ' is-clear' : ( 'multi' === $c['g'] ? ' is-multi' : '' ) ) . '" title="' . esc_attr( $g[0] ) . '"' . ( $g[1] ? ' style="background:' . esc_attr( $g[1] ) . '"' : '' ) . '></span>';
+			}
+		}
+		$price = $pr
+			? '<span class="mdo-card-p">Vanaf <b>' . wp_strip_all_tags( wc_price( $pr[0] ) ) . '</b> <span>p/st bij 250 st.' . ( $pr[1] ? ' incl. bedrukking' : '' ) . '</span></span>'
+			: '<span class="mdo-card-p">' . wp_strip_all_tags( html_entity_decode( $p->get_price_html() ) ) . '</span>';
+		ob_start();
+		?>
+		<li class="product mdo-card">
+			<a class="mdo-card-a" href="<?php echo esc_url( add_query_arg( 'aantal', 250, get_permalink( $id ) ) ); ?>">
+				<span class="mdo-card-img"><img src="<?php echo esc_url( $img ); ?>" alt="<?php echo esc_attr( html_entity_decode( $p->get_name() ) ); ?>" loading="lazy" decoding="async"></span>
+				<span class="mdo-card-n"><?php echo esc_html( html_entity_decode( $p->get_name() ) ); ?></span>
+				<?php if ( $dots ) : ?><span class="mdo-dots"><?php echo $dots; // phpcs:ignore ?></span><?php endif; ?>
+				<?php echo $price; // phpcs:ignore ?>
+			</a>
+			<?php if ( $hov && MDO_Settings::get( 'shop_hover' ) ) : ?><span class="mdo-hov" hidden data-mdo-hov="<?php echo esc_attr( wp_json_encode( $hov ) ); ?>"></span><?php endif; ?>
+		</li>
+		<?php
+		return ob_get_clean();
+	}
+
+	/** Grote productfoto met ons logo er vast op gedrukt (wordt in de browser getekend). */
+	private static function hero_product( array $popular ) {
+		$want = absint( MDO_Settings::get( 'home_hero' ) );
+		foreach ( array_merge( $want ? array( $want ) : array(), $popular ) as $id ) {
+			$p = wc_get_product( $id );
+			if ( ! $p ) {
+				continue;
+			}
+			$hov = MDO_Shop::mark_data( $p );
+			if ( $hov && MDO_Shop::logo_url() ) {
+				return array( $p, $hov );
+			}
+		}
+		return null;
+	}
+
+	public static function render() {
+		if ( ! function_exists( 'wc_get_products' ) ) {
+			return '';
+		}
+		self::assets();
+		$s       = MDO_Settings::all();
+		$popular = self::popular_ids( 8 );
+		$hero    = self::hero_product( $popular );
+		$cats    = self::categories( 8 );
+		$lines   = array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $s['home_title'] ) ) ) );
+		$ship    = class_exists( 'MDO_Shipping' ) ? MDO_Shipping::get() : array( 'cost' => '' );
+		$tax     = function_exists( 'wc_tax_enabled' ) && wc_tax_enabled() && 'incl' === get_option( 'woocommerce_tax_display_shop' );
+		$cost    = (float) $ship['cost'];
+		if ( $tax && $cost ) {
+			$rates = WC_Tax::get_base_tax_rates( '' );
+			$cost *= 1 + array_sum( wp_list_pluck( $rates, 'rate' ) ) / 100;
+		}
+		$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
+		$visits   = ( $s['home_stats'] && class_exists( 'MDO_Stats' ) && MDO_Stats::koko_active() ) ? MDO_Stats::visitors() : array( null, null );
+		$count    = (int) wp_count_posts( 'product' )->publish;
+
+		ob_start();
+		?>
+		<div class="mdo-home">
+			<ul class="mdo-h-usp">
+				<li><?php echo $tax ? 'Prijs incl. bedrukking en btw direct zichtbaar' : 'Prijs incl. bedrukking direct zichtbaar'; ?></li>
+				<?php if ( $cost ) : ?><li>Verzending NL &amp; BE: <?php echo wp_strip_all_tags( wc_price( $cost ) ); ?><?php echo $tax ? ' incl. btw' : ''; ?> per bestelling<?php echo $ship['free_from'] ? ', gratis vanaf ' . wp_strip_all_tags( wc_price( (float) $ship['free_from'] ) ) : ''; ?></li><?php endif; ?>
+				<li>Levertijd per product berekend</li>
+			</ul>
+
+			<section class="mdo-h-hero">
+				<div class="mdo-h-copy">
+					<p class="mdo-h-kicker">Promotieartikelen met je eigen logo</p>
+					<h1 class="mdo-h-title"><?php foreach ( $lines as $i => $l ) : ?><span class="<?php echo count( $lines ) - 1 === $i ? 'mdo-grad' : ''; ?>"><?php echo esc_html( $l ); ?></span><?php endforeach; ?></h1>
+					<?php if ( $s['home_text'] ) : ?><p class="mdo-h-text"><?php echo esc_html( $s['home_text'] ); ?></p><?php endif; ?>
+					<p class="mdo-h-btns">
+						<a class="mdo-h-btn" href="<?php echo esc_url( $shop_url ); ?>">Bekijk producten</a>
+						<a class="mdo-h-btn is-ghost" href="#mdo-h-how">Hoe het werkt</a>
+					</p>
+					<?php if ( null !== $visits[0] || $count ) : ?>
+					<dl class="mdo-h-stats">
+						<?php if ( null !== $visits[0] ) : ?><div><dt><?php echo esc_html( number_format_i18n( $visits[0] ) ); ?></dt><dd>bezoekers vandaag</dd></div><?php endif; ?>
+						<?php if ( null !== $visits[1] ) : ?><div><dt><?php echo esc_html( number_format_i18n( $visits[1] ) ); ?></dt><dd>bezoekers deze week</dd></div><?php endif; ?>
+						<?php if ( $count ) : ?><div><dt><?php echo esc_html( number_format_i18n( $count ) ); ?></dt><dd>producten in de shop</dd></div><?php endif; ?>
+					</dl>
+					<?php endif; ?>
+				</div>
+				<?php if ( $hero ) : list( $hp, $hov ) = $hero; ?>
+				<a class="mdo-h-show product" href="<?php echo esc_url( get_permalink( $hp->get_id() ) ); ?>">
+					<img src="<?php echo esc_url( $hov['img'] ); ?>" alt="<?php echo esc_attr( html_entity_decode( $hp->get_name() ) ); ?> met PromoFun-logo">
+					<span class="mdo-hov" hidden data-mdo-always="1" data-mdo-hov="<?php echo esc_attr( wp_json_encode( $hov ) ); ?>"></span>
+					<span class="mdo-h-note"><b>Zo ziet jouw logo eruit</b> op <?php echo esc_html( html_entity_decode( $hp->get_name() ) ); ?></span>
+				</a>
+				<?php endif; ?>
+			</section>
+
+			<?php if ( $cats ) : ?>
+			<section class="mdo-h-sec">
+				<h2>Wat zoek je?</h2>
+				<div class="mdo-h-cats">
+					<?php foreach ( $cats as $c ) : ?>
+					<a class="mdo-h-cat" href="<?php echo esc_url( $c[1] ); ?>"><span class="mdo-imgbg"><img src="<?php echo esc_url( $c[2] ); ?>" alt="" loading="lazy"></span><b><?php echo esc_html( $c[0] ); ?></b></a>
+					<?php endforeach; ?>
+				</div>
+			</section>
+			<?php endif; ?>
+
+			<section class="mdo-h-sec" id="mdo-h-how">
+				<h2>Zo werkt het</h2>
+				<ol class="mdo-h-steps">
+					<li><span>1</span><h3>Kies een product</h3><p>Kies kleur, aantal en eventueel maten.</p></li>
+					<li><span>2</span><h3>Upload je logo</h3><p>Je ziet direct een voorbeeld op het product, op de plek die jij kiest.</p></li>
+					<li><span>3</span><h3>Bestel met vaste prijs</h3><p>Totaal incl. bedrukking<?php echo $tax ? ' en btw' : ''; ?>, met de verwachte leverdatum erbij.</p></li>
+				</ol>
+			</section>
+
+			<?php if ( $popular ) : ?>
+			<section class="mdo-h-sec">
+				<div class="mdo-h-head"><h2>Populair</h2><a href="<?php echo esc_url( $shop_url ); ?>">Alle producten</a></div>
+				<ul class="products mdo-grid mdo-h-grid">
+					<?php foreach ( $popular as $id ) { echo self::card( $id ); } // phpcs:ignore ?>
+				</ul>
+			</section>
+			<?php endif; ?>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+}

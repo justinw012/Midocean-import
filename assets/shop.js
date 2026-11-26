@@ -152,6 +152,8 @@
       badge.classList.add('has-thumb');
     }
     function show() { ready(function () { requestAnimationFrame(function () { wrap.classList.add('mdo-hov-on'); }); }); }
+    // Homepage: altijd bedrukt tonen, zonder knopje.
+    if (mark.getAttribute('data-mdo-always')) { badge.remove(); show(); return; }
     // Op telefoons het plaatje alvast maken zodra het product in beeld komt.
     if (window.matchMedia && !window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
       if ('IntersectionObserver' in window) {

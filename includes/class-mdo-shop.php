@@ -40,6 +40,11 @@ class MDO_Shop {
 	}
 
 	public static function assets() {
+		static $done = false;
+		if ( $done ) {
+			return;
+		}
+		$done = true;
 		$logo = MDO_Settings::get( 'shop_hover' ) ? self::logo_url() : '';
 		$bg   = (string) MDO_Settings::get( 'img_bg' );
 		if ( ! $logo && ! $bg ) {
