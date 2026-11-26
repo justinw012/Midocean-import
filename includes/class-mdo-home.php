@@ -194,7 +194,8 @@ class MDO_Home {
 		self::assets();
 		$s       = MDO_Settings::all();
 		$popular = self::popular_ids( 8 );
-		$hero    = self::hero_products( $popular );
+		$try     = self::hero_products( $popular, 6 );
+		$hero    = array_slice( $try, 0, 5 );
 		$cats    = self::categories( 8 );
 		$lines   = array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $s['home_title'] ) ) ) );
 		$ship    = class_exists( 'MDO_Shipping' ) ? MDO_Shipping::get() : array( 'cost' => '' );
@@ -253,8 +254,33 @@ class MDO_Home {
 				<?php endif; ?>
 			</section>
 
+			<?php if ( count( $try ) >= 2 ) : ?>
+			<section class="mdo-h-sec mdo-h-band mdo-h-try" id="mdo-h-try">
+				<div class="mdo-h-try-head">
+					<h2>Probeer je eigen logo</h2>
+					<p>Kies je logo en zie het meteen op onze producten, ook straks in de hele shop. Je logo blijft in je eigen browser; wij slaan niets op.</p>
+					<p class="mdo-h-try-act">
+						<label class="mdo-h-btn mdo-h-up"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="mdo-h-file"> Kies je logo</label>
+						<button type="button" class="mdo-h-reset" hidden>Terug naar het PromoFun-logo</button>
+					</p>
+					<p class="mdo-h-try-msg" aria-live="polite"></p>
+				</div>
+				<ul class="mdo-h-try-grid">
+					<?php foreach ( $try as $h ) : list( $tp, $thov ) = $h; $tn = html_entity_decode( $tp->get_name() ); ?>
+					<li class="product mdo-h-tryitem">
+						<a href="<?php echo esc_url( get_permalink( $tp->get_id() ) ); ?>">
+							<span class="mdo-h-tryimg"><img src="<?php echo esc_url( $thov['img'] ); ?>" alt="<?php echo esc_attr( $tn ); ?>" loading="lazy"></span>
+							<span class="mdo-h-tryname"><?php echo esc_html( $tn ); ?></span>
+						</a>
+						<span class="mdo-hov" hidden data-mdo-always="1" data-mdo-hov="<?php echo esc_attr( wp_json_encode( $thov ) ); ?>"></span>
+					</li>
+					<?php endforeach; ?>
+				</ul>
+			</section>
+			<?php endif; ?>
+
 			<?php if ( $cats ) : ?>
-			<section class="mdo-h-sec">
+			<section class="mdo-h-sec mdo-h-band mdo-h-band-blue">
 				<h2>Wat zoek je?</h2>
 				<div class="mdo-h-cats">
 					<?php foreach ( $cats as $c ) : ?>
@@ -264,7 +290,7 @@ class MDO_Home {
 			</section>
 			<?php endif; ?>
 
-			<section class="mdo-h-sec" id="mdo-h-how">
+			<section class="mdo-h-sec mdo-h-band mdo-h-band-purple" id="mdo-h-how">
 				<h2>Zo werkt het</h2>
 				<ol class="mdo-h-steps">
 					<li><span>1</span><h3>Kies een product</h3><p>Kies kleur, aantal en eventueel maten.</p></li>

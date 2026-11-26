@@ -3,6 +3,10 @@
   'use strict';
   var C = window.MDO_SHOP || {};
   var logo = null, logoWait = [];
+  // Eigen logo van de bezoeker ("Probeer je logo" op de homepage): blijft alleen in deze browser.
+  var own = null;
+  try { own = localStorage.getItem('mdo_mylogo'); } catch (e) {}
+  var items = [];
 
   // Logo laden; desgewenst alleen de bovenste (grootste) regel, zonder slogan.
   function getLogo(cb) {
@@ -12,7 +16,7 @@
     var im = new Image();
     im.onload = function () {
       var out = im;
-      if (C.trimLine) {
+      if (C.trimLine && !own) {
         try {
           var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
           var x = c.getContext('2d'); x.drawImage(im, 0, 0);
@@ -45,8 +49,22 @@
       logo = out;
       logoWait.forEach(function (f) { f(logo); });
     };
-    im.src = C.logo;
+    im.onerror = function () { if (own) { own = null; try { localStorage.removeItem('mdo_mylogo'); } catch (e) {} im.src = C.logo; } };
+    im.src = own || C.logo;
   }
+  // Ander logo gebruiken (of terug naar het PromoFun-logo) en alle voorbeelden opnieuw tekenen.
+  function useLogo(url, keep) {
+    own = url || null;
+    try { if (own && keep) localStorage.setItem('mdo_mylogo', own); else if (!own) localStorage.removeItem('mdo_mylogo'); } catch (e) {}
+    logo = null; logoWait = []; inkCache = {};
+    items.forEach(function (f) { f(); });
+    scan();
+  }
+  window.MDO_LOGO = {
+    set: function (url) { var kept = true; try { localStorage.setItem('mdo_mylogo', url); } catch (e) { kept = false; } useLogo(url, kept); return kept; },
+    clear: function () { useLogo(null); },
+    own: function () { return !!own; }
+  };
   function trimX(cv) {
     var x = cv.getContext('2d'), d = x.getImageData(0, 0, cv.width, cv.height).data, l = cv.width, r = 0;
     for (var y = 0; y < cv.height; y += 2) for (var i = 0; i < cv.width; i++) if (d[(y * cv.width + i) * 4 + 3] > 24) { if (i < l) l = i; if (i > r) r = i; }
@@ -152,6 +170,16 @@
       badge.classList.add('has-thumb');
     }
     function show() { ready(function () { requestAnimationFrame(function () { wrap.classList.add('mdo-hov-on'); }); }); }
+    // Opnieuw tekenen met een ander logo.
+    items.push(function () {
+      var on = wrap.classList.contains('mdo-hov-on');
+      if (cv && cv.parentNode) cv.parentNode.removeChild(cv);
+      cv = null; busy = false; waiting = [];
+      var t = badge.querySelector('canvas'); if (t) t.remove();
+      badge.classList.remove('has-thumb');
+      if (on || mark.getAttribute('data-mdo-always')) { wrap.classList.remove('mdo-hov-on'); show(); }
+      else if (window.matchMedia && !window.matchMedia('(hover:hover) and (pointer:fine)').matches) ready(function () {});
+    });
     // Homepage: altijd bedrukt tonen, zonder knopje.
     if (mark.getAttribute('data-mdo-always')) { badge.remove(); show(); return; }
     // Op telefoons het plaatje alvast maken zodra het product in beeld komt.
@@ -197,7 +225,7 @@
     w.appendChild(img);
   }
   function scan() {
-    if (C.logo) [].forEach.call(document.querySelectorAll('[data-mdo-hov]'), setup);
+    if (C.logo || own) [].forEach.call(document.querySelectorAll('[data-mdo-hov]'), setup);
     if (C.bg) [].forEach.call(document.querySelectorAll('li.product, .wc-block-grid__product, .wc-block-product, .mdo-card'), bg);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
