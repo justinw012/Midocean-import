@@ -143,6 +143,14 @@
 
   function sideHtml() {
     var h = '', list, i, sum;
+    // Categorieën (alle niveaus onder deze pagina), met het aantal producten bij de huidige filters
+    if (C.tree && C.tree.length) {
+      list = subset(null);
+      h += grp('Categorie', '<ul class="mdo-tree">' + C.tree.map(function (t) {
+        var n = list.filter(function (r) { return (r.cats || []).indexOf(t.id) >= 0; }).length;
+        return '<li class="mdo-tree-' + Math.min(t.d, 3) + (n ? '' : ' is-off') + '"><a href="' + esc(t.url) + '">' + esc(t.name) + '</a> <span class="mdo-n">' + n + '</span></li>';
+      }).join('') + '</ul>', C.tree.length <= 25);
+    }
     // Klaar vóór
     list = subset('ready');
     h += grp('Klaar binnen', '<div class="mdo-chips">' + READY.map(function (n) {

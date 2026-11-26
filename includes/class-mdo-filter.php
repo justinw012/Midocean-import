@@ -87,9 +87,33 @@ class MDO_Filter {
 		} );
 	}
 
+	/** Alle categorieën onder $cat (0 = alles), als platte lijst met diepte, in boomvolgorde. */
+	private static function tree( $cat ) {
+		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name' ) );
+		if ( is_wp_error( $terms ) ) {
+			return array();
+		}
+		$kids = array();
+		foreach ( $terms as $t ) {
+			if ( 'uncategorized' === $t->slug || 'geen-categorie' === $t->slug ) {
+				continue;
+			}
+			$kids[ (int) $t->parent ][] = $t;
+		}
+		$out  = array();
+		$walk = function ( $parent, $depth ) use ( &$walk, &$out, $kids ) {
+			foreach ( $kids[ $parent ] ?? array() as $t ) {
+				$out[] = array( 'id' => $t->term_id, 'name' => html_entity_decode( $t->name ), 'url' => get_term_link( $t ), 'd' => $depth );
+				$walk( (int) $t->term_id, $depth + 1 );
+			}
+		};
+		$walk( (int) $cat, 0 );
+		return $out;
+	}
+
 	private static function subcats( $cat ) {
 		$out   = array();
-		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => (int) $cat, 'hide_empty' => true ) );
+		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => (int) $cat, 'hide_empty' => false ) );
 		if ( is_wp_error( $terms ) ) {
 			return $out;
 		}
@@ -111,6 +135,7 @@ class MDO_Filter {
 			'tag'      => $ctx['tag'],
 			's'        => $ctx['s'],
 			'subs'     => $ctx['cat'] || ( ! $ctx['tag'] && '' === $ctx['s'] ) ? self::subcats( $ctx['cat'] ) : array(),
+			'tree'     => ( $ctx['tag'] || '' !== $ctx['s'] ) ? array() : self::tree( $ctx['cat'] ),
 			'tiers'    => MDO_Frontend::TIERS,
 			'taxLabel' => MDO_Frontend::tax_label(),
 			'currency' => html_entity_decode( get_woocommerce_currency_symbol() ),

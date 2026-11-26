@@ -18,7 +18,7 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 .mdo-chip.is-on{background:var(--mdo-accent);border-color:var(--mdo-accent);color:#fff}
 .mdo-chip:disabled{opacity:.4;cursor:default}
 .mdo-n{font-weight:400;font-size:12px;opacity:.7}
-.mdo-f-subs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:thin}
+.mdo-f-subs{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 12px}
 .mdo-f-subs .mdo-chip{flex:none}
 
 .mdo-f-body{display:flex;gap:28px;align-items:flex-start}
@@ -111,3 +111,13 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 .mdo-filter .screen-reader-text{position:absolute!important;clip:rect(1px,1px,1px,1px);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
 .mdo-f-side .mdo-chips .mdo-chip{font-size:13px}
 .mdo-f-head .mdo-linkbtn{font-size:14px}
+.mdo-tree{list-style:none;margin:0;padding:0;font-size:14.5px}
+.mdo-tree li{display:flex;align-items:baseline;gap:6px;padding:4px 0;margin:0}
+.mdo-tree a{color:var(--mdo-ink)!important;text-decoration:none!important}
+.mdo-tree a:hover{text-decoration:underline!important}
+.mdo-tree .mdo-n{margin-left:auto}
+.mdo-tree-0 a{font-weight:600}
+.mdo-tree-1{padding-left:14px!important}
+.mdo-tree-2,.mdo-tree-3{padding-left:28px!important;font-size:13.5px}
+.mdo-tree li.is-off{opacity:.5}
+@media (max-width:900px){.mdo-f-subs .mdo-chip{padding:7px 12px;min-height:36px;font-size:13px}}
