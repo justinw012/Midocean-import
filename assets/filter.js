@@ -392,15 +392,25 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('is-open')) { root.classList.remove('is-open'); document.documentElement.classList.remove('mdo-f-lock'); } });
 
   // ---------- gegevens ophalen (grote categorieën in delen, tot alles binnen is) ----------
+  // Eerst via de pagina zelf (zelfde toegang als de pagina), anders via admin-ajax.
+  var viaAjax = false;
+  function dataUrl() {
+    if (viaAjax) return C.ajax + '?action=mdo_filter&cat=' + (C.cat || 0) + '&tag=' + (C.tag || 0) + '&s=' + encodeURIComponent(C.s || '') + '&tax=' + encodeURIComponent(C.tax || '') + '&term=' + (C.term || 0);
+    var p = new URLSearchParams(), cur = new URLSearchParams(location.search);
+    ['s', 'post_type', 'mdo_preview'].forEach(function (k) { if (cur.get(k)) p.set(k, cur.get(k)); });
+    p.set('mdo_filter_json', '1');
+    return location.pathname.replace(/\/page\/\d+\/?$/, '/') + '?' + p.toString();
+  }
   function load(tries) {
-    var u = C.ajax + '?action=mdo_filter&cat=' + (C.cat || 0) + '&tag=' + (C.tag || 0) + '&s=' + encodeURIComponent(C.s || '');
-    fetch(u, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
+    fetch(dataUrl(), { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
       rows = d.rows || []; total = d.total || rows.length; loading = !!d.more;
       document.body.classList.add('mdo-filter-on');
       render();
       if (d.more && tries < 40) setTimeout(function () { load(tries + 1); }, 50);
-    }).catch(function () {
-      // Lukt het niet, dan blijft de gewone productlijst van het thema staan.
+    }).catch(function (e) {
+      if (!viaAjax) { viaAjax = true; load(tries + 1); return; }
+      // Lukt het helemaal niet, dan de gewone productlijst en filters van het thema terugzetten.
+      if (window.console) console.warn('PromoFun-filters: gegevens niet geladen', e);
       root.innerHTML = '';
       document.body.classList.remove('mdo-filter-on');
     });

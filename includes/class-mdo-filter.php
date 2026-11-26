@@ -59,6 +59,12 @@ class MDO_Filter {
 		if ( is_product_tag() ) {
 			return array( 'cat' => 0, 'tag' => (int) get_queried_object_id(), 's' => '' );
 		}
+		if ( is_tax() ) {
+			$o = get_queried_object();
+			if ( $o && ! empty( $o->taxonomy ) && is_object_in_taxonomy( 'product', $o->taxonomy ) ) {
+				return array( 'cat' => 0, 'tag' => 0, 's' => '', 'tax' => $o->taxonomy, 'term' => (int) $o->term_id );
+			}
+		}
 		if ( is_search() && 'product' === get_query_var( 'post_type' ) ) {
 			return array( 'cat' => 0, 'tag' => 0, 's' => (string) get_search_query( false ) );
 		}
@@ -73,13 +79,24 @@ class MDO_Filter {
 		if ( ! $ctx ) {
 			return;
 		}
+		// Gegevens via dezelfde pagina-URL ophalen: wie de pagina mag zien (wachtwoord, beveiliging
+		// van de host), mag dan ook de gegevens zien. admin-ajax blijft als reserve.
+		if ( isset( $_GET['mdo_filter_json'] ) ) {
+			self::send( $ctx );
+		}
 		add_action( 'wp_enqueue_scripts', function () use ( $ctx ) {
 			self::assets( $ctx );
 		} );
 		add_action( 'woocommerce_before_shop_loop', array( __CLASS__, 'root' ), 1 );
 		add_action( 'woocommerce_no_products_found', array( __CLASS__, 'root' ), 1 );
+		// Meteen bij het laden de oude lijst en filters verbergen (niet pas als onze filters klaar zijn),
+		// anders zijn die even zichtbaar. Lukt het laden niet, dan zet het script ze terug.
+		add_action( 'wp_head', function () {
+			echo '<noscript><style>body.mdo-filter-on ul.products,body.mdo-filter-on #secondary,body.mdo-filter-on .widget-area,body.mdo-filter-on .woocommerce-pagination{display:block!important}.mdo-filter{display:none}</style></noscript>';
+		} );
 		add_filter( 'body_class', function ( $c ) {
 			$c[] = 'mdo-filter-page';
+			$c[] = 'mdo-filter-on';
 			if ( MDO_Settings::get( 'filter_sidebar' ) ) {
 				$c[] = 'mdo-filter-nosidebar';
 			}
@@ -134,8 +151,10 @@ class MDO_Filter {
 			'cat'      => $ctx['cat'],
 			'tag'      => $ctx['tag'],
 			's'        => $ctx['s'],
-			'subs'     => $ctx['cat'] || ( ! $ctx['tag'] && '' === $ctx['s'] ) ? self::subcats( $ctx['cat'] ) : array(),
-			'tree'     => ( $ctx['tag'] || '' !== $ctx['s'] ) ? array() : self::tree( $ctx['cat'] ),
+			'tax'      => $ctx['tax'] ?? '',
+			'term'     => $ctx['term'] ?? 0,
+			'subs'     => $ctx['cat'] || ( ! $ctx['tag'] && '' === $ctx['s'] && empty( $ctx['tax'] ) ) ? self::subcats( $ctx['cat'] ) : array(),
+			'tree'     => ( $ctx['tag'] || '' !== $ctx['s'] || ! empty( $ctx['tax'] ) ) ? array() : self::tree( $ctx['cat'] ),
 			'tiers'    => MDO_Frontend::TIERS,
 			'taxLabel' => MDO_Frontend::tax_label(),
 			'currency' => html_entity_decode( get_woocommerce_currency_symbol() ),
@@ -402,7 +421,7 @@ class MDO_Filter {
 		return $row;
 	}
 
-	private static function product_ids( $cat, $tag, $s ) {
+	private static function product_ids( $cat, $tag, $s, $tax = '', $term = 0 ) {
 		$args = array(
 			'post_type'        => 'product',
 			'post_status'      => 'publish',
@@ -426,6 +445,9 @@ class MDO_Filter {
 		if ( $tag ) {
 			$args['tax_query'][] = array( 'taxonomy' => 'product_tag', 'field' => 'term_id', 'terms' => array( $tag ) );
 		}
+		if ( $tax && $term ) {
+			$args['tax_query'][] = array( 'taxonomy' => $tax, 'field' => 'term_id', 'terms' => array( $term ) );
+		}
 		if ( '' !== $s ) {
 			$args['s']       = $s;
 			$args['orderby'] = 'relevance';
@@ -448,12 +470,18 @@ class MDO_Filter {
 	}
 
 	public static function ajax() {
-		$cat = absint( $_GET['cat'] ?? 0 );
-		$tag = absint( $_GET['tag'] ?? 0 );
-		$s   = sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) );
-		$s   = mb_substr( $s, 0, 80 );
+		$tax = sanitize_key( wp_unslash( $_GET['tax'] ?? '' ) );
+		self::send( array(
+			'cat'  => absint( $_GET['cat'] ?? 0 ),
+			'tag'  => absint( $_GET['tag'] ?? 0 ),
+			's'    => mb_substr( sanitize_text_field( wp_unslash( $_GET['s'] ?? '' ) ), 0, 80 ),
+			'tax'  => ( $tax && taxonomy_exists( $tax ) && is_object_in_taxonomy( 'product', $tax ) ) ? $tax : '',
+			'term' => absint( $_GET['term'] ?? 0 ),
+		) );
+	}
 
-		$ids   = self::product_ids( $cat, $tag, $s );
+	public static function send( array $ctx ) {
+		$ids   = self::product_ids( (int) $ctx['cat'], (int) $ctx['tag'], mb_substr( (string) $ctx['s'], 0, 80 ), (string) ( $ctx['tax'] ?? '' ), (int) ( $ctx['term'] ?? 0 ) );
 		$rows  = array();
 		$built = 0;
 		$t0    = microtime( true );
