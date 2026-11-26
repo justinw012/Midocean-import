@@ -132,13 +132,26 @@ class MDO_Home {
 	/** Grote productfoto met ons logo er vast op gedrukt (wordt in de browser getekend). */
 	private static function hero_product( array $popular ) {
 		$want = absint( MDO_Settings::get( 'home_hero' ) );
-		foreach ( array_merge( $want ? array( $want ) : array(), $popular ) as $id ) {
+		// Zonder eigen keuze: liefst een tas (groot, plat drukvlak: het logo valt goed op).
+		$bags = $want ? array() : get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			's'              => 'tas',
+			'fields'         => 'ids',
+			'posts_per_page' => 30,
+			'no_found_rows'  => true,
+		) );
+		$bags = array_values( array_filter( (array) $bags, function ( $id ) {
+			return (bool) preg_match( '/\b(tas|tasje|shopper|draagtas|boodschappentas|strandtas)\b|tas\b/i', html_entity_decode( get_the_title( $id ) ) );
+		} ) );
+		foreach ( array_merge( $want ? array( $want ) : array(), $bags, $popular ) as $id ) {
 			$p = wc_get_product( $id );
 			if ( ! $p ) {
 				continue;
 			}
 			$hov = MDO_Shop::mark_data( $p );
-			if ( $hov && MDO_Shop::logo_url() ) {
+			// Geen rondom-opdruk: die foto's tonen meerdere aanzichten naast elkaar.
+			if ( $hov && MDO_Shop::logo_url() && ! preg_match( '/360|WRAP|AROUND|ROUND/i', (string) $hov['id'] ) ) {
 				return array( $p, $hov );
 			}
 		}
@@ -163,6 +176,7 @@ class MDO_Home {
 			$cost *= 1 + array_sum( wp_list_pluck( $rates, 'rate' ) ) / 100;
 		}
 		$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
+		// Bezoekersaantallen alleen als dat bij Instellingen aan staat (standaard uit).
 		$visits   = ( $s['home_stats'] && class_exists( 'MDO_Stats' ) && MDO_Stats::koko_active() ) ? MDO_Stats::visitors() : array( null, null );
 		$count    = (int) wp_count_posts( 'product' )->publish;
 

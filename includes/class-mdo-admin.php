@@ -349,9 +349,9 @@ class MDO_Admin {
 					<tr><th>Homepage <code>[promofun_home]</code></th><td>
 						<p><label>Kop (elke regel apart; de laatste regel krijgt de kleuren van het logo)<br><textarea name="home_title" rows="3" class="large-text"><?php echo esc_textarea( $s['home_title'] ); ?></textarea></label></p>
 						<p><label>Tekst onder de kop<br><input type="text" name="home_text" value="<?php echo esc_attr( $s['home_text'] ); ?>" class="large-text"></label></p>
-						<p><label><input type="checkbox" name="home_stats" value="1" <?php checked( $s['home_stats'] ); ?>> Bezoekers vandaag en deze week tonen (uit Koko Analytics) en het aantal producten</label></p>
+						<p><label><input type="checkbox" name="home_stats" value="1" <?php checked( $s['home_stats'] ); ?>> Bezoekers vandaag en deze week tonen (uit Koko Analytics). Het aantal producten staat er altijd.</label></p>
 						<p><label>Populaire producten (product-ID's, met komma's; leeg = vanzelf: meest bekeken, anders meest verkocht)<br><input type="text" name="home_products" value="<?php echo esc_attr( $s['home_products'] ); ?>" class="regular-text"></label></p>
-						<p><label>Product groot bovenaan met ons logo erop (product-ID; leeg = het eerste populaire product)<br><input type="number" name="home_hero" min="0" value="<?php echo $s['home_hero'] ? (int) $s['home_hero'] : ''; ?>" style="width:110px"></label></p>
+						<p><label>Product groot bovenaan met ons logo erop (product-ID; leeg = vanzelf een tas)<br><input type="number" name="home_hero" min="0" value="<?php echo $s['home_hero'] ? (int) $s['home_hero'] : ''; ?>" style="width:110px"></label></p>
 						<p class="description">Zet <code>[promofun_home]</code> in een Shortcode-blok op de pagina die je homepage is.</p>
 					</td></tr>
 				</table>

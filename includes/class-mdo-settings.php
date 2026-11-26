@@ -35,7 +35,7 @@ class MDO_Settings {
 			'img_bg'           => '#F3F1EC',
 			'home_title'       => "Upload je logo.\nZie het meteen.\nWeet direct de prijs.",
 			'home_text'        => 'Kies een product, plaats je logo en zie de totaalprijs inclusief bedrukking. Zonder offerte aan te vragen.',
-			'home_stats'       => 1,
+			'home_stats'       => 0,
 			'home_products'    => '',
 			'home_hero'        => 0,
 		);
