@@ -13,11 +13,13 @@ class MDO_Shop {
 			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'badges' ), 15 );
 			add_action( 'wp_head', array( __CLASS__, 'badge_css' ) );
 		}
-		if ( is_admin() || ! MDO_Settings::get( 'shop_hover' ) ) {
+		if ( is_admin() ) {
 			return;
 		}
-		add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'mark' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
+		if ( MDO_Settings::get( 'shop_hover' ) ) {
+			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'mark' ), 20 );
+		}
 	}
 
 	public static function logo_url() {
@@ -38,13 +40,19 @@ class MDO_Shop {
 	}
 
 	public static function assets() {
-		if ( ! self::logo_url() ) {
+		$logo = MDO_Settings::get( 'shop_hover' ) ? self::logo_url() : '';
+		$bg   = (string) MDO_Settings::get( 'img_bg' );
+		if ( ! $logo && ! $bg ) {
 			return;
 		}
 		wp_enqueue_style( 'mdo-shop', MDO_URL . 'assets/shop.css', array(), MDO_VERSION );
+		if ( $bg ) {
+			wp_add_inline_style( 'mdo-shop', '.mdo-imgbg{background:' . $bg . '}' );
+		}
 		wp_enqueue_script( 'mdo-shop', MDO_URL . 'assets/shop.js', array(), MDO_VERSION, true );
 		wp_localize_script( 'mdo-shop', 'MDO_SHOP', array(
-			'logo'     => self::logo_url(),
+			'bg'       => $bg ? 1 : 0,
+			'logo'     => $logo,
 			'icon'     => self::icon_url(),
 			'trimLine' => (int) MDO_Settings::get( 'hover_trim' ),
 		) );
@@ -53,12 +61,23 @@ class MDO_Shop {
 	/** Gegevens voor het bedrukte voorbeeld: foto van de drukpositie + drukvlak. */
 	public static function mark() {
 		global $product;
-		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) || ! self::logo_url() ) {
+		if ( ! $product || ! self::logo_url() ) {
 			return;
+		}
+		$data = self::mark_data( $product );
+		if ( $data ) {
+			echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
+		}
+	}
+
+	/** Zelfde gegevens als array (ook gebruikt door de filters). */
+	public static function mark_data( $product ) {
+		if ( ! $product->get_meta( '_mdo_master_code' ) ) {
+			return null;
 		}
 		$print = $product->get_meta( MDO_Printdata::META );
 		if ( ! is_array( $print ) || empty( $print['positions'] ) ) {
-			return;
+			return null;
 		}
 		// Kleurcode van de standaardvariant (of de eerste), zodat het voorbeeld dezelfde kleur heeft.
 		$code   = '';
@@ -112,9 +131,9 @@ class MDO_Shop {
 				'w'     => (float) $pos['w'],
 				'dia'   => MDO_Frontend::diameter( $product ),
 			);
-			echo '<span class="mdo-hov" hidden data-mdo-hov="' . esc_attr( wp_json_encode( $data ) ) . '"></span>';
-			return;
+			return $data;
 		}
+		return null;
 	}
 
 	/**
@@ -123,7 +142,7 @@ class MDO_Shop {
 	 * - alleen gravering/blinddruk: grijs, zoals gegraveerd materiaal
 	 * - alleen beperkt aantal kleuren (zeefdruk/tampondruk): logo in één kleur, zwart of wit op donker
 	 */
-	private static function ink_for( array $pos, $colour_name ) {
+	public static function ink_for( array $pos, $colour_name ) {
 		$names  = array_merge( (array) get_option( 'mdo_technique_names', array() ), array_filter( (array) get_option( 'mdo_technique_labels', array() ) ) );
 		$dark   = (bool) preg_match( '/zwart|black|navy|marine|donker|dark|bordeaux|petrol|royal|bruin|paars|antraciet|kobalt/i', (string) $colour_name );
 		$effect = true;

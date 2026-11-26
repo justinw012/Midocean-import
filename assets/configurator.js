@@ -927,7 +927,15 @@
     form.submit();
   });
 
+  // Vanuit de filters: ?aantal=250&kleur=03 (gekozen aantal en kleur meenemen).
+  var urlQty = 0;
+  try {
+    var up = new URLSearchParams(location.search), uk = String(up.get('kleur') || '').toLowerCase();
+    urlQty = parseInt(up.get('aantal'), 10) || 0;
+    if (uk) cfg.colors.forEach(function (c, i) { if (String(c.code || '').toLowerCase() === uk) st.color = i; });
+  } catch (e) {}
   if (cfg.colors[st.color] && cfg.colors[st.color].sizes) st.qty = 1;
+  else if (urlQty > 0) st.qty = urlQty;
   render();
   loadFont('poppins');
   loadDemo();

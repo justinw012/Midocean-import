@@ -307,6 +307,7 @@ class MDO_Importer {
 			}
 			$var->update_meta_data( '_mdo_color_code', $v['color_code'] );
 			$var->update_meta_data( '_mdo_pms', $v['pms'] ?? '' );
+			$var->update_meta_data( '_mdo_color_group', $v['color_group'] ?? '' );
 			$var->update_meta_data( '_mdo_arrivals', isset( $arr[ $v['sku'] ] ) ? $arr[ $v['sku'] ] : array() );
 			if ( $v['gtin'] && method_exists( $var, 'set_global_unique_id' ) && ! $var->get_global_unique_id() ) {
 				try {

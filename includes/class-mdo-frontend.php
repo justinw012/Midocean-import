@@ -70,7 +70,7 @@ class MDO_Frontend {
 	}
 
 	/** Verkoopprijzen (al met opslag) van de technieken die dit product gebruikt. */
-	private static function techniques_for( array $faces ) {
+	public static function techniques_for( array $faces ) {
 		$pp    = get_option( 'mdo_printprices', array() );
 		$names = array_merge( get_option( 'mdo_technique_names', array() ), array_filter( (array) get_option( 'mdo_technique_labels', array() ) ) );
 		$infos = array_filter( (array) get_option( 'mdo_technique_info', array() ) );

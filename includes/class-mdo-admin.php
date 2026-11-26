@@ -47,6 +47,9 @@ class MDO_Admin {
 			'qty_note'         => sanitize_text_field( wp_unslash( $in['qty_note'] ?? '' ) ),
 			'hover_logo'       => absint( $in['hover_logo'] ?? 0 ),
 			'hover_trim'       => empty( $in['hover_trim'] ) ? 0 : 1,
+			'filter_on'        => empty( $in['filter_on'] ) ? 0 : 1,
+			'filter_sidebar'   => empty( $in['filter_sidebar'] ) ? 0 : 1,
+			'img_bg'           => sanitize_hex_color( $in['img_bg'] ?? '' ) ?: '',
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
 			'hidden_categories'=> array_values( array_map( 'sanitize_text_field', (array) ( $in['hidden_categories'] ?? array() ) ) ),
 		);
@@ -332,6 +335,11 @@ class MDO_Admin {
 						<label><input type="checkbox" name="hover_trim" value="1" <?php checked( $s['hover_trim'] ); ?>> Alleen de grote regel van het logo gebruiken (zonder slogan)</label><br>
 						<label>Ander logo (media-ID, leeg = sitelogo): <input type="number" name="hover_logo" min="0" value="<?php echo $s['hover_logo'] ? (int) $s['hover_logo'] : ''; ?>" style="width:110px"></label>
 						<?php $lu = MDO_Shop::logo_url(); if ( $lu ) : ?><br><img src="<?php echo esc_url( $lu ); ?>" alt="" style="max-width:260px;max-height:70px;margin-top:6px;background:#eee;padding:4px"><?php endif; ?>
+					</td></tr>
+					<tr><th>Winkel en filters</th><td>
+						<label><input type="checkbox" name="filter_on" value="1" <?php checked( $s['filter_on'] ); ?>> PromoFun-filters op shop-, categorie- en zoekpagina's (eerst aantal kiezen; prijs en levertijd bij dat aantal)</label><br>
+						<label><input type="checkbox" name="filter_sidebar" value="1" <?php checked( $s['filter_sidebar'] ); ?>> Zijbalk van het thema daar verbergen (de oude filters)</label><br>
+						<label>Achtergrond achter productfoto's: <input type="text" name="img_bg" value="<?php echo esc_attr( $s['img_bg'] ); ?>" placeholder="#F3F1EC" style="width:100px"></label> <span class="description">Leeg = geen. Witte productfoto's krijgen dan deze kleur.</span>
 					</td></tr>
 				</table>
 				<?php submit_button( 'Instellingen opslaan' ); ?>

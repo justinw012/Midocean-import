@@ -30,6 +30,9 @@ class MDO_Settings {
 			'qty_note'         => 'Bij bedrukte artikelen kan de geleverde hoeveelheid tot 10% afwijken; het verschil verrekenen we achteraf.',
 			'hover_logo'       => 0,
 			'hover_trim'       => 1,
+			'filter_on'        => 1,
+			'filter_sidebar'   => 1, // zijbalk van het thema verbergen op shoppagina's
+			'img_bg'           => '#F3F1EC',
 		);
 	}
 

@@ -2,7 +2,6 @@
 (function () {
   'use strict';
   var C = window.MDO_SHOP || {};
-  if (!C.logo) return;
   var logo = null, logoWait = [];
 
   // Logo laden; desgewenst alleen de bovenste (grootste) regel, zonder slogan.
@@ -182,7 +181,23 @@
     });
   }
 
-  function scan() { [].forEach.call(document.querySelectorAll('[data-mdo-hov]'), setup); }
+  // Witte productfoto's op een zachte achtergrondkleur (de foto wordt 'vermenigvuldigd', wit wordt de kleur).
+  function bg(item) {
+    if (item.getAttribute('data-mdo-bg')) return;
+    var img = item.querySelector('img');
+    if (!img) return;
+    item.setAttribute('data-mdo-bg', '1');
+    var p = img.parentNode;
+    if (p.classList && (p.classList.contains('mdo-hov-wrap') || p.classList.contains('mdo-imgbg'))) { p.classList.add('mdo-imgbg'); return; }
+    var w = document.createElement('span');
+    w.className = 'mdo-imgbg';
+    p.insertBefore(w, img);
+    w.appendChild(img);
+  }
+  function scan() {
+    if (C.logo) [].forEach.call(document.querySelectorAll('[data-mdo-hov]'), setup);
+    if (C.bg) [].forEach.call(document.querySelectorAll('li.product, .wc-block-grid__product, .wc-block-product, .mdo-card'), bg);
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
   // Producten die later geladen worden (oneindig scrollen, filters).
   if (window.MutationObserver) new MutationObserver(function () { scan(); }).observe(document.body, { childList: true, subtree: true });

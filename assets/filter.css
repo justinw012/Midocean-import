@@ -1,0 +1,113 @@
+/* PromoFun – filters. Thema-neutraal; kleuren via variabelen. */
+.mdo-filter{--mdo-ink:#16181D;--mdo-muted:#5E636D;--mdo-line:#E3E0DA;--mdo-soft:#F7F6F3;--mdo-accent:#16181D;--mdo-ok:#1D7A45;--mdo-wait:#9A5B00;margin:0 0 24px;color:var(--mdo-ink);font-size:15px;line-height:1.45}
+.mdo-filter *{box-sizing:border-box}
+/* Gewone productlijst van het thema verbergen zodra de filters klaar zijn (zonder JS blijft die staan). */
+body.mdo-filter-on .woocommerce-result-count,body.mdo-filter-on .woocommerce-ordering,body.mdo-filter-on .woocommerce-pagination,body.mdo-filter-on .woocommerce-info.woocommerce-no-products-found,body.mdo-filter-on .woocommerce-no-products-found{display:none!important}
+body.mdo-filter-on ul.products:not(.mdo-grid){display:none!important}
+body.mdo-filter-nosidebar.mdo-filter-on #secondary,body.mdo-filter-nosidebar.mdo-filter-on .widget-area,body.mdo-filter-nosidebar.mdo-filter-on aside.sidebar{display:none!important}
+body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-filter-on .content-area{width:100%!important;max-width:100%!important;flex:1 1 100%!important;float:none!important}
+.mdo-f-loading{color:var(--mdo-muted);padding:12px 0}
+
+.mdo-f-qty{background:var(--mdo-soft);border-radius:18px;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin-bottom:14px}
+.mdo-f-qty>b{font-size:16px}
+.mdo-f-qnote{font-size:14px;color:var(--mdo-muted);flex:1 1 260px}
+.mdo-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mdo-filter button{font:inherit;text-transform:none;letter-spacing:normal;line-height:1.2;min-height:0;box-shadow:none}
+.mdo-chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--mdo-line);background:#fff;color:var(--mdo-ink);border-radius:999px;padding:9px 15px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none!important;min-height:40px}
+.mdo-chip:hover{border-color:var(--mdo-ink);color:var(--mdo-ink)}
+.mdo-chip.is-on{background:var(--mdo-accent);border-color:var(--mdo-accent);color:#fff}
+.mdo-chip:disabled{opacity:.4;cursor:default}
+.mdo-n{font-weight:400;font-size:12px;opacity:.7}
+.mdo-f-subs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:thin}
+.mdo-f-subs .mdo-chip{flex:none}
+
+.mdo-f-body{display:flex;gap:28px;align-items:flex-start}
+.mdo-f-side{flex:0 0 260px;position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;padding-right:4px}
+.mdo-f-main{flex:1 1 auto;min-width:0}
+.mdo-f-head{display:none}
+.mdo-f-foot{display:none}
+.mdo-fg{border-bottom:1px solid var(--mdo-line);padding:12px 0}
+.mdo-fg summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.mdo-fg summary::-webkit-details-marker{display:none}
+.mdo-fg summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 4px 0;transition:transform .2s}
+.mdo-fg[open] summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+.mdo-fg-b{padding-top:10px}
+.mdo-fg .mdo-chip{padding:7px 12px;min-height:36px;font-weight:500}
+.mdo-check{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;font-size:15px}
+.mdo-check input{width:18px;height:18px;margin:0;accent-color:var(--mdo-accent);flex:none}
+.mdo-check.is-off{opacity:.45;cursor:default}
+.mdo-check .mdo-n{margin-left:auto}
+.mdo-date{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mdo-muted)}
+.mdo-date input{font:inherit;padding:6px 8px;border:1.5px solid var(--mdo-line);border-radius:10px;width:auto}
+.mdo-hint{font-size:12.5px;color:var(--mdo-muted);margin:8px 0 0}
+.mdo-range{width:100%;accent-color:var(--mdo-accent)}
+.mdo-range-l{display:flex;justify-content:space-between;font-size:13px;color:var(--mdo-muted)}
+.mdo-sws{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.mdo-sw{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:4px;cursor:pointer;border-radius:10px;color:var(--mdo-ink)}
+.mdo-sw:hover{background:var(--mdo-soft)}
+.mdo-sw-dot{width:30px;height:30px;border-radius:50%;background:var(--sw,#ccc);border:1px solid rgba(0,0,0,.18)}
+.mdo-sw.is-clear .mdo-sw-dot,.mdo-dot.is-clear{background:repeating-linear-gradient(45deg,#fff 0 4px,#E3E0DA 4px 8px)}
+.mdo-sw.is-multi .mdo-sw-dot,.mdo-dot.is-multi{background:conic-gradient(#D53A35,#F2C94C,#2E9E62,#2F6FD3,#7E57C2,#D53A35)}
+.mdo-sw.is-on .mdo-sw-dot{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--mdo-accent)}
+.mdo-sw-l{font-size:12px}
+.mdo-sw.is-on .mdo-sw-l{font-weight:700}
+
+.mdo-f-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:12px}
+.mdo-f-open{display:none}
+.mdo-f-count{font-size:15px}
+.mdo-f-search{flex:1 1 200px;max-width:320px;margin:0}
+.mdo-f-search input{width:100%;font:inherit;padding:9px 14px;border:1.5px solid var(--mdo-line);border-radius:999px;background:#fff}
+.mdo-f-sort{margin:0 0 0 auto;display:flex;align-items:center;gap:8px;font-size:14px}
+.mdo-f-sort select{font:inherit;padding:8px 10px;border:1.5px solid var(--mdo-line);border-radius:10px;background:#fff;width:auto}
+.mdo-f-active{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.mdo-tag{border:0;background:var(--mdo-ink);color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer}
+.mdo-linkbtn{background:none;border:0;padding:4px;text-decoration:underline;cursor:pointer;color:var(--mdo-ink);font-size:13px}
+.mdo-btn{background:var(--mdo-accent);color:#fff;border:0;border-radius:999px;padding:13px 22px;font-weight:600;cursor:pointer}
+.mdo-more{text-align:center;margin:24px 0 0}
+.mdo-empty{padding:24px;background:var(--mdo-soft);border-radius:18px}
+.mdo-empty .mdo-f-active{margin:10px 0 0}
+
+/* Productkaarten */
+.mdo-filter ul.products.mdo-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px;margin:0!important;padding:0;list-style:none}
+.mdo-filter ul.products.mdo-grid::before,.mdo-filter ul.products.mdo-grid::after{display:none!important}
+.mdo-filter ul.products.mdo-grid li.product.mdo-card{width:auto!important;margin:0!important;padding:0!important;float:none!important;position:relative;text-align:left}
+.mdo-card-a{display:flex;flex-direction:column;gap:6px;color:var(--mdo-ink)!important;text-decoration:none!important}
+.mdo-card-img{position:relative;display:block;border-radius:14px;overflow:hidden;aspect-ratio:1}
+.mdo-card-img img{width:100%;height:100%;object-fit:contain;display:block;margin:0!important}
+.mdo-card-img .mdo-imgbg,.mdo-card-img .mdo-hov-wrap{height:100%}
+.mdo-card-n{font-weight:600;font-size:15px;line-height:1.3;margin-top:4px}
+.mdo-dots{display:flex;gap:4px;align-items:center}
+.mdo-dot{width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.2);display:inline-block}
+.mdo-dot-more{font-size:12px;color:var(--mdo-muted);margin-left:2px}
+.mdo-card-p{font-size:15px}
+.mdo-card-p span{font-size:13px;color:var(--mdo-muted)}
+.mdo-card-d{font-size:13px}
+.mdo-card-d.is-ok{color:var(--mdo-ok)}
+.mdo-card-d.is-wait{color:var(--mdo-wait)}
+.mdo-card-d.is-unk{color:var(--mdo-muted)}
+.mdo-card .mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px}
+
+/* Telefoon/tablet: filters als paneel van onderen */
+@media (max-width:900px){
+  .mdo-f-body{display:block}
+  .mdo-f-open{display:inline-flex;align-items:center;border:0;background:var(--mdo-accent);color:#fff;border-radius:999px;padding:10px 16px;font-weight:600;cursor:pointer;min-height:42px}
+  .mdo-f-sort{margin-left:0}
+  .mdo-f-search{order:5;max-width:none;flex-basis:100%}
+  .mdo-f-qty{padding:12px 14px}
+  .mdo-f-qty .mdo-chips{flex-wrap:nowrap;overflow-x:auto;width:100%}
+  .mdo-f-qty .mdo-chip{flex:none}
+  .mdo-f-side{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:86vh;height:86vh;background:#fff;z-index:99999;border-radius:20px 20px 0 0;padding:0;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .25s ease;box-shadow:0 -8px 30px rgba(0,0,0,.2);visibility:hidden}
+  .mdo-filter.is-open .mdo-f-side{transform:none;visibility:visible}
+  .mdo-filter.is-open::before{content:"";position:fixed;inset:0;background:rgba(22,24,29,.45);z-index:99998}
+  .mdo-f-head{display:flex;align-items:center;gap:12px;padding:14px 18px 8px;font-size:20px}
+  .mdo-f-head b{margin-right:auto}
+  .mdo-f-x{background:none;border:0;font-size:28px;line-height:1;cursor:pointer;padding:4px 8px;color:var(--mdo-ink)}
+  .mdo-f-side [data-slot="side"]{flex:1;overflow:auto;padding:0 18px}
+  .mdo-f-foot{display:block;padding:12px 18px 18px;border-top:1px solid var(--mdo-line)}
+  .mdo-f-foot .mdo-btn{width:100%;padding:15px}
+  .mdo-filter ul.products.mdo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  html.mdo-f-lock,html.mdo-f-lock body{overflow:hidden}
+}
+.mdo-filter .screen-reader-text{position:absolute!important;clip:rect(1px,1px,1px,1px);clip-path:inset(50%);width:1px;height:1px;overflow:hidden;white-space:nowrap}
+.mdo-f-side .mdo-chips .mdo-chip{font-size:13px}
+.mdo-f-head .mdo-linkbtn{font-size:14px}
