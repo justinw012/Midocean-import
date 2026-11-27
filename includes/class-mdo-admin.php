@@ -56,6 +56,13 @@ class MDO_Admin {
 			'tax_toggle'       => empty( $in['tax_toggle'] ) ? 0 : 1,
 			'brand_grad'       => empty( $in['brand_grad'] ) ? 0 : 1,
 			'compact_crumbs'   => empty( $in['compact_crumbs'] ) ? 0 : 1,
+			'footer_on'        => empty( $in['footer_on'] ) ? 0 : 1,
+			'footer_text'      => sanitize_text_field( wp_unslash( $in['footer_text'] ?? '' ) ),
+			'footer_email'     => sanitize_email( wp_unslash( $in['footer_email'] ?? '' ) ),
+			'footer_phone'     => sanitize_text_field( wp_unslash( $in['footer_phone'] ?? '' ) ),
+			'footer_address'   => sanitize_textarea_field( wp_unslash( $in['footer_address'] ?? '' ) ),
+			'footer_kvk'       => sanitize_text_field( wp_unslash( $in['footer_kvk'] ?? '' ) ),
+			'footer_btw'       => sanitize_text_field( wp_unslash( $in['footer_btw'] ?? '' ) ),
 			'home_products'    => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_products'] ?? '' ) ) ) ) ),
 			'home_hero'        => implode( ',', array_filter( array_map( 'absint', preg_split( '/[\s,;]+/', (string) ( $in['home_hero'] ?? '' ) ) ) ) ),
 			'categories'       => array_values( array_map( 'sanitize_text_field', (array) ( $in['categories'] ?? array() ) ) ),
@@ -351,6 +358,18 @@ class MDO_Admin {
 						<label><input type="checkbox" name="compact_crumbs" value="1" <?php checked( $s['compact_crumbs'] ); ?>> Thema-aanpassingen: grote grijze titelbalk vervangen door een smalle kruimelpad-regel, en op mobiel het winkelmandje naast het logo</label><br>
 						<label><input type="checkbox" name="tax_toggle" value="1" <?php checked( $s['tax_toggle'] ); ?>> Klant kiest zelf: prijzen incl. of excl. btw (schakelaar in de shop, bij het product en op de homepage; ook als <code>[promofun_btw]</code>)</label><br>
 						<label>Achtergrond achter productfoto's: <input type="text" name="img_bg" value="<?php echo esc_attr( $s['img_bg'] ); ?>" placeholder="#F3F1EC" style="width:100px"></label> <span class="description">Leeg = geen. Witte productfoto's krijgen dan deze kleur.</span>
+					</td></tr>
+					<tr><th>Footer</th><td>
+						<p><label><input type="checkbox" name="footer_on" value="1" <?php checked( $s['footer_on'] ); ?>> PromoFun-footer tonen (logo, shopcategorieën, klantenservice, contact) in plaats van de lege footer van het thema</label></p>
+						<p><label>Korte tekst onder het logo<br><input type="text" name="footer_text" value="<?php echo esc_attr( $s['footer_text'] ); ?>" class="large-text"></label></p>
+						<p style="display:flex;flex-wrap:wrap;gap:10px">
+							<label>E-mail<br><input type="email" name="footer_email" value="<?php echo esc_attr( $s['footer_email'] ); ?>"></label>
+							<label>Telefoon<br><input type="text" name="footer_phone" value="<?php echo esc_attr( $s['footer_phone'] ); ?>"></label>
+							<label>KvK-nummer<br><input type="text" name="footer_kvk" value="<?php echo esc_attr( $s['footer_kvk'] ); ?>"></label>
+							<label>Btw-nummer<br><input type="text" name="footer_btw" value="<?php echo esc_attr( $s['footer_btw'] ); ?>"></label>
+						</p>
+						<p><label>Adres (optioneel)<br><textarea name="footer_address" rows="2" class="regular-text"><?php echo esc_textarea( $s['footer_address'] ); ?></textarea></label></p>
+						<p class="description">Leeg = niet tonen. Klantenservice toont vanzelf je pagina's Verzending, Over, Contact, Veelgestelde vragen, Algemene voorwaarden en Privacybeleid als ze bestaan.</p>
 					</td></tr>
 					<tr><th>Homepage <code>[promofun_home]</code></th><td>
 						<p><label>Kop (elke regel apart; de laatste regel krijgt de kleuren van het logo)<br><textarea name="home_title" rows="3" class="large-text"><?php echo esc_textarea( $s['home_title'] ); ?></textarea></label></p>

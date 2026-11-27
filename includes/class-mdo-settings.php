@@ -37,7 +37,14 @@ class MDO_Settings {
 			'home_text'        => 'Kies een product, plaats je logo en zie de totaalprijs inclusief bedrukking. Zonder offerte aan te vragen.',
 			'home_stats'       => 0,
 			'compact_crumbs'   => 1, // grote titelbalk van het thema vervangen door één smalle regel
-			'brand_grad'       => 1, // kleurverloop van het logo in de hele site
+			'brand_grad'       => 1,
+			'footer_on'        => 1,
+			'footer_text'      => 'Promotieartikelen met je eigen logo. Je ziet direct een voorbeeld en de prijs inclusief bedrukking.',
+			'footer_email'     => '',
+			'footer_phone'     => '',
+			'footer_address'   => '',
+			'footer_kvk'       => '',
+			'footer_btw'       => '', // kleurverloop van het logo in de hele site
 			'tax_toggle'       => 1, // klant kiest zelf incl./excl. btw
 			'home_products'    => '',
 			'home_hero'        => '',

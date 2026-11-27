@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Midocean Import & Configurator
  * Description:       Synchroniseert Midocean-producten, prijzen, voorraad en printdata naar WooCommerce en voegt een bedrukkingsconfigurator toe aan de productpagina.
- * Version:           0.11.2
+ * Version:           0.11.3
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            PromoFun
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MDO_VERSION', '0.11.2' );
+define( 'MDO_VERSION', '0.11.3' );
 define( 'MDO_FILE', __FILE__ );
 define( 'MDO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MDO_URL', plugin_dir_url( __FILE__ ) );
@@ -43,6 +43,7 @@ require_once MDO_DIR . 'includes/class-mdo-filter.php';
 require_once MDO_DIR . 'includes/class-mdo-home.php';
 require_once MDO_DIR . 'includes/class-mdo-tax.php';
 require_once MDO_DIR . 'includes/class-mdo-crumbs.php';
+require_once MDO_DIR . 'includes/class-mdo-footer.php';
 
 add_action( 'before_woocommerce_init', function () {
 	if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
@@ -67,7 +68,7 @@ add_action( 'plugins_loaded', function () {
 	MDO_Mockup::init();
 	MDO_Shop::init();
 	MDO_Diag::init();
-	MDO_Shipping::init(); MDO_Filter::init(); MDO_Home::init(); MDO_Tax::init(); MDO_Crumbs::init();
+	MDO_Shipping::init(); MDO_Filter::init(); MDO_Home::init(); MDO_Tax::init(); MDO_Crumbs::init(); MDO_Footer::init();
 	add_action( 'admin_init', array( 'MDO_Importer', 'fix_size_order' ) );
 } );
 

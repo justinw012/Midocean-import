@@ -68,3 +68,26 @@ html body .mdo-ti-cur{color:#6123E0}
 
 /* Lege zijbalk van het thema op filterpagina's (neemt anders een hele regel ruimte in) */
 body.mdo-filter-nosidebar.mdo-filter-on .sidebar-left,body.mdo-filter-nosidebar.mdo-filter-on .sidebar-right{display:none!important}
+
+/* PromoFun-footer */
+body.mdo-footer-on #colophon,body.mdo-footer-on .store-mart-lite-section-footer-wrap-main{background:#16181D!important;color:#C9CCD3}
+body.mdo-footer-on #colophon{position:relative;margin-top:40px}
+body.mdo-footer-on #colophon::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--pf-grad)}
+.mdo-footer{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px;padding:52px 15px 30px;color:#C9CCD3;font-size:14.5px;line-height:1.7}
+.mdo-footer h2{color:#fff!important;font-size:15px!important;margin:0 0 12px!important;letter-spacing:0;text-transform:none}
+.mdo-footer ul{list-style:none;margin:0;padding:0}
+.mdo-footer li{margin:0 0 4px}
+.mdo-footer a{color:#C9CCD3!important;text-decoration:none!important}
+.mdo-footer a:hover{color:#fff!important;text-decoration:underline!important}
+.mdo-ft-logo img{max-width:200px;height:auto;background:#fff;border-radius:12px;padding:8px 12px}
+.mdo-ft-brand p{margin:12px 0 0;max-width:320px}
+.mdo-ft-name{color:#fff;font-weight:700;font-size:20px}
+body.mdo-footer-on .store-mart-lite-footer-wrap{border-top:1px solid rgba(255,255,255,.12);color:#8E939C;font-size:13px}
+body.mdo-footer-on .store-mart-lite-footer-wrap a{color:#C9CCD3!important}
+@media (max-width:900px){.mdo-footer{grid-template-columns:1fr 1fr;gap:26px 20px;padding:40px 15px 24px}.mdo-ft-brand{grid-column:1/-1}}
+
+/* Terug-naar-boven: kleiner en rond, valt minder over de inhoud */
+.sml-scrollup{right:6px!important;bottom:14px!important}
+.sml-scrollup span{width:44px!important;height:44px!important;line-height:44px!important;margin:10px!important;border-radius:50%!important;box-shadow:0 4px 12px rgba(22,24,29,.25)}
+.sml-scrollup span:before{box-shadow:inset 0 0 0 35px #6123E0!important;border-radius:50%!important}
+.sml-scrollup span:after{border-radius:50%!important}
