@@ -271,7 +271,7 @@
     var list = sorted(subset(null)), act = activeChips(), nf = act.length;
     var h = '<div class="mdo-f-bar">' +
       '<button type="button" class="mdo-f-open" data-act="open">Filters' + (nf ? ' (' + nf + ')' : '') + '</button>' +
-      '<b class="mdo-f-count">' + list.length + (list.length === 1 ? ' product' : ' producten') + '</b>' +
+      '<b class="mdo-f-count">' + (loading && !rows.length ? 'Laden…' : list.length + (list.length === 1 ? ' product' : ' producten')) + '</b>' +
       '<label class="mdo-f-search"><span class="screen-reader-text">Zoek in deze producten</span><input type="search" data-act="text" value="' + esc(st.text) + '" placeholder="Zoek in deze producten"></label>' +
       '<label class="mdo-f-sort">Sorteer <select data-act="sort">' +
       [['rec', 'Aanbevolen'], ['price', 'Laagste prijs bij ' + st.q.toLocaleString('nl-NL') + ' st.'], ['fast', 'Snelst klaar'], ['new', 'Nieuwste'], ['name', 'Naam']].map(function (o) { return '<option value="' + o[0] + '"' + (st.sort === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') +

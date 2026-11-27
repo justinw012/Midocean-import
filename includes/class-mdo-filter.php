@@ -488,13 +488,31 @@ class MDO_Filter {
 		$built = 0;
 		$t0    = microtime( true );
 		$more  = false;
-		foreach ( $ids as $id ) {
-			// Niet te lang in één aanvraag: de rest volgt bij de volgende aanvraag.
-			if ( $built && microtime( true ) - $t0 > 6 ) {
-				$more = true;
-				break;
+		$key   = self::key();
+		// Snel: wijzigdatum en opgeslagen samenvatting van alle producten in twee query's per 500,
+		// zonder elk product apart te laden. Alleen verouderde producten worden opnieuw gemaakt.
+		global $wpdb;
+		$mods = array();
+		$have = array();
+		foreach ( array_chunk( $ids, 500 ) as $chunk ) {
+			$in = implode( ',', array_map( 'intval', $chunk ) );
+			foreach ( $wpdb->get_results( "SELECT ID, post_modified_gmt FROM {$wpdb->posts} WHERE ID IN ($in)" ) as $o ) { // phpcs:ignore
+				$mods[ (int) $o->ID ] = strtotime( $o->post_modified_gmt . ' UTC' );
 			}
-			$r = self::row( $id, $built );
+			foreach ( $wpdb->get_results( $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id IN ($in)", self::META ) ) as $o ) { // phpcs:ignore
+				$have[ (int) $o->post_id ] = $o->meta_value;
+			}
+		}
+		foreach ( $ids as $id ) {
+			$r = isset( $have[ $id ] ) ? maybe_unserialize( $have[ $id ] ) : null;
+			if ( ! ( is_array( $r ) && ( $r['_k'] ?? '' ) === $key && (int) ( $r['_m'] ?? -1 ) === (int) ( $mods[ $id ] ?? 0 ) ) ) {
+				// Niet te lang in één aanvraag: de rest volgt bij de volgende aanvraag.
+				if ( $built && microtime( true ) - $t0 > 6 ) {
+					$more = true;
+					continue;
+				}
+				$r = self::row( $id, $built );
+			}
 			if ( $r && ! empty( $r['x'] ) && ( $xp = wc_get_product( $id ) ) ) {
 				$r['ph'] = wp_strip_all_tags( html_entity_decode( $xp->get_price_html() ) ); // volgt incl./excl. btw
 			}
@@ -508,7 +526,9 @@ class MDO_Filter {
 		$vids = array();
 		foreach ( $rows as $r ) {
 			foreach ( (array) ( $r['c'] ?? array() ) as $c ) {
-				$vids = array_merge( $vids, $c['v'] );
+				foreach ( (array) $c['v'] as $v ) {
+					$vids[] = (int) $v;
+				}
 			}
 		}
 		$st = $vids ? self::stock_for( $vids ) : array();
