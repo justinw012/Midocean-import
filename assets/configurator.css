@@ -245,3 +245,8 @@ body.mdo-has-bar{padding-bottom:84px}
 .mdo-reviews #comments{margin:0}
 .mdo-reviews.is-empty #comments{margin:0;padding:0}
 .mdo-reviews ol.commentlist{margin:14px 0 0!important;padding:0!important}
+/* Upload met i-knop; prijsverschil technieken */
+.mdo-upwrap{display:flex;align-items:center;gap:8px}
+.mdo-upwrap .mdo-upload{flex:1;min-width:0}
+.mdo-ti-price.is-cur{color:#6123E0;font-weight:700}
+.mdo-ti-price.is-less{color:#1A7F4B}

@@ -88,7 +88,10 @@
     return { unit: unit, setup: setup, total: total, perPc: total / q };
   }
   // Prijzen rekenen exclusief btw (zoals de winkelwagen); tonen zoals WooCommerce ze toont (meestal incl. btw).
-  function eur(n) { return cfg.currency + ' ' + (n * (cfg.tax || 1)).toFixed(2).replace('.', cfg.decimalSep); }
+  function eur(n) {
+    var p = (n * (cfg.tax || 1)).toFixed(2).split('.');
+    return cfg.currency + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, cfg.thousandSep || '') + cfg.decimalSep + p[1];
+  }
 
   // ---------- staat ----------
   var st = {
@@ -462,8 +465,9 @@
       if (myLogo && !fs.logo) {
         h += '<div class="mdo-mylogo"><img src="' + esc(myLogo) + '" alt=""><span>Je eigen logo staat al in het voorbeeld.</span><button type="button" data-act="usemylogo" class="mdo-pill">Gebruik dit logo</button></div>';
       }
-      h += '<label class="mdo-upload"><input type="file" data-act="logo" accept=".pdf,.eps,.ai,.svg,.png,.jpg,.jpeg"><span>' +
-        (fs.logo ? esc(fs.logo.name) : 'Upload je logo (PDF, EPS, AI, SVG, PNG, JPG) – of later aanleveren') + '</span></label>';
+      h += '<div class="mdo-upwrap"><label class="mdo-upload"><input type="file" data-act="logo" accept=".pdf,.eps,.ai,.svg,.png,.jpg,.jpeg"><span>' +
+        (fs.logo ? esc(fs.logo.name) : 'Upload je logo (PDF, EPS, AI, SVG, PNG, JPG) – of later aanleveren') + '</span></label>' +
+        '<button type="button" class="mdo-info" data-act="logoinfo" aria-label="Welk logo werkt goed?">i</button></div>';
       h += '<div class="mdo-field"><span class="mdo-lbl">Kleuren in je logo</span><div class="mdo-grid mdo-grid-col">' + COLOUR_OPTS.map(function (k) {
         return '<button type="button" data-act="colours" data-v="' + k + '" class="mdo-pill' + (fs.colours === k ? ' is-on' : '') + '">' + (k === 'fc' ? 'Full colour' : k) + '</button>';
       }).join('') + '</div></div>';
@@ -641,6 +645,10 @@
 
   // Eén "vanaf"-prijs bovenaan, inclusief de gekozen bedrukking (WooCommerce-prijs is verborgen).
   function fromHtml() {
+    if (st.touched) {
+      var n = dispQty(), qq = quote(cfg.colors[st.color], n, priceSels(selections()));
+      return '<p class="mdo-from"><strong>' + eur(qq.perPc) + '</strong> per stuk <span class="mdo-muted">bij ' + n.toLocaleString('nl-NL') + ' stuks, incl. bedrukking' + (cfg.taxLabel ? ', ' + cfg.taxLabel : '') + '</span></p>';
+    }
     var color = cfg.colors[st.color], t = cfg.tiers[0] || 50, q = quote(color, t, priceSels(selections()));
     var big = cfg.tiers[cfg.tiers.length - 1], qb = quote(color, big, priceSels(selections()));
     return '<p class="mdo-from">Vanaf <strong>' + eur(qb.perPc) + '</strong> per stuk <span class="mdo-muted">incl. bedrukking' + (cfg.taxLabel ? ', ' + cfg.taxLabel : '') + ' · bij ' + t + ' stuks ' + eur(q.perPc) + '</span></p>';
@@ -707,20 +715,48 @@
     for (var i = 0; i < INFO.length; i++) if (INFO[i][0].test(t.name || '')) return [INFO[i][1], INFO[i][2], INFO[i][3]];
     return ['', [], []];
   }
+  // Prijs per stuk van één techniek op dit vlak; verschil met de huidige keuze is wat de klant wil weten.
+  function optCost(o, fs) {
+    var d = dims(o.pos, fs);
+    return quote(cfg.colors[st.color], st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]).perPc;
+  }
+  function diffHtml(o, sel, fs, long) {
+    if (o.key === sel.opt.key) return long ? '' : '<span class="mdo-ti-price is-cur">Gekozen</span>';
+    var d = optCost(o, fs) - optCost(sel.opt, fs);
+    var txt = Math.abs(d) < 0.005 ? 'zelfde prijs' : (d > 0 ? '+ ' : '− ') + eur(Math.abs(d)) + (long ? ' per stuk' : ' p.st.');
+    return '<span class="mdo-ti-price' + (d < -0.004 ? ' is-less' : '') + '">' + txt + '</span>';
+  }
   function techRows(face, fs, sel) {
-    var color = cfg.colors[st.color];
     return sel.opts.map(function (o, i) {
-      var inf = infoFor(o.tech.id), d = dims(o.pos, fs), on = o.key === sel.opt.key;
-      var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
-      var printPc = q.perPc - productPrice(color, st.qty) - cfg.manip;
+      var inf = infoFor(o.tech.id), on = o.key === sel.opt.key;
       var size = o.pos.id !== face.positions[0].id ? ' <span class="mdo-muted">(' + o.pos.w + ' × ' + o.pos.h + ' mm)</span>' : '';
       return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-act="techpick" data-v="' + esc(o.key) + '" role="radio" tabindex="0" aria-checked="' + on + '">' +
-        '<div class="mdo-row-between"><strong><span class="mdo-ti-dot"></span>' + esc(cfg.techniques[o.tech.id].name) + size + '</strong><span class="mdo-ti-price">+ ' + eur(printPc) + ' p.st.</span></div>' +
+        '<div class="mdo-row-between"><strong><span class="mdo-ti-dot"></span>' + esc(cfg.techniques[o.tech.id].name) + size + '</strong>' + diffHtml(o, sel, fs) + '</div>' +
         (i === 0 && sel.opts.length > 1 ? '<span class="mdo-ti-tag">Voordeligst</span>' : '') +
         (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
         (inf[1].length || inf[2].length ? '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
         '</div>';
-    }).join('') + '<p class="mdo-muted mdo-ti-note">Drukkosten per stuk bij ' + st.qty + ' stuks, instelkosten inbegrepen.</p>';
+    }).join('') + '<p class="mdo-muted mdo-ti-note">Verschil per stuk met je huidige keuze, bij ' + st.qty.toLocaleString('nl-NL') + ' stuks, instelkosten inbegrepen.</p>';
+  }
+  function openLogoInfo() {
+    var ov = document.createElement('div');
+    ov.className = 'mdo-sheet';
+    ov.innerHTML = '<div class="mdo-sheet-in" role="dialog" aria-modal="true" aria-label="Welk logo werkt goed?"><div class="mdo-row-between"><strong style="font-size:17px">Welk logo werkt goed?</strong><button type="button" class="mdo-sheet-x" aria-label="Sluiten">×</button></div>' +
+      '<div class="mdo-ti is-on"><strong>Het beste: een vectorbestand</strong><p>PDF, AI, EPS of SVG uit het ontwerpprogramma (vraag het je ontwerper of drukker). Blijft scherp op elk formaat en de kleuren zijn precies over te nemen.</p></div>' +
+      '<div class="mdo-ti"><strong>Goed: een grote PNG</strong><p>Met doorzichtige achtergrond en groot genoeg, bijvoorbeeld 1000 pixels breed of meer.</p></div>' +
+      '<div class="mdo-ti"><strong>Minder goed</strong><ul>' +
+      '<li class="min">Een klein plaatje van een website, e-mail of social media: wordt wazig of blokkerig</li>' +
+      '<li class="min">Een foto of scan van een logo op papier of scherm</li>' +
+      '<li class="min">Een witte achtergrond: op een gekleurd product wordt die als wit vlak meegedrukt</li></ul></div>' +
+      '<p><strong>Per techniek</strong></p><ul class="mdo-note-ex">' +
+      '<li>Zeefdruk en tampondruk: een logo met een paar egale kleuren; geen foto\'s of kleurverlopen</li>' +
+      '<li>Gravure en blinddruk: één tint; heel dunne lijnen en kleine tekst worden minder scherp</li>' +
+      '<li>Borduren: eenvoudige vormen en niet te kleine tekst</li>' +
+      '<li>Full colour: ook foto\'s en kleurverlopen</li></ul>' +
+      '<p class="mdo-muted">Geen goed bestand? Upload wat je hebt of lever het later aan. Je krijgt eerst een drukproef ter goedkeuring.</p></div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('.mdo-sheet-x')) ov.remove(); });
+    ov.addEventListener('keydown', function (e) { if (e.key === 'Escape') ov.remove(); });
+    document.body.appendChild(ov);
   }
   function openNoteInfo() {
     var ov = document.createElement('div');
@@ -738,11 +774,9 @@
     if (!sel) return;
     var color = cfg.colors[st.color];
     var rows = sel.opts.map(function (o) {
-      var inf = infoFor(o.tech.id), d = dims(o.pos, fs);
-      var q = quote(color, st.qty, [{ tech: o.tech.id, colours: nColours(fs), w: d.w, h: d.h }]);
-      var printPc = q.perPc - productPrice(color, st.qty) - cfg.manip;
+      var inf = infoFor(o.tech.id);
       var on = o.key === sel.opt.key;
-      return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-pick="' + esc(o.key) + '" role="button" tabindex="0" aria-pressed="' + on + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong><span class="mdo-muted">+ ' + eur(printPc) + ' per stuk bij ' + st.qty + ' st.</span></div>' +
+      return '<div class="mdo-ti' + (on ? ' is-on' : '') + '" data-pick="' + esc(o.key) + '" role="button" tabindex="0" aria-pressed="' + on + '"><div class="mdo-row-between"><strong>' + esc(cfg.techniques[o.tech.id].name) + '</strong>' + diffHtml(o, sel, fs, true) + '</div>' +
         (inf[0] ? '<p>' + esc(inf[0]) + '</p>' : '') +
         '<ul>' + inf[1].map(function (x) { return '<li class="plus">' + esc(x) + '</li>'; }).join('') + inf[2].map(function (x) { return '<li class="min">' + esc(x) + '</li>'; }).join('') + '</ul>' +
         (on ? '<span class="mdo-ti-cur">✓ Gekozen</span>' : '<span class="mdo-ti-pick">Tik om te kiezen</span>') + '</div>';
@@ -750,7 +784,7 @@
     var ov = document.createElement('div');
     ov.className = 'mdo-sheet';
     ov.innerHTML = '<div class="mdo-sheet-in" role="dialog" aria-modal="true" aria-label="Uitleg technieken"><div class="mdo-row-between"><strong style="font-size:17px">Technieken voor ' + esc(face.label.toLowerCase()) + '</strong><button type="button" class="mdo-sheet-x" aria-label="Sluiten">×</button></div>' +
-      '<p class="mdo-muted">Prijzen zijn de drukkosten per stuk bij het gekozen aantal, met de instelkosten verdeeld over de stuks.</p>' + rows + '</div>';
+      '<p class="mdo-muted">Bedragen zijn het verschil per stuk met je huidige keuze, bij ' + st.qty.toLocaleString('nl-NL') + ' stuks en met de instelkosten verdeeld over de stuks.</p>' + rows + '</div>';
     ov.addEventListener('click', function (e) {
       var p = e.target.closest('[data-pick]');
       if (p) { fs.pick = p.getAttribute('data-pick'); fs.size = null; ov.remove(); render(); return; }
@@ -876,6 +910,14 @@
   // ---------- interactie ----------
   function curFace() { return st.faces[st.face]; }
 
+  // Na de eerste keuze van de klant: de prijs bovenaan gelijk aan die onderaan (niet meer "vanaf").
+  function touch(e) {
+    var t = e.target.closest && e.target.closest('[data-act]');
+    if (t && !/info$|^(zoom|fontopen|goto|prev|next)$/.test(t.getAttribute('data-act') || '')) st.touched = true;
+  }
+  root.addEventListener('click', touch, true);
+  root.addEventListener('input', touch, true);
+  root.addEventListener('change', touch, true);
   root.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act],[data-act="techpick"]'); if (!b) return;
     galView = 'design';
@@ -893,6 +935,7 @@
     else if (a === 'al') fs.al = v;
     else if (a === 'va') fs.va = v;
     else if (a === 'noteinfo') { openNoteInfo(); return; }
+    else if (a === 'logoinfo') { openLogoInfo(); return; }
     else if (a === 'rot') { fs.rot = parseInt(v, 10); fs.size = null; }
     else if (a === 'goto') { st.step = parseInt(v, 10); render(); return; }
     else if (a === 'next') { st.step = Math.min(2, st.step + 1); render(); root.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
@@ -1075,7 +1118,7 @@
     if (uk) cfg.colors.forEach(function (c, i) { if (String(c.code || '').toLowerCase() === uk) st.color = i; });
   } catch (e) {}
   if (cfg.colors[st.color] && cfg.colors[st.color].sizes) st.qty = 1;
-  else if (urlQty > 0) st.qty = urlQty;
+  else if (urlQty > 0) { st.qty = urlQty; st.touched = true; }
   // Vanuit de winkelwagen ("Wijzigen"): het ontwerp van die regel terugzetten.
   if (cfg.edit) {
     var E = cfg.edit, M = E.mdo || {}, firstFace = null;
@@ -1100,6 +1143,7 @@
     st.note = M.note || '';
     if (M.sizes) { st.sizes = {}; M.sizes.forEach(function (z) { st.sizes[z.size] = z.qty | 0; }); st.qty = sizeTotal(); }
     else if (E.qty > 0) st.qty = E.qty;
+    st.touched = true;
   }
   render();
   loadFont('poppins');

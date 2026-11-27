@@ -161,6 +161,7 @@ class MDO_Filter {
 			'btw'      => MDO_Tax::html(),
 			'currency' => html_entity_decode( get_woocommerce_currency_symbol() ),
 			'dec'      => wc_get_price_decimal_separator(),
+			'thou'     => wc_get_price_thousand_separator(),
 			'newDays'  => (int) MDO_Settings::get( 'badge_new_days' ),
 			'groups'   => array_map( function ( $g ) {
 				return array( $g[0], $g[1] );

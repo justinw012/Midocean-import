@@ -194,6 +194,7 @@ class MDO_Frontend {
 			'tiers'          => self::TIERS,
 			'currency'       => html_entity_decode( get_woocommerce_currency_symbol() ),
 			'decimalSep'     => wc_get_price_decimal_separator(),
+			'thousandSep'    => wc_get_price_thousand_separator(),
 			'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 			'nonce'          => wp_create_nonce( 'mdo_logo' ),
 			'demoLogo'       => class_exists( 'MDO_Shop' ) ? MDO_Shop::logo_url() : '',

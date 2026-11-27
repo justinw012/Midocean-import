@@ -19,7 +19,7 @@
   var st = { q: 250, g: {}, t: {}, max: null, ready: 0, date: '', stock: false, mat: {}, rec: false, sz: {}, gen: {}, nw: false, last: false, text: '', sort: 'rec', shown: PAGE };
   (function readUrl() {
     var p = new URLSearchParams(location.search), q;
-    try { q = parseInt(localStorage.getItem('mdo_qty'), 10); } catch (e) { q = 0; }
+    try { q = parseInt(sessionStorage.getItem('mdo_qty'), 10); localStorage.removeItem('mdo_qty'); } catch (e) { q = 0; }
     if (parseInt(p.get('aantal'), 10)) q = parseInt(p.get('aantal'), 10);
     if (tiers.indexOf(q) >= 0) st.q = q;
     function set(key, obj) { (p.get(key) || '').split(',').forEach(function (v) { if (v) obj[v] = 1; }); }
@@ -46,12 +46,15 @@
     put('zoek', st.text); put('sorteer', st.sort !== 'rec' ? st.sort : '');
     var qs = p.toString();
     try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) {}
-    try { localStorage.setItem('mdo_qty', String(st.q)); } catch (e) {}
+    try { sessionStorage.setItem('mdo_qty', String(st.q)); } catch (e) {}
   }
 
   // ---------- hulpjes ----------
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function eur(n) { return C.currency + ' ' + n.toFixed(2).replace('.', C.dec || ','); }
+  function eur(n) {
+    var p = n.toFixed(2).split('.');
+    return C.currency + ' ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, C.thou || '') + (C.dec || ',') + p[1];
+  }
   function today() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
   function parseDate(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function fmtDate(d) { return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
@@ -353,7 +356,7 @@
     var b = e.target.closest('[data-act]');
     if (!b || b.tagName === 'INPUT' || b.tagName === 'SELECT') return;
     var a = b.getAttribute('data-act'), v = b.getAttribute('data-v');
-    if (a === 'q') { st.q = parseInt(v, 10); st.max = null; update(); return; }
+    if (a === 'q') { var nq = parseInt(v, 10); st.q = nq === st.q ? 250 : nq; st.max = null; update(); return; }
     if (a === 'g' || a === 't' || a === 'sz') { toggle(st[a], v); update(); return; }
     if (a === 'ready') { st.ready = st.ready === +v ? 0 : +v; st.date = ''; update(); return; }
     if (a === 'more') { st.shown += PAGE * 2; render('main'); return; }

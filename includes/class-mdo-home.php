@@ -199,13 +199,7 @@ class MDO_Home {
 		$hero    = array_slice( $try, 0, 5 );
 		$cats    = self::categories( 8 );
 		$lines   = array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $s['home_title'] ) ) ) );
-		$ship    = class_exists( 'MDO_Shipping' ) ? MDO_Shipping::get() : array( 'cost' => '' );
 		$tax     = function_exists( 'wc_tax_enabled' ) && wc_tax_enabled() && 'incl' === get_option( 'woocommerce_tax_display_shop' );
-		$cost    = (float) $ship['cost'];
-		if ( $tax && $cost ) {
-			$rates = WC_Tax::get_base_tax_rates( '' );
-			$cost *= 1 + array_sum( wp_list_pluck( $rates, 'rate' ) ) / 100;
-		}
 		$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
 		// Bezoekersaantallen alleen als dat bij Instellingen aan staat (standaard uit).
 		$visits   = ( $s['home_stats'] && class_exists( 'MDO_Stats' ) && MDO_Stats::koko_active() ) ? MDO_Stats::visitors() : array( null, null );
@@ -216,7 +210,6 @@ class MDO_Home {
 		<div class="mdo-home">
 			<ul class="mdo-h-usp">
 				<li><?php echo $tax ? 'Prijs incl. bedrukking en btw direct zichtbaar' : 'Prijs incl. bedrukking direct zichtbaar'; ?></li>
-				<?php if ( $cost ) : ?><li>Verzending NL &amp; BE: <?php echo wp_strip_all_tags( wc_price( $cost ) ); ?><?php echo $tax ? ' incl. btw' : ''; ?> per bestelling<?php echo $ship['free_from'] ? ', gratis vanaf ' . wp_strip_all_tags( wc_price( (float) $ship['free_from'] ) ) : ''; ?></li><?php endif; ?>
 				<li>Levertijd per product berekend</li>
 				<?php $btw = MDO_Tax::html(); if ( $btw ) : ?><li class="mdo-h-btw">Prijzen <?php echo $btw; // phpcs:ignore ?></li><?php endif; ?>
 			</ul>
