@@ -19,7 +19,7 @@ class MDO_Settings {
 			'name_format'      => 'short_name', // short_name | short | name | name_short
 			'rename_existing'  => 0,
 			'update_slug'      => 1,
-			'backorders'       => 'no', // no | notify
+			'backorders'       => 'notify', // Midocean-producten zijn altijd bestelbaar
 			'configurator'     => 1,
 			'shop_hover'       => 1,
 			'lead_proof'       => 1,

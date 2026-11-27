@@ -33,6 +33,10 @@ class MDO_Cart {
 		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'order_meta' ), 10, 4 );
 		add_filter( 'woocommerce_add_cart_item', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
 		add_filter( 'woocommerce_product_backorders_allowed', array( __CLASS__, 'allow_backorder' ), 10, 3 );
+		add_filter( 'woocommerce_product_is_in_stock', array( __CLASS__, 'in_stock' ), 10, 2 );
+		add_action( 'woocommerce_before_cart', array( __CLASS__, 'stock_notice' ) );
+		add_action( 'woocommerce_before_checkout_form', array( __CLASS__, 'stock_notice' ), 5 );
+		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'stock_order_note' ) );
 		add_filter( 'woocommerce_get_cart_item_from_session', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
 		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'fixed_qty' ), 10, 3 );
 		add_action( 'wp_ajax_mdo_logo', array( __CLASS__, 'upload' ) );
@@ -325,6 +329,9 @@ class MDO_Cart {
 			$data[] = array( 'key' => 'Maten', 'value' => esc_html( self::sizes_text( $item['mdo']['sizes'] ) ) );
 		}
 		$data[] = array( 'key' => 'Bedrukking', 'value' => esc_html( self::short( $item['mdo'] ) ) );
+		if ( self::shortage( $item ) > 0 ) {
+			$data[] = array( 'key' => 'Levering', 'value' => 'Nu niet op voorraad – we laten je de leverdatum weten' );
+		}
 		if ( 'rest' === $ctx && ! empty( $item['mdo_quote']['setup'] ) && ! empty( $item['data'] ) ) {
 			$data[] = array( 'key' => 'Instelkosten', 'value' => wp_strip_all_tags( self::money( $item['mdo_quote']['setup'], $item['data'] ) ) . ' (zit in de stukprijs)' );
 		}
@@ -608,6 +615,11 @@ class MDO_Cart {
 	}
 
 	public static function order_meta( $item, $cart_key, $values, $order ) {
+		$short = self::shortage( $values );
+		if ( $short > 0 ) {
+			$item->add_meta_data( 'Levering', 'Nu niet op voorraad – we laten je de leverdatum weten' );
+			$item->add_meta_data( '_mdo_short', $short );
+		}
 		if ( empty( $values['mdo'] ) ) {
 			return;
 		}
@@ -702,13 +714,60 @@ class MDO_Cart {
 	 * Nabestellen toestaan als Midocean al een levering gepland heeft, en bij kleding
 	 * (daar controleert de configurator de voorraad per maat; WooCommerce ziet alleen één maat).
 	 */
+	// ---------- niet op voorraad: toch bestellen en betalen, leverdatum volgt ----------
+
+	private static function is_mdo( $product ) {
+		if ( ! $product || ! is_object( $product ) ) {
+			return false;
+		}
+		if ( $product->is_type( 'variation' ) ) {
+			return '' !== (string) $product->get_meta( '_mdo_color_code' ) || (bool) get_post_meta( $product->get_parent_id(), '_mdo_master_code', true );
+		}
+		return (bool) $product->get_meta( '_mdo_master_code' );
+	}
+
 	public static function allow_backorder( $allowed, $product_id, $product = null ) {
-		if ( $allowed || ! $product || ! $product->is_type( 'variation' ) ) {
-			return $allowed;
+		return $allowed || self::is_mdo( $product );
+	}
+
+	public static function in_stock( $in, $product ) {
+		return $in || self::is_mdo( $product );
+	}
+
+	/** Tekort voor deze regel (0 = genoeg voorraad). */
+	private static function shortage( $item ) {
+		$p = $item['data'] ?? null;
+		if ( ! $p || ! is_object( $p ) || ! $p->managing_stock() || null === $p->get_stock_quantity() ) {
+			return 0;
 		}
-		if ( $product->get_meta( '_mdo_arrivals' ) || '' !== (string) $product->get_meta( '_mdo_size' ) ) {
-			return true;
+		if ( ! empty( $item['mdo']['sizes'] ) ) {
+			return 0; // maten: voorraad per maat wordt in de configurator al getoond
 		}
-		return $allowed;
+		return max( 0, (int) $item['quantity'] - max( 0, (int) $p->get_stock_quantity() ) );
+	}
+
+	public static function stock_notice() {
+		if ( ! WC()->cart ) {
+			return;
+		}
+		foreach ( WC()->cart->get_cart() as $item ) {
+			if ( self::shortage( $item ) > 0 ) {
+				echo '<div class="woocommerce-info mdo-stock-info">Een of meer producten zijn nu niet (genoeg) op voorraad. Je kunt gewoon bestellen en betalen; na je bestelling laten we je weten wanneer het geleverd wordt.</div>';
+				return;
+			}
+		}
+	}
+
+	public static function stock_order_note( $order ) {
+		$lines = array();
+		foreach ( $order->get_items() as $it ) {
+			$short = (int) $it->get_meta( '_mdo_short' );
+			if ( $short > 0 ) {
+				$lines[] = $it->get_name() . ': ' . $short . ' st. tekort';
+			}
+		}
+		if ( $lines ) {
+			$order->add_order_note( 'Niet op voorraad – leverdatum doorgeven aan klant. ' . implode( '; ', $lines ) . '.' );
+		}
 	}
 }

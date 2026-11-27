@@ -36,7 +36,7 @@ class MDO_Admin {
 			'name_format'      => in_array( $in['name_format'] ?? '', array( 'short_name', 'short', 'name', 'name_short' ), true ) ? $in['name_format'] : 'short_name',
 			'rename_existing'  => empty( $in['rename_existing'] ) ? 0 : 1,
 			'update_slug'      => empty( $in['update_slug'] ) ? 0 : 1,
-			'backorders'       => ( 'notify' === ( $in['backorders'] ?? '' ) ) ? 'notify' : 'no',
+			'backorders'       => 'notify',
 			'configurator'     => empty( $in['configurator'] ) ? 0 : 1,
 			'shop_hover'       => empty( $in['shop_hover'] ) ? 0 : 1,
 			'lead_proof'       => max( 0, min( 10, (int) ( $in['lead_proof'] ?? 1 ) ) ),
@@ -323,11 +323,7 @@ class MDO_Admin {
 						<label style="display:block;line-height:2"><input type="checkbox" name="update_slug" value="1" <?php checked( $s['update_slug'] ); ?>> Webadres (URL) aanpassen aan de nieuwe naam <span style="color:#777">– niet doen als de shop al live staat en de oude links gedeeld zijn</span></label>
 					</td></tr>
 					<tr><th>Niet op voorraad</th><td>
-						<select name="backorders">
-							<option value="no" <?php selected( $s['backorders'], 'no' ); ?>>Niet bestelbaar</option>
-							<option value="notify" <?php selected( $s['backorders'], 'notify' ); ?>>Toch bestelbaar (klant ziet: langere levertijd)</option>
-						</select>
-						<p class="description">Geldt vanaf de volgende synchronisatie.</p>
+						<p class="description" style="margin-top:0">Altijd bestelbaar en gewoon te betalen. De klant ziet dat het nu niet op voorraad is en dat jullie de leverdatum laten weten. Zo’n bestelling krijgt een notitie “Niet op voorraad – leverdatum doorgeven aan klant”.</p>
 					</td></tr>
 					<tr><th>Teksten bestaande producten</th><td><label><input type="checkbox" name="overwrite_texts" value="1" <?php checked( $s['overwrite_texts'] ); ?>> Naam en omschrijving overschrijven met Midocean</label></td></tr>
 					<tr><th>Configurator</th><td><label><input type="checkbox" name="configurator" value="1" <?php checked( $s['configurator'] ); ?>> Configurator tonen op Midocean-producten</label></td></tr>
