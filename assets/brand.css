@@ -5,14 +5,6 @@
 #masthead,header.site-header{position:relative}
 #masthead::after,header.site-header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--pf-grad);pointer-events:none}
 
-/* Hoofdknoppen van WooCommerce: in winkelwagen, afrekenen, bestellen */
-.woocommerce .single_add_to_cart_button,.woocommerce a.checkout-button,.woocommerce #place_order,.woocommerce .button.alt,.woocommerce button.button.alt,
-.wc-block-cart__submit-button,.wc-block-components-checkout-place-order-button,.wc-block-components-button.contained,.mdo-buy,.mdo .mdo-buy{
-  background:var(--pf-grad)!important;background-size:140% 100%!important;background-position:0 0!important;border:0!important;color:#fff!important;transition:background-position .35s ease,box-shadow .2s,transform .15s}
-.woocommerce .single_add_to_cart_button:hover,.woocommerce a.checkout-button:hover,.woocommerce #place_order:hover,.woocommerce .button.alt:hover,
-.wc-block-cart__submit-button:hover,.wc-block-components-checkout-place-order-button:hover,.mdo-buy:hover{background-position:100% 0!important;box-shadow:0 8px 20px rgba(154,75,234,.3);transform:translateY(-1px)}
-.mdo-buy:disabled{filter:grayscale(.6);opacity:.6;transform:none!important;box-shadow:none!important}
-
 /* Paginatitels: korte verloopstreep eronder */
 .woocommerce-products-header__title.page-title::after,.woocommerce h1.product_title::after,.entry-header .entry-title::after{content:"";display:block;width:64px;height:4px;border-radius:2px;background:var(--pf-grad);margin-top:10px}
 
@@ -29,8 +21,27 @@
 
 /* Filters en winkel */
 .mdo-filter{--mdo-accent:#6123E0}
-.mdo-filter .mdo-chip.is-on,.mdo-f-open,.mdo-filter .mdo-btn,.mdo-filter .mdo-tag{background:var(--pf-grad)!important;border-color:transparent!important;color:#fff!important}
+.mdo-filter .mdo-chip.is-on,.mdo-filter .mdo-tag{background:var(--pf-grad)!important;border-color:transparent!important;color:#fff!important}
 .mdo-card-p b{color:#16181D}
 .mdo-card:hover .mdo-card-n{background:var(--pf-grad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 .mdo-hov-badge.has-thumb{border-color:transparent!important;background:var(--pf-grad)!important;padding:2px!important}
-.mdo-btw a.is-on{background:var(--pf-grad)!important}
+
+/* Compact kruimelpad (vervangt de grote titelbalk van het thema) */
+.mdo-banner-hide{display:none!important}
+.mdo-crumbs-wrap{margin:14px 0 16px}
+.mdo-crumbs{font-size:13.5px;color:#5E636D;line-height:1.4}
+.mdo-crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
+.mdo-crumbs li{margin:0;flex:none;display:flex;align-items:center}
+.mdo-crumbs li+li::before{content:"›";margin:0 8px;color:#A3A7AE}
+.mdo-crumbs li[aria-current]{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:#16181D;font-weight:500;display:block}
+.mdo-crumbs li[aria-current]::before{display:inline}
+.mdo-crumbs a{color:#5E636D!important;text-decoration:none!important}
+.mdo-crumbs a:hover{color:#6123E0!important;text-decoration:underline!important}
+.mdo-crumbs-back{display:none}
+.mdo-crumbs-title{font-size:clamp(26px,3.2vw,36px);margin:6px 0 0;line-height:1.15;text-align:left}
+.mdo-crumbs-title::after{content:"";display:block;width:56px;height:4px;border-radius:2px;background:var(--pf-grad);margin-top:8px}
+@media (max-width:700px){
+  .mdo-crumbs ol{display:none}
+  .mdo-crumbs-back{display:inline-flex;align-items:center;gap:6px;min-height:40px;font-weight:600;color:#16181D!important}
+  .mdo-crumbs-wrap{margin:6px 0 10px}
+}

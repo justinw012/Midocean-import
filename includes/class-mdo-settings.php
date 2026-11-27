@@ -36,6 +36,7 @@ class MDO_Settings {
 			'home_title'       => "Upload je logo.\nZie het meteen.\nWeet direct de prijs.",
 			'home_text'        => 'Kies een product, plaats je logo en zie de totaalprijs inclusief bedrukking. Zonder offerte aan te vragen.',
 			'home_stats'       => 0,
+			'compact_crumbs'   => 1, // grote titelbalk van het thema vervangen door één smalle regel
 			'brand_grad'       => 1, // kleurverloop van het logo in de hele site
 			'tax_toggle'       => 1, // klant kiest zelf incl./excl. btw
 			'home_products'    => '',

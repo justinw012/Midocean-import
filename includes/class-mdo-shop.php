@@ -11,6 +11,8 @@ class MDO_Shop {
 	public static function init() {
 		if ( ! is_admin() ) {
 			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'badges' ), 15 );
+			// Productpagina: labels boven de titel.
+			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'badges_single' ), 4 );
 			add_action( 'wp_head', array( __CLASS__, 'badge_css' ) );
 		}
 		if ( is_admin() ) {
@@ -21,6 +23,10 @@ class MDO_Shop {
 		add_action( 'wp_enqueue_scripts', function () {
 			if ( MDO_Settings::get( 'brand_grad' ) ) {
 				wp_enqueue_style( 'mdo-brand', MDO_URL . 'assets/brand.css', array(), MDO_VERSION );
+			}
+			if ( MDO_Settings::get( 'compact_crumbs' ) && function_exists( 'is_product' ) && ( is_product() || is_product_category() || is_product_tag() || is_shop() || ( is_search() && 'product' === get_query_var( 'post_type' ) ) ) ) {
+				wp_enqueue_style( 'mdo-brand', MDO_URL . 'assets/brand.css', array(), MDO_VERSION );
+				wp_enqueue_script( 'mdo-crumbs', MDO_URL . 'assets/crumbs.js', array(), MDO_VERSION, true );
 			}
 		}, 999 );
 		if ( MDO_Settings::get( 'shop_hover' ) ) {
@@ -174,6 +180,15 @@ class MDO_Shop {
 	}
 
 	/** Labels "Nieuw" en "Op = op" op de productfoto in de winkel. */
+	public static function badges_single() {
+		ob_start();
+		self::badges();
+		$html = ob_get_clean();
+		if ( $html ) {
+			echo str_replace( 'class="mdo-badges"', 'class="mdo-badges mdo-badges-single"', $html ); // phpcs:ignore
+		}
+	}
+
 	public static function badges() {
 		global $product;
 		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) ) {
@@ -195,7 +210,7 @@ class MDO_Shop {
 
 	public static function badge_css() {
 		if ( function_exists( 'is_woocommerce' ) && ( is_woocommerce() || is_front_page() ) ) {
-			echo '<style>li.product{position:relative}.mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;pointer-events:none}.mdo-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:#fff;background:#5B2EE5;box-shadow:0 1px 3px rgba(0,0,0,.15)}.mdo-badge-last{background:#B42318}</style>';
+			echo '<style>li.product{position:relative}.mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;pointer-events:none}.mdo-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:#fff;background:#5B2EE5;box-shadow:0 1px 3px rgba(0,0,0,.15)}.mdo-badge-last{background:#B42318}.mdo-badges-single{position:static;flex-direction:row;margin:0 0 8px}.mdo-badges-single .mdo-badge{font-size:13px;padding:4px 12px}</style>';
 		}
 	}
 }

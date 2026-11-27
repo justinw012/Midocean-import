@@ -302,8 +302,8 @@
 
   function qtyHtml() {
     return '<div class="mdo-f-qty"><b id="mdo-q-l">Hoeveel stuks heb je nodig?</b><div class="mdo-chips" role="group" aria-labelledby="mdo-q-l">' +
-      tiers.map(function (q) { return chip('q', q, q.toLocaleString('nl-NL'), st.q === q); }).join('') +
-      '</div><span class="mdo-f-qnote">Prijzen, voorraad en levertijd gelden voor ' + st.q.toLocaleString('nl-NL') + ' stuks, incl. bedrukking in 1 kleur' + (C.taxLabel ? ', ' + esc(C.taxLabel) : '') + '.</span>' + (C.btw || '') + '</div>';
+      tiers.map(function (q, k) { return chip('q', q, q.toLocaleString('nl-NL') + (k === tiers.length - 1 ? '+' : ''), st.q === q); }).join('') +
+      '</div><span class="mdo-f-qnote">Prijzen, voorraad en levertijd gelden voor ' + (st.q === tiers[tiers.length - 1] ? st.q.toLocaleString('nl-NL') + ' stuks of meer' : st.q.toLocaleString('nl-NL') + ' stuks') + ', incl. bedrukking in 1 kleur' + (C.taxLabel ? ', ' + esc(C.taxLabel) : '') + '.</span>' + (C.btw || '') + '</div>';
   }
   // Lege categorieën (zonder enig product, los van de filters) niet tonen.
   function hasProducts(t) { return rows.some(function (r) { return (r.cats || []).indexOf(t.id) >= 0; }); }
