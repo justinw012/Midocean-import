@@ -447,7 +447,7 @@
     return (cfg.btw ? '<div class="mdo-btw-row">Prijzen ' + cfg.btw + '</div>' : '') + '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ', incl. ' + eur(q.setup) + ' instelkosten' : '') + (cfg.taxLabel ? ', ' + cfg.taxLabel : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() + (cfg.qtyNote ? '<p class="mdo-qtynote">' + esc(cfg.qtyNote) + '</p>' : '') +
-      '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
+      '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>' + (cfg.edit ? 'Wijziging opslaan' : 'In winkelwagen') + '</button>';
   }
 
   function faceHtml(face) {
@@ -985,8 +985,87 @@
     Object.keys(color.attrs).forEach(function (k) {
       var i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = color.attrs[k]; i.className = 'mdo-attr'; form.appendChild(i);
     });
-    form.submit();
+    if (cfg.edit) hidden('mdo_replace', cfg.edit.key);
+    var btn = e.target.closest('.mdo-buy'), sent = false;
+    btn.disabled = true;
+    var go = function (layer) {
+      if (sent) return; sent = true;
+      hidden('mdo_thumb', layer ? JSON.stringify(layer) : '');
+      form.submit();
+    };
+    setTimeout(function () { go(null); }, 3000); // plaatje niet gelukt: gewoon doorgaan
+    try { artLayer(go); } catch (x) { go(null); }
   });
+  function hidden(name, value) {
+    var i = form.querySelector('input[name="' + name + '"]');
+    if (!i) { i = document.createElement('input'); i.type = 'hidden'; i.name = name; form.appendChild(i); }
+    i.value = value;
+  }
+
+  // ---------- plaatje voor de winkelwagen ----------
+  // Alleen de opdruk (transparant), op de maat van het drukvlak. De server zet hem op de productfoto.
+  function artLayer(done) {
+    var list = selections();
+    if (!list.length) return done(null);
+    var cur = faceByKey(st.face), s = null;
+    list.forEach(function (x) { if (!s && cur && x.face.key === cur.key) s = x; });
+    s = s || list[0];
+    var fs = s.fs, pos = s.opt.pos, b = pos.box;
+    if (!b || b.length < 4) return done(null);
+    var bw = b[2] - b[0], bh = b[3] - b[1];
+    if (!(bw > 0 && bh > 0)) return done(null);
+    var k = 600 / Math.max(bw, bh), W = Math.max(1, Math.round(bw * k)), H = Math.max(1, Math.round(bh * k));
+    var aw = W * Math.min(1, s.w / pos.w), ah = H * Math.min(1, s.h / pos.h);
+    var x0 = s.al === 'l' ? 0 : s.al === 'r' ? W - aw : (W - aw) / 2;
+    var y0 = s.va === 't' ? 0 : s.va === 'b' ? H - ah : (H - ah) / 2;
+    var vert = !!s.d.vertical, cw = vert ? ah : aw, ch = vert ? aw : ah;
+    var effect = effectOf(s.opt.tech.id);
+    var lightInk = fs.mode === 'text' && !effect && !isDarkHex(inkOf(fs));
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var ctx = c.getContext('2d');
+    function finish(src) {
+      ctx.save();
+      ctx.translate(x0 + aw / 2, y0 + ah / 2);
+      ctx.rotate((s.rot || 0) * Math.PI / 180);
+      ctx.drawImage(src, -src.width / 2, -src.height / 2);
+      ctx.restore();
+      done({ pos: pos.id, art: c.toDataURL('image/png'), blend: isDark() || lightInk ? 0 : 1 });
+    }
+    // Inhoud op ware grootte binnen cw × ch, met de kleur zoals in het voorbeeld.
+    var t = document.createElement('canvas'), tx = t.getContext('2d');
+    if (fs.mode === 'text') {
+      var tb = textBox(fs), f = Math.min(cw / tb.vbw, ch / 100);
+      t.width = Math.max(1, Math.round(tb.vbw * f)); t.height = Math.max(1, Math.round(100 * f));
+      tx.font = '700 ' + (84 * f) + 'px ' + FONTS[fs.font][1];
+      tx.textAlign = 'center'; tx.textBaseline = 'alphabetic';
+      tx.fillStyle = effectInk(effect) || inkOf(fs);
+      tx.fillText(tb.txt, t.width / 2, 74 * f);
+      return finish(t);
+    }
+    var own = !!fs.logo, src = own ? fs.logo.preview : demoSrc;
+    if (own && !src) return done(null); // bijv. PDF zonder voorbeeld
+    if (!src) src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(demoLogo(isDark(), effect).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="220" '));
+    var im = new Image();
+    im.onload = function () {
+      try {
+        var iw = im.naturalWidth || 440, ih = im.naturalHeight || 220, f = Math.min(cw / iw, ch / ih);
+        t.width = Math.max(1, Math.round(iw * f)); t.height = Math.max(1, Math.round(ih * f));
+        tx.drawImage(im, 0, 0, t.width, t.height);
+        var ink = null, alpha = 1;
+        if (effect === 'engrave') { ink = isDark() ? [201, 205, 210] : [90, 94, 100]; alpha = 0.9; }
+        else if (effect === 'deboss') { ink = isDark() ? [255, 255, 255] : [0, 0, 0]; alpha = isDark() ? 0.18 : 0.28; }
+        else if (!own && demoMono(fs)) ink = isDark() ? [255, 255, 255] : [29, 26, 46];
+        if (ink) {
+          var d = tx.getImageData(0, 0, t.width, t.height), p = d.data;
+          for (var i = 0; i < p.length; i += 4) { p[i] = ink[0]; p[i + 1] = ink[1]; p[i + 2] = ink[2]; p[i + 3] = Math.round(p[i + 3] * alpha); }
+          tx.putImageData(d, 0, 0);
+        }
+        finish(t);
+      } catch (x) { done(null); }
+    };
+    im.onerror = function () { done(null); };
+    im.src = src;
+  }
 
   // Vanuit de filters: ?aantal=250&kleur=03 (gekozen aantal en kleur meenemen).
   var urlQty = 0;
@@ -997,6 +1076,31 @@
   } catch (e) {}
   if (cfg.colors[st.color] && cfg.colors[st.color].sizes) st.qty = 1;
   else if (urlQty > 0) st.qty = urlQty;
+  // Vanuit de winkelwagen ("Wijzigen"): het ontwerp van die regel terugzetten.
+  if (cfg.edit) {
+    var E = cfg.edit, M = E.mdo || {}, firstFace = null;
+    cfg.colors.forEach(function (c, i) { if (+c.id === +E.variation) st.color = i; });
+    Object.keys(st.faces).forEach(function (k) { st.faces[k].on = false; });
+    (M.prints || []).forEach(function (p) {
+      cfg.faces.forEach(function (f) {
+        f.positions.forEach(function (ps) {
+          if (ps.id !== p.position) return;
+          var fs = st.faces[f.key];
+          fs.on = true; fs.pick = p.position + '|' + p.tech; fs.mode = p.mode === 'text' ? 'text' : 'logo';
+          fs.colours = p.full ? 'fc' : String(p.colours || 1); fs.text = p.text || ''; fs.font = FONTS[p.font] ? p.font : 'poppins';
+          fs.ink = p.ink || null; fs.pms = p.pms || ''; fs.rot = p.rot | 0; fs.al = p.al || 'c'; fs.va = p.va || 'm';
+          fs.size = Math.round(((p.rot | 0) % 180 ? p.h : p.w)) || null;
+          if (p.logo) fs.logo = { name: p.logoname || 'logo', token: p.logo, preview: /\.(png|jpe?g)$/i.test(p.logo) ? E.logoBase + p.logo : '' };
+          if (fs.mode === 'text') loadFont(fs.font);
+          if (!firstFace) firstFace = f.key;
+        });
+      });
+    });
+    if (firstFace) st.face = firstFace;
+    st.note = M.note || '';
+    if (M.sizes) { st.sizes = {}; M.sizes.forEach(function (z) { st.sizes[z.size] = z.qty | 0; }); st.qty = sizeTotal(); }
+    else if (E.qty > 0) st.qty = E.qty;
+  }
   render();
   loadFont('poppins');
   loadDemo();
@@ -1007,6 +1111,8 @@
     cfg.taxLabel = cfg.taxRate > 0 ? (incl ? 'incl. btw' : 'excl. btw') : '';
     cfg.btw = String(cfg.btw || '').replace(/ class="is-on" aria-current="true"/g, '').replace(new RegExp('(mdo_btw=' + mode + '[^"]*")'), '$1 class="is-on" aria-current="true"');
   }
+  // Terug met de knop van de browser: koopknop weer bruikbaar maken.
+  window.addEventListener('pageshow', function (e) { if (e.persisted) render(); });
   document.addEventListener('mdo-btw', function (e) { e.preventDefault(); applyBtw(e.detail); render(); });
   var ck = /(?:^|; )mdo_btw=(incl|excl)/.exec(document.cookie);
   if (ck && cfg.btw && (ck[1] === 'incl') !== ((cfg.tax || 1) > 1)) { applyBtw(ck[1]); render(); }

@@ -1,0 +1,27 @@
+/* Winkelwagen en afrekenen: samengestelde producten */
+.mdo-design-thumb{border-radius:10px;background:#F3F1EC;object-fit:contain}
+.woocommerce-cart-form .product-thumbnail img.mdo-design-thumb{width:96px !important;height:96px !important;max-width:none !important}
+@media (max-width:768px){.woocommerce-cart-form .product-thumbnail img.mdo-design-thumb{width:72px !important;height:72px !important}}
+
+/* Totaal groot, stukprijs en inhoud klein eronder */
+.mdo-ci-total{display:block;font-size:1.1em;font-weight:800;color:#1D1A2E}
+.mdo-ci-sub{display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:#6b6880;font-weight:400}
+.mdo-ci-sub .woocommerce-Price-amount{font-weight:600;color:#4a4760}
+.mdo-ci-pc{font-size:12px;color:#6b6880}
+
+/* Tip volgende staffel onder het aantal */
+.mdo-ci-tip{display:inline-block;margin-top:6px;padding:3px 9px;border-radius:999px;background:#F1EBFF;color:#6123E0 !important;font-size:12px;font-weight:600;line-height:1.4;text-decoration:none !important;white-space:nowrap}
+.mdo-ci-tip:hover{background:#E6DBFF}
+.mdo-ci-tip::before{content:"↓ ";}
+
+/* Details inklapbaar + Wijzigen */
+.woocommerce-cart-form dl.variation dd p{margin:0}
+.mdo-ci{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 14px}
+.mdo-ci-det summary{cursor:pointer;color:#6123E0;font-weight:600;list-style:none}
+.mdo-ci-det summary::-webkit-details-marker{display:none}
+.mdo-ci-det summary::after{content:" ▾";font-size:.85em}
+.mdo-ci-det[open] summary::after{content:" ▴"}
+.mdo-ci-det ul{margin:6px 0 2px;padding:8px 12px;list-style:none;background:#F7F5FB;border-radius:8px;font-size:13px;line-height:1.5}
+.mdo-ci-det li{margin:2px 0}
+.mdo-ci-edit{font-weight:600;color:#6123E0 !important;text-decoration:underline !important}
+.woocommerce-cart-form dl.variation dt.variation-Ontwerp{display:none}

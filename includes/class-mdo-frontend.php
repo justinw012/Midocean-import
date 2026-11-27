@@ -259,6 +259,10 @@ class MDO_Frontend {
 			woocommerce_template_single_add_to_cart();
 			return;
 		}
+		$edit = class_exists( 'MDO_Cart' ) ? MDO_Cart::edit_data( $product->get_id() ) : null;
+		if ( $edit ) {
+			$cfg['edit'] = $edit;
+		}
 		?>
 		<form class="mdo-form cart" method="post" enctype="multipart/form-data" action="<?php echo esc_url( apply_filters( 'woocommerce_add_to_cart_form_action', $product->get_permalink() ) ); ?>">
 			<div id="mdo-configurator" class="mdo" data-config="<?php echo esc_attr( wp_json_encode( $cfg ) ); ?>">
