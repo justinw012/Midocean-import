@@ -436,13 +436,13 @@
       short = shortSz.length > 0;
       block = shortSz.some(function (sz) { return !sz.backorders && !readyFrom(sz.stock, sz.arrivals, st.sizes[sz.size] | 0); }) || sizeTotal() === 0;
       stockMsg = (sizeTotal() === 0 ? '<p class="mdo-warn">Vul bij minstens één maat een aantal in.</p>' : '') +
-        (!short ? '' : '<p class="mdo-warn">Niet genoeg voorraad in ' + shortSz.map(function (sz) { return esc(sz.size) + ' (nog ' + Math.max(0, sz.stock) + (sz.arrivals && sz.arrivals.length ? ', meer rond ' + fmtDate(parseDate(sz.arrivals[0][0])) : '') + ')'; }).join(', ') + '.' + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>');
+        (!short ? '' : '<p class="mdo-warn">Niet genoeg voorraad in ' + shortSz.map(function (sz) { return esc(sz.size) + ' (nog ' + Math.max(0, sz.stock) + (sz.arrivals && sz.arrivals.length ? ', meer rond ' + fmtDate(parseDate(sz.arrivals[0][0])) : '') + ')'; }).join(', ') + '.' + (block ? ' Bestellen kan zo niet: kies minder stuks in die maat of neem contact met ons op.' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>');
     } else {
       short = color.stock !== null && st.qty > color.stock; block = short && !color.backorders;
       // Met een geplande levering bij de leverancier mag er besteld worden; de levertijd schuift dan op.
       var later = short && readyFrom(color.stock, color.arrivals, st.qty);
       if (later) block = false;
-      stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? '' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
+      stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? ' Bestellen kan zo niet: kies een andere kleur' + (color.stock > 0 ? ', maximaal ' + color.stock + ' stuks' : '') + ' of neem contact met ons op.' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
     return (cfg.btw ? '<div class="mdo-btw-row">Prijzen ' + cfg.btw + '</div>' : '') + '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (cfg.taxLabel ? ' (' + cfg.taxLabel + ')' : '') + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
