@@ -126,3 +126,15 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 @media (max-width:900px){.mdo-f-qty .mdo-btw{margin-left:0}}
 .mdo-card-n,.mdo-chip{overflow-wrap:anywhere;-webkit-hyphens:auto;hyphens:auto}
 .mdo-filter ul.products.mdo-grid li.product.mdo-card{min-width:0}
+
+/* Zoekveld in het paneel alleen op mobiel; op desktop staat het in de balk */
+.mdo-f-search-side{display:none}
+@media (max-width:900px){
+  .mdo-f-bar{flex-wrap:nowrap;gap:8px}
+  .mdo-f-bar .mdo-f-search{display:none}
+  .mdo-f-count{white-space:nowrap;font-size:14px}
+  .mdo-f-sort{margin-left:auto;min-width:0}
+  .mdo-f-sort-l{display:none}
+  .mdo-f-sort select{max-width:150px;padding:8px 6px;font-size:14px}
+  .mdo-f-search-side{display:block;margin:4px 0 8px}
+}

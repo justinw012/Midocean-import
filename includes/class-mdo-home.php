@@ -58,7 +58,7 @@ class MDO_Home {
 	}
 
 	/** Hoofdcategorieën met producten, met een foto: de categorie-afbeelding of een product eruit. */
-	private static function categories( $n = 8 ) {
+	public static function categories( $n = 8 ) {
 		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC' ) );
 		$out   = array();
 		if ( is_wp_error( $terms ) ) {
@@ -92,7 +92,7 @@ class MDO_Home {
 		return $out;
 	}
 
-	private static function card( $id ) {
+	public static function card( $id ) {
 		$p = wc_get_product( $id );
 		if ( ! $p ) {
 			return '';

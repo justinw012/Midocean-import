@@ -139,3 +139,8 @@
 .mdo-h-cat,.mdo-h-tryitem,.mdo-home .mdo-card{min-width:0}
 .mdo-h-cat b,.mdo-h-tryname,.mdo-home .mdo-card-n{overflow-wrap:anywhere;-webkit-hyphens:auto;hyphens:auto}
 @media (max-width:700px){.mdo-h-cat b{font-size:15px;line-height:1.3}}
+
+/* Gerelateerde producten op de productpagina */
+.mdo-home.mdo-related{max-width:none;padding:8px 0 24px;margin:20px 0 0;clear:both}
+.mdo-related .mdo-h-head h2{font-size:22px}
+@media (min-width:701px){.mdo-related ul.products.mdo-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}

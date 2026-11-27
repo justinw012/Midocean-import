@@ -142,7 +142,7 @@
   function grp(title, body, open) { return body ? '<details class="mdo-fg"' + (open === false ? '' : ' open') + '><summary>' + title + '</summary><div class="mdo-fg-b">' + body + '</div></details>' : ''; }
 
   function sideHtml() {
-    var h = '', list, i, sum;
+    var h = '<label class="mdo-f-search mdo-f-search-side"><span class="screen-reader-text">Zoek in deze producten</span><input type="search" data-act="text" value="' + esc(st.text) + '" placeholder="Zoek in deze producten"></label>', list, i, sum;
     // Categorieën (alle niveaus onder deze pagina), met het aantal producten bij de huidige filters
     if (C.tree && C.tree.length) {
       list = subset(null);
@@ -273,7 +273,7 @@
       '<button type="button" class="mdo-f-open" data-act="open">Filters' + (nf ? ' (' + nf + ')' : '') + '</button>' +
       '<b class="mdo-f-count">' + (loading && !rows.length ? 'Laden…' : list.length + (list.length === 1 ? ' product' : ' producten')) + '</b>' +
       '<label class="mdo-f-search"><span class="screen-reader-text">Zoek in deze producten</span><input type="search" data-act="text" value="' + esc(st.text) + '" placeholder="Zoek in deze producten"></label>' +
-      '<label class="mdo-f-sort">Sorteer <select data-act="sort">' +
+      '<label class="mdo-f-sort"><span class="mdo-f-sort-l">Sorteer</span> <select data-act="sort" aria-label="Sorteer">' +
       [['rec', 'Aanbevolen'], ['price', 'Laagste prijs bij ' + st.q.toLocaleString('nl-NL') + ' st.'], ['fast', 'Snelst klaar'], ['new', 'Nieuwste'], ['name', 'Naam']].map(function (o) { return '<option value="' + o[0] + '"' + (st.sort === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') +
       '</select></label></div>';
     if (nf) h += '<div class="mdo-f-active">' + act.map(function (a) { return '<button type="button" class="mdo-tag" data-act="un-' + a[0] + '" data-v="' + esc(a[1]) + '">' + esc(a[2]) + ' <span aria-hidden="true">×</span><span class="screen-reader-text"> verwijderen</span></button>'; }).join('') + '<button type="button" class="mdo-linkbtn" data-act="clear">Wis alles</button></div>';
@@ -383,9 +383,9 @@
       clearTimeout(tmr);
       tmr = setTimeout(function () {
         st.shown = PAGE;
-        var pos = t.selectionStart;
+        var pos = t.selectionStart, inSide = !!t.closest('.mdo-f-side');
         render();
-        var n = root.querySelector('input[data-act="text"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
+        var n = root.querySelector((inSide ? '.mdo-f-side' : '.mdo-f-main') + ' input[data-act="text"]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
       }, 200);
     }
   });
