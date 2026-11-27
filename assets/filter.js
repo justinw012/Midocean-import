@@ -392,6 +392,23 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('is-open')) { root.classList.remove('is-open'); document.documentElement.classList.remove('mdo-f-lock'); } });
 
   // ---------- gegevens ophalen (grote categorieën in delen, tot alles binnen is) ----------
+  // Lege blokken van het thema boven de filters (zonder zichtbare tekst of beeld) inklappen.
+  var gapsDone = false;
+  function collapseGaps() {
+    if (gapsDone) return; gapsDone = true;
+    function empty(el) {
+      if (el.contains(root) || el.matches('script, style, link, meta, .mdo-crumbs-wrap')) return false;
+      if ([].some.call(el.querySelectorAll('img, svg, input, select, textarea, iframe, video, canvas, button'), function (m) { return m.getClientRects().length > 0; })) return false;
+      return !(el.innerText || '').trim();
+    }
+    for (var up = 0, node = root; node && up < 3 && node !== document.body; up++, node = node.parentNode) {
+      if (node.matches && node.matches('main, #main, #primary, .content-area, .site-content')) break;
+      for (var sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) {
+        if (empty(sib) && sib.getBoundingClientRect().height > 8) sib.style.display = 'none';
+      }
+    }
+  }
+
   // Eerst via de pagina zelf (zelfde toegang als de pagina), anders via admin-ajax.
   var viaAjax = false;
   function dataUrl() {
@@ -405,6 +422,7 @@
     fetch(dataUrl(), { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) {
       rows = d.rows || []; total = d.total || rows.length; loading = !!d.more;
       document.body.classList.add('mdo-filter-on');
+      collapseGaps();
       render();
       if (d.more && tries < 40) setTimeout(function () { load(tries + 1); }, 50);
     }).catch(function (e) {

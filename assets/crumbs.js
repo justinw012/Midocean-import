@@ -4,6 +4,7 @@
 (function () {
   'use strict';
   var C = window.MDO_CRUMBS || {};
+  if (document.querySelector('.mdo-crumbs-wrap')) return; // kop al door de plugin gemaakt (Zigcy Lite)
   function outside(el) { return !el.closest('.summary, .mdo-home, .mdo-filter, #mdo-configurator, .mdo, ul.products, .widget, footer, #colophon'); }
   var crumb = [].slice.call(document.querySelectorAll('.woocommerce-breadcrumb, .breadcrumb-trail, .breadcrumbs, .breadcrumb, nav[aria-label*="readcrumb"], [class*="breadcrumb"]')).filter(outside)[0];
   if (!crumb) return;
