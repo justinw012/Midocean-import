@@ -135,3 +135,7 @@
   .mdo-home *{animation:none!important;transition:none!important}
 }
 .mdo-h-try-note{font-size:13px!important;opacity:.85}
+/* Lange woorden (bijv. "lunchbenodigdheden") afbreken binnen het vak */
+.mdo-h-cat,.mdo-h-tryitem,.mdo-home .mdo-card{min-width:0}
+.mdo-h-cat b,.mdo-h-tryname,.mdo-home .mdo-card-n{overflow-wrap:anywhere;-webkit-hyphens:auto;hyphens:auto}
+@media (max-width:700px){.mdo-h-cat b{font-size:15px;line-height:1.3}}

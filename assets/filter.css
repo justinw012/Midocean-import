@@ -124,3 +124,5 @@ body.mdo-filter-nosidebar.mdo-filter-on #primary,body.mdo-filter-nosidebar.mdo-f
 .mdo-f-subs .mdo-chip.is-off{opacity:.5}
 .mdo-f-qty .mdo-btw{margin-left:auto}
 @media (max-width:900px){.mdo-f-qty .mdo-btw{margin-left:0}}
+.mdo-card-n,.mdo-chip{overflow-wrap:anywhere;-webkit-hyphens:auto;hyphens:auto}
+.mdo-filter ul.products.mdo-grid li.product.mdo-card{min-width:0}
