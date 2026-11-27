@@ -164,7 +164,8 @@
       var cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
       var sx = Math.max(0, Math.min(c.width - side, cx - side / 2)), sy = Math.max(0, Math.min(c.height - side, cy - side / 2));
       var t = document.createElement('canvas'); t.width = t.height = 120;
-      var x = t.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 120, 120);
+      var x = t.getContext('2d'); x.fillStyle = C.bgColor || '#fff'; x.fillRect(0, 0, 120, 120);
+      x.globalCompositeOperation = 'multiply'; // witte foto-achtergrond wordt de achtergrondkleur
       x.drawImage(c, sx, sy, side, side, 0, 0, 120, 120);
       badge.appendChild(t);
       badge.classList.add('has-thumb');

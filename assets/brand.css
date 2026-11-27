@@ -24,7 +24,6 @@
 .mdo-filter .mdo-chip.is-on,.mdo-filter .mdo-tag{background:var(--pf-grad)!important;border-color:transparent!important;color:#fff!important}
 .mdo-card-p b{color:#16181D}
 .mdo-card:hover .mdo-card-n{background:var(--pf-grad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.mdo-hov-badge.has-thumb{border-color:transparent!important;background:var(--pf-grad)!important;padding:2px!important}
 
 /* Compact kruimelpad (vervangt de grote titelbalk van het thema) */
 .mdo-banner-hide{display:none!important}

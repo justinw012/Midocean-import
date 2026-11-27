@@ -69,6 +69,7 @@ class MDO_Shop {
 		wp_enqueue_script( 'mdo-shop', MDO_URL . 'assets/shop.js', array(), MDO_VERSION, true );
 		wp_localize_script( 'mdo-shop', 'MDO_SHOP', array(
 			'bg'       => $bg ? 1 : 0,
+			'bgColor'  => $bg,
 			'logo'     => $logo,
 			'icon'     => self::icon_url(),
 			'trimLine' => (int) MDO_Settings::get( 'hover_trim' ),
