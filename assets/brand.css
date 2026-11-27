@@ -30,6 +30,9 @@
 .mdo-banner-hide{display:none!important}
 .mdo-crumbs-wrap{margin:14px auto 16px}
 .mdo-crumbs-on .store-mart-lite-bread-home{display:none!important}
+.mdo-crumbs-wrap.container{padding-left:15px;padding-right:15px;box-sizing:border-box}
+/* Thema: 60px ruimte boven de inhoud (bedoeld onder de grote balk) – na de smalle kop is dat te veel */
+.mdo-crumbs-on .content-area{margin-top:4px!important;padding-top:0!important}
 body.mdo-filter-on .archive-header{display:none!important}
 .mdo-crumbs{font-size:13.5px;color:#5E636D;line-height:1.4}
 .mdo-crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
