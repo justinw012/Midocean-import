@@ -667,6 +667,7 @@
     placeStage();
     drawWrap();
     root.classList.toggle('is-mobile', !!mobile.matches);
+    document.body.classList.toggle('mdo-has-bar', !!mobile.matches);
     measure();
     syncGallery();
   }

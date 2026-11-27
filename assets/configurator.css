@@ -55,7 +55,11 @@
 .mdo-progress span{height:5px;border-radius:3px;background:var(--mdo-line)}
 .mdo-progress span.is-on{background:var(--mdo-accent)}
 .mdo-bar{display:none}
-.mdo.is-mobile{padding-bottom:84px}
+.mdo.is-mobile{padding-bottom:0;margin-bottom:8px}
+/* Ruimte voor de vaste prijsbalk onderaan: alleen aan het eind van de pagina, niet midden in de inhoud */
+body.mdo-has-bar{padding-bottom:84px}
+.single-product .mdo-form.cart{margin-bottom:0!important}
+@media (max-width:767px){.mdo-configured .product_meta{margin-top:8px;padding-top:12px}}
 .mdo.is-mobile .mdo-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--mdo-line);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
 .mdo-bar-price{display:flex;flex-direction:column;line-height:1.2}
 .mdo-bar-price strong{font-size:18px}
