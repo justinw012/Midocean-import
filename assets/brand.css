@@ -58,7 +58,10 @@ body.mdo-filter-on .archive-header{display:none!important}
 .mob-nav-wrapper .mob-hiriz-wrapp .site-header-cart{padding:0!important}
 
 /* Thema-accent rood → paars van PromoFun */
-.mob-nav-wrapper .lnr-menu:before,button.menu-toggle::after{color:#6123E0!important}
+.mob-nav-wrapper .lnr-menu:before{color:#6123E0!important}
+/* Het thema tekent in de mobiele kop twee menu-iconen over elkaar; alleen het eigen icoon tonen */
+.mob-nav-wrapper .mob-hiriz-wrapp .menu-toggle::after{display:none!important}
+button.menu-toggle::after{color:#6123E0!important}
 .woocommerce-info,.woocommerce-message{border-top-color:#6123E0!important}
 .woocommerce-info::before,.woocommerce-message::before{color:#6123E0!important}
 
