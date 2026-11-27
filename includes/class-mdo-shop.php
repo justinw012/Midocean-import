@@ -17,6 +17,12 @@ class MDO_Shop {
 			return;
 		}
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
+		// Huisstijl (kleurverloop uit het logo) in de hele site, als laatste geladen.
+		add_action( 'wp_enqueue_scripts', function () {
+			if ( MDO_Settings::get( 'brand_grad' ) ) {
+				wp_enqueue_style( 'mdo-brand', MDO_URL . 'assets/brand.css', array(), MDO_VERSION );
+			}
+		}, 999 );
 		if ( MDO_Settings::get( 'shop_hover' ) ) {
 			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'mark' ), 20 );
 		}

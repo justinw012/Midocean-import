@@ -1,0 +1,36 @@
+/* PromoFun huisstijl in de hele site: paars van het thema + het kleurverloop uit het logo (blauw → paars → roze). */
+:root{--pf-purple:#6123E0;--pf-grad:linear-gradient(90deg,#2EC5EE 0%,#5A7BF0 38%,#9A4BEA 68%,#E048C8 100%);--pf-tint:#F3EDFD}
+
+/* Dun verloop onder de kop van de site */
+#masthead,header.site-header{position:relative}
+#masthead::after,header.site-header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--pf-grad);pointer-events:none}
+
+/* Hoofdknoppen van WooCommerce: in winkelwagen, afrekenen, bestellen */
+.woocommerce .single_add_to_cart_button,.woocommerce a.checkout-button,.woocommerce #place_order,.woocommerce .button.alt,.woocommerce button.button.alt,
+.wc-block-cart__submit-button,.wc-block-components-checkout-place-order-button,.wc-block-components-button.contained,.mdo-buy,.mdo .mdo-buy{
+  background:var(--pf-grad)!important;background-size:140% 100%!important;background-position:0 0!important;border:0!important;color:#fff!important;transition:background-position .35s ease,box-shadow .2s,transform .15s}
+.woocommerce .single_add_to_cart_button:hover,.woocommerce a.checkout-button:hover,.woocommerce #place_order:hover,.woocommerce .button.alt:hover,
+.wc-block-cart__submit-button:hover,.wc-block-components-checkout-place-order-button:hover,.mdo-buy:hover{background-position:100% 0!important;box-shadow:0 8px 20px rgba(154,75,234,.3);transform:translateY(-1px)}
+.mdo-buy:disabled{filter:grayscale(.6);opacity:.6;transform:none!important;box-shadow:none!important}
+
+/* Paginatitels: korte verloopstreep eronder */
+.woocommerce-products-header__title.page-title::after,.woocommerce h1.product_title::after,.entry-header .entry-title::after{content:"";display:block;width:64px;height:4px;border-radius:2px;background:var(--pf-grad);margin-top:10px}
+
+/* Labels */
+.mdo-badge-new{background:var(--pf-grad)!important}
+
+/* Configurator: paars in plaats van rood, verloop op de stapnummers en de voortgang */
+.mdo{--mdo-accent:#6123E0}
+.mdo-tier.is-on,.mdo-fontopt:hover,.mdo-fontopt.is-on,.mdo-steptabs button.is-on{background:var(--pf-tint)!important}
+.mdo-ti:hover,.mdo-ti.is-on,.mdo-tis .mdo-ti.is-on{background:#F8F4FE!important}
+.mdo-steptabs button.is-on .mdo-stepnr,.mdo-steptabs button.is-done .mdo-stepnr,.mdo-progress span.is-on{background:var(--pf-grad)!important}
+.mdo-from strong,.mdo-total-num{background:var(--pf-grad);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
+.mdo-stage{border-radius:18px}
+
+/* Filters en winkel */
+.mdo-filter{--mdo-accent:#6123E0}
+.mdo-filter .mdo-chip.is-on,.mdo-f-open,.mdo-filter .mdo-btn,.mdo-filter .mdo-tag{background:var(--pf-grad)!important;border-color:transparent!important;color:#fff!important}
+.mdo-card-p b{color:#16181D}
+.mdo-card:hover .mdo-card-n{background:var(--pf-grad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.mdo-hov-badge.has-thumb{border-color:transparent!important;background:var(--pf-grad)!important;padding:2px!important}
+.mdo-btw a.is-on{background:var(--pf-grad)!important}
