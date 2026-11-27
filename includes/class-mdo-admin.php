@@ -348,7 +348,7 @@ class MDO_Admin {
 						<label><input type="checkbox" name="filter_on" value="1" <?php checked( $s['filter_on'] ); ?>> PromoFun-filters op shop-, categorie- en zoekpagina's (eerst aantal kiezen; prijs en levertijd bij dat aantal)</label><br>
 						<label><input type="checkbox" name="filter_sidebar" value="1" <?php checked( $s['filter_sidebar'] ); ?>> Zijbalk van het thema daar verbergen (de oude filters)</label><br>
 						<label><input type="checkbox" name="brand_grad" value="1" <?php checked( $s['brand_grad'] ); ?>> Kleurverloop van het logo (blauw → roze) in de hele site: knoppen, kopstreep, configurator, filters</label><br>
-						<label><input type="checkbox" name="compact_crumbs" value="1" <?php checked( $s['compact_crumbs'] ); ?>> Grote grijze titelbalk van het thema vervangen door een smalle kruimelpad-regel (product-, categorie- en zoekpagina's)</label><br>
+						<label><input type="checkbox" name="compact_crumbs" value="1" <?php checked( $s['compact_crumbs'] ); ?>> Thema-aanpassingen: grote grijze titelbalk vervangen door een smalle kruimelpad-regel, en op mobiel het winkelmandje naast het logo</label><br>
 						<label><input type="checkbox" name="tax_toggle" value="1" <?php checked( $s['tax_toggle'] ); ?>> Klant kiest zelf: prijzen incl. of excl. btw (schakelaar in de shop, bij het product en op de homepage; ook als <code>[promofun_btw]</code>)</label><br>
 						<label>Achtergrond achter productfoto's: <input type="text" name="img_bg" value="<?php echo esc_attr( $s['img_bg'] ); ?>" placeholder="#F3F1EC" style="width:100px"></label> <span class="description">Leeg = geen. Witte productfoto's krijgen dan deze kleur.</span>
 					</td></tr>

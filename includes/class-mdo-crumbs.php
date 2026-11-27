@@ -31,6 +31,33 @@ class MDO_Crumbs {
 		add_action( 'wp_enqueue_scripts', function () {
 			wp_enqueue_style( 'mdo-brand', MDO_URL . 'assets/brand.css', array(), MDO_VERSION );
 		}, 999 );
+		add_action( 'wp_footer', array( __CLASS__, 'header_fix' ), 99 );
+	}
+
+	/**
+	 * Telefoon/tablet: het thema zet het winkelmandje met vaste pixelafstanden neer, waardoor het op
+	 * smallere schermen (iPhone) onder het logo belandt. Wij zetten het rechts, op dezelfde hoogte als het logo.
+	 */
+	public static function header_fix() {
+		?>
+		<script>
+		(function () {
+			var head = document.getElementById('masthead'), cart = head && head.querySelector('.cart-icon-wrap'), logo = head && head.querySelector('.site-branding');
+			if (!cart || !logo) return;
+			var mq = window.matchMedia('(max-width: 992px)');
+			function place() {
+				if (!mq.matches) { head.classList.remove('mdo-hdr-fix'); return; }
+				head.classList.add('mdo-hdr-fix');
+				var h = head.getBoundingClientRect(), l = logo.getBoundingClientRect();
+				head.style.setProperty('--mdo-logo-mid', Math.round(l.top - h.top + l.height / 2) + 'px');
+			}
+			place();
+			window.addEventListener('resize', place);
+			window.addEventListener('load', place);
+			if (mq.addEventListener) mq.addEventListener('change', place);
+		})();
+		</script>
+		<?php
 	}
 
 	/** Kruimels als lijst van array( naam, url ). De laatste is de huidige pagina. */
