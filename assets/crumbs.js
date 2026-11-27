@@ -7,11 +7,18 @@
   function outside(el) { return !el.closest('.summary, .mdo-home, .mdo-filter, #mdo-configurator, .mdo, ul.products, .widget, footer, #colophon'); }
   var crumb = [].slice.call(document.querySelectorAll('.woocommerce-breadcrumb, .breadcrumb-trail, .breadcrumbs, .breadcrumb, nav[aria-label*="readcrumb"], [class*="breadcrumb"]')).filter(outside)[0];
   if (!crumb) return;
-  // Titel zoeken in de blokken rond het kruimelpad (max. 4 niveaus omhoog); dat blok is de titelbalk.
-  var head = null, box = crumb.parentNode;
-  for (var lv = 0; lv < 4 && box && box !== document.body; lv++, box = box.parentNode) {
-    head = [].slice.call(box.querySelectorAll('h1, h2, h3, .page-title, .entry-title')).filter(function (h) { return !crumb.contains(h) && outside(h); })[0];
-    if (head) break;
+  // Soms is het hele titelblok zelf een "breadcrumb"-element (titel zit erin): dan is dát de balk.
+  var head = crumb.querySelector('h1, h2, h3, .page-title, .entry-title'), box = crumb;
+  if (head) {
+    var inner = [].slice.call(crumb.querySelectorAll('nav, ol, ul, [class*="breadcrumb"], .woocommerce-breadcrumb')).filter(function (el) { return el.querySelector('a') && !el.contains(head); })[0];
+    if (inner) crumb = inner;
+  } else {
+    // Titel zoeken in de blokken rond het kruimelpad (max. 4 niveaus omhoog); dat blok is de titelbalk.
+    box = crumb.parentNode;
+    for (var lv = 0; lv < 4 && box && box !== document.body; lv++, box = box.parentNode) {
+      head = [].slice.call(box.querySelectorAll('h1, h2, h3, .page-title, .entry-title')).filter(function (h) { return !crumb.contains(h) && outside(h); })[0];
+      if (head) break;
+    }
   }
   if (!head) return;
   if (!box || box === document.body || box.matches('main, #main, #content, #primary, .site-content, #page, .site')) return;
@@ -46,4 +53,22 @@
     anchor.parentNode.insertBefore(wrap, anchor);
   }
   box.classList.add('mdo-banner-hide');
+
+  // Lege blokken van het thema tussen de kop en de producten (bijv. een lege balk voor sorteren/aantal) inklappen.
+  function empty(el) {
+    if (el === wrap || el.contains(wrap) || el.id === 'mdo-filter') return false;
+    if ([].some.call(el.querySelectorAll('img, svg, input, select, textarea, iframe, video, canvas, button'), function (m) { return m.getClientRects().length > 0; })) return false;
+    return !(el.innerText || '').trim();
+  }
+  // Omhulsels van de balk (met eigen achtergrond/ruimte) die nu leeg zijn ook verbergen.
+  for (var k = 0, pa = box.parentNode; k < 3 && pa && pa !== document.body && !pa.matches('main, #main, #content, #primary, .site-content, #page, .site') && empty(pa); k++, pa = pa.parentNode) {
+    pa.classList.add('mdo-banner-hide');
+  }
+  var start = document.getElementById('mdo-filter') || product;
+  for (var up = 0, node = start; node && up < 3 && node !== document.body; up++, node = node.parentNode) {
+    for (var sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) {
+      if (sib.matches('script, style, link, meta')) continue;
+      if (empty(sib) && sib.getBoundingClientRect().height > 8) sib.classList.add('mdo-banner-hide');
+    }
+  }
 })();
