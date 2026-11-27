@@ -444,7 +444,7 @@
       if (later) block = false;
       stockMsg = !short ? '' : '<p class="mdo-warn">' + (color.stock > 0 ? 'Nog ' + color.stock + ' stuks op voorraad in ' + esc(color.name) + '.' : 'Op dit moment niet op voorraad in ' + esc(color.name) + '.') + arrivalsText(color.arrivals) + (block ? ' Bestellen kan zo niet: kies een andere kleur' + (color.stock > 0 ? ', maximaal ' + color.stock + ' stuks' : '') + ' of neem contact met ons op.' : ' Je kunt wel bestellen; de levertijd is dan langer.') + '</p>';
     }
-    return (cfg.btw ? '<div class="mdo-btw-row">Prijzen ' + cfg.btw + '</div>' : '') + '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (cfg.taxLabel ? ' (' + cfg.taxLabel + ')' : '') + (q.setup ? ' (incl. ' + eur(q.setup) + ' instelkosten)' : '') + '</span></div>' +
+    return (cfg.btw ? '<div class="mdo-btw-row">Prijzen ' + cfg.btw + '</div>' : '') + '<div class="mdo-total"><span class="mdo-total-num">' + eur(q.total) + '</span><span class="mdo-muted">' + (n !== st.qty ? 'Voorbeeld bij ' + n + ' stuks: ' : '') + eur(q.perPc) + ' per stuk, alles inbegrepen' + (q.setup ? ', incl. ' + eur(q.setup) + ' instelkosten' : '') + (cfg.taxLabel ? ', ' + cfg.taxLabel : '') + '</span></div>' +
       (next ? '<p class="mdo-hint">Vanaf ' + next + ' stuks: ' + eur(quote(color, next, priceSels(sels)).perPc) + ' per stuk</p>' : '') +
       '<div class="mdo-tiers">' + tiers + '</div>' + stockMsg + deliveryHtml() + (cfg.qtyNote ? '<p class="mdo-qtynote">' + esc(cfg.qtyNote) + '</p>' : '') +
       '<button type="button" class="mdo-buy button alt"' + (block ? ' disabled' : '') + '>In winkelwagen</button>';
@@ -784,8 +784,42 @@
       }).join('') + '</div>';
   }
   // Mobiel: het podium tussen de stappen en de keuzes; desktop: terug naar zijn eigen plek links.
+  // Desktop: beschrijving en specificaties in de linkerkolom onder het voorbeeld (vult de lege ruimte).
+  // Het voorbeeld blijft meescrollen tot de beschrijving eraan komt (een "spoor" met berekende hoogte).
+  var leftCol = null, track = null, tabsEl = document.querySelector('.woocommerce-tabs'), tabsHome = null;
+  if (gal && tabsEl && gal.parentNode) {
+    leftCol = document.createElement('div');
+    leftCol.className = 'images mdo-leftcol';
+    track = document.createElement('div');
+    track.className = 'mdo-track';
+    gal.parentNode.insertBefore(leftCol, gal);
+    leftCol.appendChild(track);
+    track.appendChild(gal);
+    gal.classList.remove('images');
+    tabsHome = { parent: tabsEl.parentNode, next: tabsEl.nextSibling };
+  }
+  // Beschrijving direct onder het voorbeeld. Past de hele linkerkolom in beeld, dan scrollt hij mee
+  // (zo blijft het voorbeeld zichtbaar tijdens het kiezen); anders blijft hij gewoon staan.
+  function sizeTrack() {
+    if (!leftCol) return;
+    var on = !mobile.matches && tabsEl.parentNode === leftCol && leftCol.getBoundingClientRect().height <= window.innerHeight - 40;
+    leftCol.classList.toggle('is-sticky', on);
+  }
+  window.addEventListener('resize', function () { sizeTrack(); });
+  function placeTabs() {
+    if (!leftCol) return;
+    if (!mobile.matches && tabsEl.parentNode !== leftCol) leftCol.appendChild(tabsEl);
+    else if (mobile.matches && tabsEl.parentNode === leftCol) tabsHome.parent.insertBefore(tabsEl, tabsHome.next);
+    sizeTrack();
+  }
+  if (leftCol && window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { sizeTrack(); });
+    var sm = document.querySelector('.mdo-configured .summary, .product .summary');
+    if (sm) ro.observe(sm); ro.observe(tabsEl); ro.observe(gal);
+  }
   var galHome = gal ? { parent: gal.parentNode, next: gal.nextSibling } : null;
   function placeStage() {
+    placeTabs();
     if (!gal) return;
     var slot = root.querySelector('[data-slot="stage"]');
     if (mobile.matches && slot) slot.appendChild(gal);
