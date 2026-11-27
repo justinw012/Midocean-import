@@ -13,6 +13,8 @@ class MDO_Shop {
 			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'badges' ), 15 );
 			// Productpagina: labels boven de titel.
 			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'badges_single' ), 4 );
+			// Productpagina: korte feiten onder de naam (voorraad, klaar rond, kleuren, bedrukking).
+			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'facts' ), 6 );
 			add_action( 'wp_head', array( __CLASS__, 'badge_css' ) );
 		}
 		if ( is_admin() ) {
@@ -181,6 +183,113 @@ class MDO_Shop {
 	}
 
 	/** Labels "Nieuw" en "Op = op" op de productfoto in de winkel. */
+	/** Datum na $n werkdagen (za/zo overgeslagen). */
+	private static function workdays( DateTimeImmutable $d, $n ) {
+		while ( (int) $d->format( 'N' ) >= 6 ) {
+			$d = $d->modify( '+1 day' );
+		}
+		while ( $n > 0 ) {
+			$d = $d->modify( '+1 day' );
+			if ( (int) $d->format( 'N' ) < 6 ) {
+				$n--;
+			}
+		}
+		return $d;
+	}
+
+	public static function facts() {
+		global $product;
+		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) || ! class_exists( 'MDO_Filter' ) ) {
+			return;
+		}
+		$built = 0;
+		$row   = MDO_Filter::row( $product->get_id(), $built );
+		if ( ! $row || ! empty( $row['x'] ) || empty( $row['c'] ) ) {
+			return;
+		}
+		$q     = 250;
+		$i     = array_search( $q, MDO_Frontend::TIERS, true );
+		$tz    = wp_timezone();
+		$today = new DateTimeImmutable( 'today', $tz );
+		$facts = array();
+
+		// Voorraad (som van alle kleuren/maten per kleur) en verwachte leveringen.
+		$best = null;
+		$now  = false;
+		foreach ( $row['c'] as $c ) {
+			$stock = 0;
+			$arr   = array();
+			$known = true;
+			foreach ( $c['v'] as $vid ) {
+				if ( 'yes' !== get_post_meta( $vid, '_manage_stock', true ) ) {
+					$known = false;
+					break;
+				}
+				$stock += max( 0, (int) get_post_meta( $vid, '_stock', true ) );
+				foreach ( (array) get_post_meta( $vid, '_mdo_arrivals', true ) as $a ) {
+					if ( is_array( $a ) && isset( $a[0], $a[1] ) ) {
+						$arr[ (string) $a[0] ] = ( $arr[ (string) $a[0] ] ?? 0 ) + (int) $a[1];
+					}
+				}
+			}
+			$start = null;
+			if ( ! $known || $stock >= $q ) {
+				$start = $today;
+				$now   = true;
+			} else {
+				ksort( $arr );
+				$have = $stock;
+				foreach ( $arr as $date => $n ) {
+					$have += $n;
+					if ( $have >= $q ) {
+						$start = max( $today, new DateTimeImmutable( $date, $tz ) );
+						break;
+					}
+				}
+			}
+			if ( $start && ( ! $best || $start < $best ) ) {
+				$best = $start;
+			}
+		}
+		$days  = array( 'zo', 'ma', 'di', 'wo', 'do', 'vr', 'za' );
+		$month = array( '', 'jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec' );
+		if ( $now ) {
+			$facts[] = array( 'ok', 'Op voorraad' );
+		} elseif ( $best ) {
+			$facts[] = array( 'wait', 'Nieuwe voorraad onderweg' );
+		}
+		if ( $best && isset( $row['ld'][ $i ] ) ) {
+			$d       = self::workdays( $best, (int) $row['ld'][ $i ] );
+			$facts[] = array( 'date', 'Klaar rond ' . $days[ (int) $d->format( 'w' ) ] . ' ' . $d->format( 'j' ) . ' ' . $month[ (int) $d->format( 'n' ) ] . ' bij ' . $q . ' st.' );
+		}
+		$groups = array_unique( wp_list_pluck( $row['c'], 'g' ) );
+		$nc     = count( $row['c'] );
+		if ( $nc > 1 ) {
+			$facts[] = array( 'col', $nc . ' kleuren' );
+		}
+		$t = (array) ( $row['t'] ?? array() );
+		if ( ! empty( $t['fc'] ) ) {
+			$facts[] = array( 'print', 'Full colour mogelijk' );
+		} elseif ( ! empty( $t['eng'] ) ) {
+			$facts[] = array( 'print', 'Gravure' );
+		}
+		if ( ! empty( $t['wrap'] ) ) {
+			$facts[] = array( 'print', 'Rondom bedrukken' );
+		}
+		if ( ! empty( $row['rec'] ) ) {
+			$facts[] = array( 'eco', 'Gerecycled materiaal' );
+		}
+		if ( ! $facts ) {
+			return;
+		}
+		echo '<ul class="mdo-facts">';
+		foreach ( $facts as $f ) {
+			echo '<li class="mdo-fact mdo-fact-' . esc_attr( $f[0] ) . '">' . esc_html( $f[1] ) . '</li>';
+		}
+		echo '</ul>';
+		unset( $groups );
+	}
+
 	public static function badges_single() {
 		ob_start();
 		self::badges();
@@ -211,7 +320,7 @@ class MDO_Shop {
 
 	public static function badge_css() {
 		if ( function_exists( 'is_woocommerce' ) && ( is_woocommerce() || is_front_page() ) ) {
-			echo '<style>li.product{position:relative}.mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;pointer-events:none}.mdo-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:#fff;background:#5B2EE5;box-shadow:0 1px 3px rgba(0,0,0,.15)}.mdo-badge-last{background:#B42318}.mdo-badges-single{position:static;flex-direction:row;margin:0 0 8px}.mdo-badges-single .mdo-badge{font-size:13px;padding:4px 12px}</style>';
+			echo '<style>li.product{position:relative}.mdo-badges{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;pointer-events:none}.mdo-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.3;color:#fff;background:#5B2EE5;box-shadow:0 1px 3px rgba(0,0,0,.15)}.mdo-badge-last{background:#B42318}.mdo-badges-single{position:static;flex-direction:row;margin:0 0 8px}.mdo-facts{list-style:none;margin:6px 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:6px}.mdo-fact{margin:0;padding:5px 11px;border-radius:999px;font-size:13px;font-weight:500;line-height:1.3;background:#F3EDFD;color:#3E1A8F}.mdo-fact-ok{background:#E3F4EA;color:#14532D}.mdo-fact-wait{background:#FFF1D6;color:#7A4A00}.mdo-fact-date{background:#E6F3FD;color:#0B4A75}.mdo-fact-col{background:#FDE7F5;color:#8A1C64}.mdo-fact-eco{background:#E3F4EA;color:#14532D}.mdo-badges-single .mdo-badge{font-size:13px;padding:4px 12px}</style>';
 		}
 	}
 }

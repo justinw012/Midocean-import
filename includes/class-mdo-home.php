@@ -260,7 +260,8 @@ class MDO_Home {
 			<section class="mdo-h-sec mdo-h-band mdo-h-try" id="mdo-h-try">
 				<div class="mdo-h-try-head">
 					<h2>Probeer je eigen logo</h2>
-					<p>Kies je logo en zie het meteen op onze producten, ook straks in de hele shop. Je logo blijft in je eigen browser; wij slaan niets op.</p>
+					<p>Kies je logo en zie het meteen op onze producten. Daarna zie je het ook bij elk product in de shop, en staat het klaar als je gaat bestellen: met één klik gebruik je het voor je bestelling.</p>
+					<p class="mdo-h-try-note">Je logo blijft in je eigen browser; wij ontvangen het pas als je het bij een product kiest voor je bestelling.</p>
 					<p class="mdo-h-try-act">
 						<label class="mdo-h-btn mdo-h-up"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="mdo-h-file"> Kies je logo</label>
 						<button type="button" class="mdo-h-reset" hidden>Terug naar het PromoFun-logo</button>

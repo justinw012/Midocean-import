@@ -134,3 +134,4 @@
 @media (prefers-reduced-motion:reduce){
   .mdo-home *{animation:none!important;transition:none!important}
 }
+.mdo-h-try-note{font-size:13px!important;opacity:.85}

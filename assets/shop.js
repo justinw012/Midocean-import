@@ -60,7 +60,44 @@
     items.forEach(function (f) { f(); });
     scan();
   }
+  // Logo van de bezoeker klaarmaken: witte achtergrond weg (jpg), randen bijsnijden, max. 800 px.
+  function prepareLogo(img) {
+    var max = 800, w = img.naturalWidth || 800, h = img.naturalHeight || 400, k = Math.min(1, max / Math.max(w, h));
+    var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+    var x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height);
+    var d = x.getImageData(0, 0, c.width, c.height), p = d.data, i, see = false;
+    for (i = 3; i < p.length; i += 16) if (p[i] < 250) { see = true; break; }
+    if (!see) {
+      for (i = 0; i < p.length; i += 4) {
+        var m = Math.min(p[i], p[i + 1], p[i + 2]);
+        if (m > 238) p[i + 3] = 0; else if (m > 215) p[i + 3] = Math.round(255 * (238 - m) / 23);
+      }
+      x.putImageData(d, 0, 0);
+    }
+    var l = c.width, r = -1, t = c.height, b = -1, y, X;
+    for (y = 0; y < c.height; y++) for (X = 0; X < c.width; X++) if (p[(y * c.width + X) * 4 + 3] > 24) { if (X < l) l = X; if (X > r) r = X; if (y < t) t = y; if (y > b) b = y; }
+    if (r < l || b < t) return null;
+    var o = document.createElement('canvas'); o.width = r - l + 1; o.height = b - t + 1;
+    o.getContext('2d').drawImage(c, l, t, o.width, o.height, 0, 0, o.width, o.height);
+    return o.toDataURL('image/png');
+  }
   window.MDO_LOGO = {
+    // Bestand (png/jpg/webp/svg) → klaarmaken en overal gebruiken. cb(ok, bewaard)
+    fromFile: function (f, cb) {
+      cb = cb || function () {};
+      if (!f || !/^image\/(png|jpe?g|webp|svg\+xml)$/.test(f.type)) { cb(false); return; }
+      var url = URL.createObjectURL(f), im = new Image();
+      im.onload = function () {
+        var data = null;
+        try { data = prepareLogo(im); } catch (e) {}
+        URL.revokeObjectURL(url);
+        if (!data) { cb(false); return; }
+        cb(true, window.MDO_LOGO.set(data));
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); cb(false); };
+      im.src = url;
+    },
+    get: function () { return own; },
     set: function (url) { var kept = true; try { localStorage.setItem('mdo_mylogo', url); } catch (e) { kept = false; } useLogo(url, kept); return kept; },
     clear: function () { useLogo(null); },
     own: function () { return !!own; }

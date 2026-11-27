@@ -291,7 +291,17 @@
   }
   // Voorbeeldlogo: ons eigen logo (zonder slogan) in plaats van "Jouw logo".
   var demoSrc = null;
+  // Logo dat de bezoeker eerder koos (homepage of een ander product): alleen in deze browser.
+  var myLogo = null;
+  try { myLogo = localStorage.getItem('mdo_mylogo'); } catch (e) {}
   function loadDemo() {
+    if (myLogo) {
+      var mi = new Image();
+      mi.onload = function () { demoSrc = myLogo; imgSize[demoSrc] = [mi.naturalWidth, mi.naturalHeight]; render(); };
+      mi.onerror = function () { myLogo = null; loadDemo(); };
+      mi.src = myLogo;
+      return;
+    }
     if (!cfg.demoLogo) return;
     var im = new Image();
     im.onload = function () {
@@ -449,6 +459,9 @@
       return '<button type="button" data-act="mode" data-v="' + m[0] + '" class="' + (fs.mode === m[0] ? 'is-on' : '') + '">' + m[1] + '</button>';
     }).join('') + '</div>';
     if (fs.mode === 'logo') {
+      if (myLogo && !fs.logo) {
+        h += '<div class="mdo-mylogo"><img src="' + esc(myLogo) + '" alt=""><span>Je eigen logo staat al in het voorbeeld.</span><button type="button" data-act="usemylogo" class="mdo-pill">Gebruik dit logo</button></div>';
+      }
       h += '<label class="mdo-upload"><input type="file" data-act="logo" accept=".pdf,.eps,.ai,.svg,.png,.jpg,.jpeg"><span>' +
         (fs.logo ? esc(fs.logo.name) : 'Upload je logo (PDF, EPS, AI, SVG, PNG, JPG) – of later aanleveren') + '</span></label>';
       h += '<div class="mdo-field"><span class="mdo-lbl">Kleuren in je logo</span><div class="mdo-grid mdo-grid-col">' + COLOUR_OPTS.map(function (k) {
@@ -883,11 +896,24 @@
     else if (a === 'note') st.note = t.value;
   });
 
-  function upload(file, fs) {
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act="usemylogo"]');
+    if (!b || !myLogo) return;
+    e.preventDefault();
+    try {
+      var parts = myLogo.split(','), bin = atob(parts[1]), arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      var file = new File([arr], 'mijn-logo.png', { type: 'image/png' });
+      upload(file, curFace(), true);
+    } catch (x) { alert('Dit lukt niet; upload je logo hieronder.'); }
+  });
+  function upload(file, fs, fromMine) {
+    // Logo ook gebruiken voor de voorbeelden in de shop en op de homepage (alleen in deze browser).
+    if (!fromMine && window.MDO_LOGO && window.MDO_LOGO.fromFile) window.MDO_LOGO.fromFile(file, function (ok) { if (ok) { try { myLogo = localStorage.getItem('mdo_mylogo'); } catch (e) {} } });
     var fd = new FormData();
     fd.append('action', 'mdo_logo'); fd.append('nonce', cfg.nonce); fd.append('file', file);
     // Direct een voorbeeld tonen van het eigen bestand; het uploaden loopt op de achtergrond.
-    var local = /^image\/(png|jpe?g|gif|webp|svg\+xml)$/.test(file.type) && window.URL ? URL.createObjectURL(file) : '';
+    var local = fromMine ? myLogo : (/^image\/(png|jpe?g|gif|webp|svg\+xml)$/.test(file.type) && window.URL && URL.createObjectURL ? URL.createObjectURL(file) : '');
     fs.logo = { name: file.name + ' (uploaden…)', token: '', preview: local };
     render();
     fetch(cfg.ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (r) {

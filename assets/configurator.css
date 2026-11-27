@@ -216,3 +216,7 @@
 /* Knoppen rond, zoals de rest (thema maakt .button.alt hoekig) */
 #mdo-configurator .mdo-next,#mdo-configurator .mdo-buy,.mdo .mdo-next,.mdo .mdo-buy{border-radius:999px!important;font-weight:600;letter-spacing:normal;text-transform:none}
 #mdo-configurator .mdo-pill[data-act="prev"]{border-radius:999px;min-height:46px;padding:0 20px}
+.mdo-mylogo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#F3EDFD;border-radius:14px;padding:10px 12px;margin:0 0 10px;font-size:14px}
+.mdo-mylogo img{height:32px;max-width:90px;object-fit:contain;background:#fff;border-radius:6px;padding:3px}
+.mdo-mylogo span{flex:1 1 160px}
+#mdo-configurator .mdo-mylogo .mdo-pill{border-radius:999px;font-weight:600}
