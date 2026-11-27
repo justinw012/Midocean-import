@@ -213,3 +213,6 @@
 .mdo-qtynote{margin:6px 0 10px;font-size:12px;color:#646970}
 
 .mdo-btw-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#5E636D;margin:0 0 8px}
+/* Knoppen rond, zoals de rest (thema maakt .button.alt hoekig) */
+#mdo-configurator .mdo-next,#mdo-configurator .mdo-buy,.mdo .mdo-next,.mdo .mdo-buy{border-radius:999px!important;font-weight:600;letter-spacing:normal;text-transform:none}
+#mdo-configurator .mdo-pill[data-act="prev"]{border-radius:999px;min-height:46px;padding:0 20px}
