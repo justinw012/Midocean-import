@@ -220,3 +220,18 @@
 .mdo-mylogo img{height:32px;max-width:90px;object-fit:contain;background:#fff;border-radius:6px;padding:3px}
 .mdo-mylogo span{flex:1 1 160px}
 #mdo-configurator .mdo-mylogo .mdo-pill{border-radius:999px;font-weight:600}
+
+/* Beoordelingen: altijd zichtbaar, compact */
+.mdo-reviews{clear:both;margin:28px 0 8px;padding:18px 20px;border:1.5px solid #ECEAE5;border-radius:18px;background:#fff}
+.mdo-rv-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.mdo-rv-head h2{font-size:20px!important;margin:0!important}
+.mdo-rv-head .star-rating{margin:0!important;float:none!important}
+.mdo-rv-sum{color:#5E636D;font-size:14px}
+.mdo-rv-write{margin-left:auto;border:1.5px solid #16181D;background:#fff;color:#16181D;border-radius:999px;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;min-height:40px}
+.mdo-rv-write:hover{background:#F3EDFD}
+.mdo-reviews .woocommerce-Reviews-title,.mdo-reviews .woocommerce-noreviews{display:none}
+.mdo-reviews #review_form_wrapper{display:none;margin-top:16px}
+.mdo-reviews.is-writing #review_form_wrapper{display:block}
+.mdo-reviews #comments{margin:0}
+.mdo-reviews.is-empty #comments{margin:0;padding:0}
+.mdo-reviews ol.commentlist{margin:14px 0 0!important;padding:0!important}

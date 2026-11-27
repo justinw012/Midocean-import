@@ -13,6 +13,9 @@ class MDO_Frontend {
 		add_action( 'woocommerce_before_single_product', array( __CLASS__, 'maybe_replace' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'woocommerce_product_tabs', array( __CLASS__, 'specs_tab' ), 20 );
+		// Minder tabbladen: "Aanvullende informatie" gaat in Specificaties, beoordelingen staan los onder de tabs.
+		add_filter( 'woocommerce_product_tabs', array( __CLASS__, 'slim_tabs' ), 98 );
+		add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'reviews_block' ), 14 );
 		add_action( 'wp_ajax_mdo_doc', array( __CLASS__, 'doc' ) );
 		add_action( 'wp_ajax_nopriv_mdo_doc', array( __CLASS__, 'doc' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'pdf_assets' ) );
@@ -278,7 +281,7 @@ class MDO_Frontend {
 		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) ) {
 			return $tabs;
 		}
-		if ( self::specs_rows( $product ) || $product->get_meta( '_mdo_documents' ) ) {
+		if ( self::specs_rows( $product ) || self::attribute_rows( $product ) || $product->get_meta( '_mdo_documents' ) ) {
 			$tabs['mdo_specs'] = array(
 				'title'    => 'Specificaties &amp; downloads',
 				'priority' => 15,
@@ -369,9 +372,76 @@ class MDO_Frontend {
 		return ucfirst( trim( str_replace( array( '_', '-' ), ' ', $t ) ) ) ?: 'Document';
 	}
 
+	/** Zichtbare producteigenschappen (wat WooCommerce onder "Aanvullende informatie" toont), zonder dubbele. */
+	private static function attribute_rows( $product ) {
+		$rows = array();
+		foreach ( $product->get_attributes() as $attr ) {
+			if ( ! $attr->get_visible() ) {
+				continue;
+			}
+			$label = wc_attribute_label( $attr->get_name(), $product );
+			if ( $attr->is_taxonomy() ) {
+				$vals = wc_get_product_terms( $product->get_id(), $attr->get_name(), array( 'fields' => 'names' ) );
+			} else {
+				$vals = $attr->get_options();
+			}
+			$vals = array_filter( array_map( 'trim', (array) $vals ) );
+			if ( $vals ) {
+				$rows[ $label ] = implode( ', ', $vals );
+			}
+		}
+		return $rows;
+	}
+
+	public static function slim_tabs( $tabs ) {
+		global $product;
+		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) ) {
+			return $tabs;
+		}
+		if ( isset( $tabs['mdo_specs'] ) ) {
+			unset( $tabs['additional_information'] );
+		}
+		unset( $tabs['reviews'] );
+		return $tabs;
+	}
+
+	/** Beoordelingen altijd zichtbaar, compact: kop met sterren + knop; het formulier klapt open. */
+	public static function reviews_block() {
+		global $product;
+		if ( ! $product || ! $product->get_meta( '_mdo_master_code' ) || 'yes' !== get_option( 'woocommerce_enable_reviews' ) || ! $product->get_reviews_allowed() ) {
+			return;
+		}
+		$n   = (int) $product->get_review_count();
+		$avg = (float) $product->get_average_rating();
+		echo '<section class="mdo-reviews' . ( $n ? '' : ' is-empty' ) . '" id="mdo-reviews"><div class="mdo-rv-head"><h2>Beoordelingen</h2>';
+		if ( $n ) {
+			echo wc_get_rating_html( $avg, $n ); // phpcs:ignore
+			echo '<span class="mdo-rv-sum">' . esc_html( number_format_i18n( $avg, 1 ) ) . ' van 5 · ' . esc_html( $n ) . ( 1 === $n ? ' beoordeling' : ' beoordelingen' ) . '</span>';
+		} else {
+			echo '<span class="mdo-rv-sum">Nog geen beoordelingen.</span>';
+		}
+		echo '<button type="button" class="mdo-rv-write" aria-expanded="false">' . ( $n ? 'Schrijf een beoordeling' : 'Schrijf de eerste' ) . '</button></div>';
+		comments_template();
+		echo '</section>';
+		?>
+		<script>
+		(function () {
+			var s = document.getElementById('mdo-reviews'); if (!s) return;
+			var b = s.querySelector('.mdo-rv-write');
+			b.addEventListener('click', function () {
+				var on = s.classList.toggle('is-writing');
+				b.setAttribute('aria-expanded', on ? 'true' : 'false');
+				if (on) { var f = s.querySelector('#review_form_wrapper'); if (f) { f.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+			});
+			if (/^#(reviews|comment|review_form)/.test(location.hash)) s.classList.add('is-writing');
+		})();
+		</script>
+		<?php
+	}
+
 	public static function specs_html() {
 		global $product;
-		$rows = self::specs_rows( $product );
+		$rows = self::specs_rows( $product ) + self::attribute_rows( $product );
 		$docs = (array) $product->get_meta( '_mdo_documents' );
 		echo '<div class="mdo-specs">';
 		if ( $rows ) {
