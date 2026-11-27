@@ -15,6 +15,9 @@ class MDO_Shop {
 			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'badges_single' ), 4 );
 			// Productpagina: korte feiten onder de naam (voorraad, klaar rond, kleuren, bedrukking).
 			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'facts' ), 6 );
+			// Productprijs in lijsten (gerelateerde producten, widgets, zoekresultaten van het thema):
+			// bij Midocean-producten "Vanaf … p/st bij 250 st. incl. bedrukking" i.p.v. de kale productprijs.
+			add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'price_html' ), 20, 2 );
 			add_action( 'wp_head', array( __CLASS__, 'badge_css' ) );
 		}
 		if ( is_admin() ) {
@@ -183,6 +186,30 @@ class MDO_Shop {
 	}
 
 	/** Labels "Nieuw" en "Op = op" op de productfoto in de winkel. */
+	public static function price_html( $html, $product ) {
+		static $busy = false;
+		if ( $busy || is_admin() || ! $product || ! $product->get_meta( '_mdo_master_code' ) || ! class_exists( 'MDO_Filter' ) ) {
+			return $html;
+		}
+		// Op de productpagina zelf toont de configurator de prijs (en verbergt de themaprijs).
+		if ( function_exists( 'is_product' ) && is_product() && get_queried_object_id() === $product->get_id() ) {
+			return $html;
+		}
+		$busy  = true;
+		$built = 0;
+		$row   = MDO_Filter::row( $product->get_id(), $built );
+		$busy  = false;
+		if ( ! $row || ! empty( $row['x'] ) || empty( $row['pr'] ) ) {
+			return $html;
+		}
+		$q  = 250;
+		$i  = array_search( $q, MDO_Frontend::TIERS, true );
+		$tx = 'incl' === get_option( 'woocommerce_tax_display_shop' ) ? (float) ( $row['tx'] ?? 1 ) : 1.0;
+		$pp = (float) $row['pr'][ $i ] * $tx;
+		$tl = MDO_Frontend::tax_label();
+		return '<span class="mdo-from-price">Vanaf <strong>' . wc_price( $pp ) . '</strong> <small>p/st bij ' . $q . ' st.' . ( ! empty( $row['pp'] ) ? ' incl. bedrukking' : '' ) . ( $tl ? ', ' . esc_html( $tl ) : '' ) . '</small></span>';
+	}
+
 	/** Datum na $n werkdagen (za/zo overgeslagen). */
 	private static function workdays( DateTimeImmutable $d, $n ) {
 		while ( (int) $d->format( 'N' ) >= 6 ) {
