@@ -34,6 +34,7 @@ class MDO_Cart {
 		add_filter( 'woocommerce_add_cart_item', array( __CLASS__, 'drop_size_attr' ), 10, 1 );
 		add_filter( 'woocommerce_product_backorders_allowed', array( __CLASS__, 'allow_backorder' ), 10, 3 );
 		add_filter( 'woocommerce_product_is_in_stock', array( __CLASS__, 'in_stock' ), 10, 2 );
+		add_filter( 'woocommerce_cart_contents_count', array( __CLASS__, 'contents_count' ) );
 		add_action( 'woocommerce_before_cart', array( __CLASS__, 'stock_notice' ) );
 		add_action( 'woocommerce_before_checkout_form', array( __CLASS__, 'stock_notice' ), 5 );
 		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'stock_order_note' ) );
@@ -714,6 +715,18 @@ class MDO_Cart {
 	 * Nabestellen toestaan als Midocean al een levering gepland heeft, en bij kleding
 	 * (daar controleert de configurator de voorraad per maat; WooCommerce ziet alleen één maat).
 	 */
+	/** Teller bij het winkelmandje: een bedrukt product telt als 1, niet als 50 stuks. */
+	public static function contents_count( $count ) {
+		if ( ! WC()->cart ) {
+			return $count;
+		}
+		$n = 0;
+		foreach ( WC()->cart->get_cart() as $item ) {
+			$n += empty( $item['mdo'] ) ? (int) $item['quantity'] : 1;
+		}
+		return $n;
+	}
+
 	// ---------- niet op voorraad: toch bestellen en betalen, leverdatum volgt ----------
 
 	private static function is_mdo( $product ) {
