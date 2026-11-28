@@ -33,6 +33,13 @@ class MDO_Theme {
 				MDO_Theme::browse();
 			}
 		}
+		// Categoriekeuze in de zoekbalk: alleen hoofdcategorieën (zoeken in een hoofdcategorie neemt de subcategorieën mee),
+		// anders staan namen als "Sets" en "Zaklampen" er meerdere keren in.
+		if ( ! function_exists( 'zigcy_lite_product_search' ) ) {
+			function zigcy_lite_product_search() { // phpcs:ignore
+				return MDO_Theme::search_form();
+			}
+		}
 		add_filter( 'wp_nav_menu_objects', function ( $items ) {
 			foreach ( $items as $it ) {
 				if ( 'Thuis' === trim( wp_strip_all_tags( $it->title ) ) ) {
@@ -43,6 +50,24 @@ class MDO_Theme {
 		} );
 		add_action( 'wp_footer', array( __CLASS__, 'mobile_menu' ), 5 );
 		add_action( 'wp', array( __CLASS__, 'related_setup' ), 20 );
+	}
+
+	public static function search_form() {
+		$cur  = ( is_search() && isset( $_GET['term'] ) ) ? sanitize_title( wp_unslash( $_GET['term'] ) ) : ''; // phpcs:ignore
+		$cats = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'name', 'order' => 'ASC' ) );
+		$opts = '<option value="">Alle categorieën</option>';
+		foreach ( is_array( $cats ) ? $cats : array() as $c ) {
+			if ( 'uncategorized' === $c->slug || 'geen-categorie' === $c->slug ) {
+				continue;
+			}
+			$opts .= '<option value="' . esc_attr( $c->slug ) . '"' . selected( $cur, $c->slug, false ) . '>' . esc_html( $c->name ) . '</option>';
+		}
+		return '<form role="search" method="get" id="searchform" action="' . esc_url( home_url( '/' ) ) . '">' .
+			'<div class="search-wrap"><div class="sm_search_wrap"><select class="sm_search_product false" name="term" aria-label="Categorie">' . $opts . '</select></div>' .
+			'<div class="sm_search_form"><input type="text" value="' . esc_attr( get_search_query() ) . '" name="s" id="s" placeholder="Zoek een product…" autocomplete="off"/>' .
+			'<button type="submit" id="searchsubmit" aria-label="Zoeken"><i class="fa fa-search"></i></button>' .
+			'<input type="hidden" name="post_type" value="product" /><input type="hidden" name="taxonomy" value="product_cat" /></div>' .
+			'<div class="search-content"></div></div></form>';
 	}
 
 	public static function browse() {
