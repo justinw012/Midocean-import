@@ -199,3 +199,8 @@ li.woocommerce-mini-cart-item.mini_cart_item{padding-top:10px!important;padding-
   .header-three .sml-head-main-wrap{border-bottom:0!important}
   .mdo-crumbs-wrap{margin-top:14px!important;margin-bottom:6px!important}
 }
+/* Zoekknop tegen de rechterrand van het zoekvak (geen wit stukje erachter); ruimte naast het hamburgericoon */
+.header-three .search-wrap{position:relative}
+.header-three .sm_search_form{position:static!important}
+.header-three .sm_search_form button#searchsubmit{right:-1px!important}
+.store-mart-lite-menu-wrap .sml-cat-text-wrap .lnr-menu,.store-mart-lite-menu-wrap .sml-cat-text-wrap i{margin-right:8px!important}
