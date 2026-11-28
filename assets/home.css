@@ -144,3 +144,10 @@
 .mdo-home.mdo-related{max-width:none;padding:8px 0 24px;margin:20px 0 0;clear:both}
 .mdo-related .mdo-h-head h2{font-size:22px}
 @media (min-width:701px){.mdo-related ul.products.mdo-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Volle rijen: 4 naast elkaar (2 op mobiel); tegel "Alle producten" vult de rij aan */
+@media (min-width:701px){.mdo-h-cats,.mdo-h-try-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.mdo-h-cat-all{--tile:linear-gradient(135deg,#2EC5EE,#6123E0 55%,#E048C8)!important;background:linear-gradient(135deg,#2EC5EE,#6123E0 55%,#E048C8)!important;color:#fff!important}
+.mdo-h-cat-all .mdo-imgbg{background:rgba(255,255,255,.16)!important;display:flex!important;align-items:center;justify-content:center}
+.mdo-h-cat-allin{display:flex;flex-direction:column;align-items:center;font-size:clamp(30px,4vw,44px);font-weight:800;line-height:1;color:#fff}
+.mdo-h-cat-allin small{font-size:14px;font-weight:600;margin-top:6px;opacity:.9}
+.mdo-h-cat-all b{color:#fff}

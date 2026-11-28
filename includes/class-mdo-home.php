@@ -204,8 +204,11 @@ class MDO_Home {
 		self::assets();
 		$s       = MDO_Settings::all();
 		$popular = self::popular_ids( 8 );
-		$try     = self::hero_products( $popular, 6 );
+		$try     = self::hero_products( $popular, 8 );
 		$hero    = array_slice( $try, 0, 5 );
+		if ( count( $try ) >= 4 ) {
+			$try = array_slice( $try, 0, (int) floor( count( $try ) / 4 ) * 4 ); // volle rijen van 4 (en van 2 op mobiel)
+		}
 		$cats    = self::categories( 8 );
 		$lines   = array_values( array_filter( array_map( 'trim', preg_split( '/\r?\n/', (string) $s['home_title'] ) ) ) );
 		$tax     = function_exists( 'wc_tax_enabled' ) && wc_tax_enabled() && 'incl' === get_option( 'woocommerce_tax_display_shop' );
@@ -291,6 +294,9 @@ class MDO_Home {
 					<?php foreach ( $cats as $c ) : ?>
 					<a class="mdo-h-cat" href="<?php echo esc_url( $c[1] ); ?>"><span class="mdo-imgbg"><img src="<?php echo esc_url( $c[2] ); ?>" alt="" loading="lazy"></span><b><?php echo esc_html( $c[0] ); ?></b></a>
 					<?php endforeach; ?>
+					<?php if ( count( $cats ) % 4 ) : // rij vol maken ?>
+					<a class="mdo-h-cat mdo-h-cat-all" href="<?php echo esc_url( $shop_url ); ?>"><span class="mdo-imgbg"><span class="mdo-h-cat-allin"><?php echo esc_html( number_format_i18n( (int) $count ) ); ?><small>producten</small></span></span><b>Alle producten ›</b></a>
+					<?php endif; ?>
 				</div>
 			</section>
 			<?php endif; ?>
@@ -298,7 +304,7 @@ class MDO_Home {
 			<section class="mdo-h-sec mdo-h-band mdo-h-band-purple" id="mdo-h-how">
 				<h2>Zo werkt het</h2>
 				<ol class="mdo-h-steps">
-					<li><span>1</span><h3>Kies een product</h3><p>Kies kleur, aantal en eventueel maten.</p></li>
+					<li><span>1</span><h3>Kies een product</h3><p>Selecteer kleur, aantal en eventueel maten.</p></li>
 					<li><span>2</span><h3>Upload je logo</h3><p>Je ziet direct een voorbeeld op het product, op de plek die jij kiest.</p></li>
 					<li><span>3</span><h3>Bestel met vaste prijs</h3><p>Totaal incl. bedrukking<?php echo $tax ? ' en btw' : ''; ?>, met de verwachte leverdatum erbij.</p></li>
 				</ol>
