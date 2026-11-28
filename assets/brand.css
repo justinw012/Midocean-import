@@ -66,7 +66,7 @@ button.menu-toggle::after{color:#6123E0!important}
 .woocommerce-info::before,.woocommerce-message::before{color:#6123E0!important}
 
 /* Configurator: paars in plaats van rood (sterker dan de eigen stijl van de configurator) */
-html body .mdo,html body #mdo-configurator{--mdo-accent:#6123E0}
+html body .mdo,html body #mdo-configurator,html body .mdo-leftcol,html body .mdo-stage,html body .mdo-sheet{--mdo-accent:#6123E0}
 html body .mdo-ti-cur{color:#6123E0}
 
 /* Lege zijbalk van het thema op filterpagina's (neemt anders een hele regel ruimte in) */
