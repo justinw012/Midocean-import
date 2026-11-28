@@ -657,7 +657,7 @@
     var h = '';
     if (mobile.matches) {
       // Mobiel: stappen en voorbeeld bovenaan (in stap 2 blijven ze in beeld), keuzes eronder, prijs onderaan.
-      h += '<div class="mdo-mtop' + (st.step < 2 ? ' is-sticky' : '') + '"><div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
+      h += '<div class="mdo-mtop' + '"><div class="mdo-steptabs" role="tablist">' + STEPS.map(function (x, i) {
         return '<button type="button" role="tab" aria-selected="' + (i === st.step ? 'true' : 'false') + '" data-act="goto" data-v="' + i + '" class="' + (i === st.step ? 'is-on' : '') + (i < st.step ? ' is-done' : '') + '"><span class="mdo-stepnr">' + (i + 1) + '</span>' + esc(x) + '</button>';
       }).join('') + '</div>' + (gal ? '<div data-slot="stage"></div>' : '') + '</div>';
       if (st.step === 0) h += swatchesHtml() + qtyHtml();
@@ -884,7 +884,7 @@
   }
   function syncGallery() {
     if (!gal) return;
-    // Mobiel: bij Kleur & aantal én Bedrukking blijft een compact voorbeeld bovenin staan tijdens het scrollen.
+    // Mobiel: bij Kleur & aantal en Bedrukking een iets kleiner voorbeeld (scrolt gewoon mee, niet vast bovenin).
     gal.classList.toggle('is-compact', !!(mobile.matches && st.step < 2));
     gal.classList.toggle('is-step0', st.step === 0);
     gal.innerHTML = stageHtml();

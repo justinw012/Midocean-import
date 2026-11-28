@@ -208,8 +208,8 @@ body.mdo-has-bar{padding-bottom:84px}
   .mdo-mtop .mdo-steptabs{margin-bottom:8px}
   .mdo-mtop.is-sticky{position:sticky;top:var(--wp-admin--admin-bar--height,0px);z-index:30;box-shadow:0 6px 10px -6px rgba(0,0,0,.18);padding-bottom:4px}
   .mdo-mtop .mdo-stage{position:static;margin:0}
-  .mdo-configured .mdo-stage.is-compact .mdo-stage-main{height:30vh;display:flex;align-items:center;justify-content:center}
-  .mdo-configured .mdo-stage.is-compact .mdo-photo{height:30vh;width:auto;max-width:100%;margin:0 auto}
+  .mdo-configured .mdo-stage.is-compact .mdo-stage-main{min-height:0;display:flex;align-items:center;justify-content:center}
+  .mdo-configured .mdo-stage.is-compact .mdo-photo{height:auto;width:fit-content;max-width:100%;margin:0 auto;aspect-ratio:auto}
   .mdo-configured .mdo-stage.is-compact .mdo-photo img{height:100%;width:auto}
   .mdo-configured .mdo-stage.is-compact .mdo-stage-strip,.mdo-configured .mdo-stage.is-compact .mdo-stage-tabs,.mdo-configured .mdo-stage.is-compact .mdo-stage-cap .mdo-muted{display:none}
   .mdo-configured .mdo-stage.is-compact .mdo-stage-cap{margin:2px 0 0}
@@ -264,5 +264,9 @@ html:has(body.mdo-configured),body.mdo-configured{overflow-x:clip!important;over
   /* Bij Kleur & aantal: wissel tussen ontwerp en productfoto's blijft zichtbaar in het compacte voorbeeld */
   .mdo-configured .mdo-stage.is-compact.is-step0 .mdo-stage-tabs{display:flex;margin-bottom:4px}
   .mdo-configured .mdo-stage.is-compact.is-step0 .mdo-stage-tabs button{padding-top:6px;padding-bottom:6px}
-  .mdo-configured .mdo-stage.is-compact .mdo-stage-main img{max-height:30vh;width:auto;max-width:100%}
+}
+@media (max-width:767px){
+  /* Voorbeeld nooit uitrekken of indrukken */
+  .mdo-configured .mdo-stage.is-compact .mdo-photo img{display:block;height:auto!important;width:auto!important;max-height:36vh;max-width:100%!important}
+  .mdo-configured .mdo-stage.is-compact .mdo-gallery-main img,.mdo-configured .mdo-stage.is-compact .mdo-stage-main>img{max-height:36vh;width:auto;max-width:100%;height:auto;object-fit:contain}
 }
