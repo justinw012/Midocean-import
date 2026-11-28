@@ -59,6 +59,15 @@ class MDO_Home {
 
 	/** Hoofdcategorieën met producten, met een foto: de categorie-afbeelding of een product eruit. */
 	public static function categories( $n = 8 ) {
+		static $memo = array();
+		if ( isset( $memo[ $n ] ) ) {
+			return $memo[ $n ];
+		}
+		$memo[ $n ] = self::categories_build( $n );
+		return $memo[ $n ];
+	}
+
+	private static function categories_build( $n ) {
 		$terms = get_terms( array( 'taxonomy' => 'product_cat', 'parent' => 0, 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC' ) );
 		$out   = array();
 		if ( is_wp_error( $terms ) ) {
@@ -84,7 +93,7 @@ class MDO_Home {
 			if ( ! $img ) {
 				continue; // zonder zichtbaar product geen tegel
 			}
-			$out[] = array( html_entity_decode( $t->name ), get_term_link( $t ), $img );
+			$out[] = array( html_entity_decode( $t->name ), get_term_link( $t ), $img, (int) $t->term_id, (int) $t->count );
 			if ( count( $out ) >= $n ) {
 				break;
 			}

@@ -153,7 +153,26 @@ body.mdo-footer-on .store-mart-lite-footer-wrap a{color:#C9CCD3!important}
   .single-product .mdo-facts>*{font-size:13px!important;padding:4px 10px!important}
 }
 /* Knop "Categorieën" nergens: de shop heeft categorieknoppen en het filter, het mobiele menu eigen categorieën; niet op productpagina's, home, Over, Contact, winkelwagen, afrekenen */
-.store-mart-lite-menu-wrap .store-mart-lite-cat{display:none!important}
+.store-mart-lite-menu-wrap .categorylist{display:none!important}
+/* Categorieën-paneel (desktop) */
+.store-mart-lite-menu-wrap{position:relative}
+.mdo-mega{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:60;background:#fff;border-radius:18px;box-shadow:0 18px 40px rgba(22,24,29,.16);padding:22px 24px 14px}
+.mdo-mega[hidden]{display:none}
+.mdo-mega-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px 22px}
+.mdo-mega-head{display:flex;align-items:center;gap:12px;text-decoration:none!important;color:#16181D!important;font-weight:700;font-size:15px;line-height:1.25}
+.mdo-mega-head:hover .mdo-mega-name{color:#6123E0}
+.mdo-mega-img{flex:none;width:56px;height:56px;border-radius:14px;background:#F3F1EC;overflow:hidden;display:block}
+.mdo-mega-img img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.mdo-mega-name{min-width:0;overflow-wrap:break-word;hyphens:auto}
+.mdo-mega-name small{font-weight:500;color:#8E939C;font-size:12px}
+.mdo-mega-col ul{list-style:none;margin:8px 0 0 68px;padding:0}
+.mdo-mega-col li{margin:0;padding:3px 0;border:0!important}
+.mdo-mega-col li a{font-size:13.5px;color:#5E636D!important;text-decoration:none!important}
+.mdo-mega-col li a:hover{color:#6123E0!important}
+.mdo-mega-all{margin:14px 0 0;padding-top:12px;border-top:1px solid #ECEAE5;text-align:right}
+.mdo-mega-all a{font-weight:700;color:#6123E0!important}
+.mdo-mega-open .sml-cat-text-wrap{background:#6123E0!important;color:#fff!important}
+@media (max-width:767px){.mdo-mega{display:none!important}}
 /* Minicart in de kop: compact, met eigen scroll als er veel in zit */
 ul.woocommerce-mini-cart{max-height:min(52vh,380px);overflow-y:auto;overscroll-behavior:contain}
 .woocommerce-mini-cart dl.variation{display:none!important}

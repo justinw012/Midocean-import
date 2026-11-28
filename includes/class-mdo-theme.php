@@ -49,6 +49,7 @@ class MDO_Theme {
 			return $items;
 		} );
 		add_action( 'wp_footer', array( __CLASS__, 'mobile_menu' ), 5 );
+		add_action( 'wp_footer', array( __CLASS__, 'mega_menu' ), 6 );
 		add_action( 'wp', array( __CLASS__, 'related_setup' ), 20 );
 	}
 
@@ -89,6 +90,54 @@ class MDO_Theme {
 	}
 
 	/** Mobiel menu: hoofdcategorieën met een foto + de btw-schakelaar, onder het gewone menu. */
+	/** Desktop: knop "Categorieën" opent een paneel met de hoofdcategorieën (foto) en hun grootste subcategorieën. */
+	public static function mega_menu() {
+		if ( ! class_exists( 'MDO_Home' ) || ! function_exists( 'wc_get_page_permalink' ) ) {
+			return;
+		}
+		$cats = MDO_Home::categories( 12 );
+		if ( ! $cats ) {
+			return;
+		}
+		?>
+		<template id="mdo-megamenu">
+			<div class="mdo-mega" role="dialog" aria-label="Categorieën" hidden>
+				<div class="mdo-mega-grid">
+					<?php
+					foreach ( $cats as $c ) :
+						$subs = empty( $c[3] ) ? array() : get_terms( array( 'taxonomy' => 'product_cat', 'parent' => $c[3], 'hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC', 'number' => 5 ) );
+						?>
+					<div class="mdo-mega-col">
+						<a class="mdo-mega-head" href="<?php echo esc_url( $c[1] ); ?>"><span class="mdo-mega-img"><img src="<?php echo esc_url( $c[2] ); ?>" alt="" loading="lazy"></span><span class="mdo-mega-name"><?php echo esc_html( $c[0] ); ?><?php if ( ! empty( $c[4] ) ) : ?> <small><?php echo esc_html( number_format_i18n( $c[4] ) ); ?></small><?php endif; ?></span></a>
+						<?php if ( is_array( $subs ) && $subs ) : ?>
+						<ul>
+							<?php foreach ( $subs as $sub ) : ?>
+							<li><a href="<?php echo esc_url( get_term_link( $sub ) ); ?>"><?php echo esc_html( html_entity_decode( $sub->name ) ); ?></a></li>
+							<?php endforeach; ?>
+						</ul>
+						<?php endif; ?>
+					</div>
+					<?php endforeach; ?>
+				</div>
+				<p class="mdo-mega-all"><a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>">Alle producten bekijken ›</a></p>
+			</div>
+		</template>
+		<script>
+		(function () {
+			var t = document.getElementById('mdo-megamenu'), bar = document.querySelector('.store-mart-lite-menu-wrap'), btn = document.querySelector('.store-mart-lite-menu-wrap .sml-cat-text-wrap');
+			if (!t || !bar || !btn) return;
+			bar.appendChild(t.content.cloneNode(true));
+			var panel = bar.querySelector('.mdo-mega');
+			btn.setAttribute('aria-expanded', 'false');
+			function set(open) { panel.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); bar.classList.toggle('mdo-mega-open', open); }
+			btn.addEventListener('click', function (e) { e.preventDefault(); e.stopImmediatePropagation(); set(panel.hidden); }, true);
+			document.addEventListener('click', function (e) { if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) set(false); });
+			document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { set(false); btn.focus(); } });
+		})();
+		</script>
+		<?php
+	}
+
 	public static function mobile_menu() {
 		if ( ! class_exists( 'MDO_Home' ) || ! function_exists( 'wc_get_page_permalink' ) ) {
 			return;
