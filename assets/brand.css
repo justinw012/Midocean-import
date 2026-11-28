@@ -152,8 +152,8 @@ body.mdo-footer-on .store-mart-lite-footer-wrap a{color:#C9CCD3!important}
   .single-product .mdo-facts{gap:6px!important;margin:6px 0 8px!important}
   .single-product .mdo-facts>*{font-size:13px!important;padding:4px 10px!important}
 }
-/* Knop "Categorieën" alleen op de shop en categoriepagina's; niet op productpagina's, home, Over, Contact, winkelwagen, afrekenen */
-body:not(.woocommerce) .store-mart-lite-menu-wrap .store-mart-lite-cat,body.single-product .store-mart-lite-menu-wrap .store-mart-lite-cat{display:none!important}
+/* Knop "Categorieën" nergens: de shop heeft categorieknoppen en het filter, het mobiele menu eigen categorieën; niet op productpagina's, home, Over, Contact, winkelwagen, afrekenen */
+.store-mart-lite-menu-wrap .store-mart-lite-cat{display:none!important}
 /* Minicart in de kop: compact, met eigen scroll als er veel in zit */
 ul.woocommerce-mini-cart{max-height:min(52vh,380px);overflow-y:auto;overscroll-behavior:contain}
 .woocommerce-mini-cart dl.variation{display:none!important}
