@@ -25,3 +25,10 @@
 .mdo-ci-det li{margin:2px 0}
 .mdo-ci-edit{font-weight:600;color:#6123E0 !important;text-decoration:underline !important}
 .woocommerce-cart-form dl.variation dt.variation-Ontwerp{display:none}
+
+/* Rustiger: label "Ontwerp" weg, korte voorraadmelding, geen categorieknop in winkelwagen en afrekenen */
+.woocommerce-cart-form dl.variation dt.variation-Ontwerp,.woocommerce dl.variation dt.variation-Ontwerp{display:none!important}
+.woocommerce-cart-form dl.variation dd.variation-Ontwerp{margin-left:0!important;float:none!important;clear:left}
+.mdo-stock-info{margin:0 0 18px;padding:10px 14px;border-radius:10px;background:#FFF6E5;color:#7A4B00;font-size:14px;line-height:1.45}
+.mdo-stock-info::before{content:"ⓘ ";font-weight:700}
+.browse-category-wrap{visibility:hidden}

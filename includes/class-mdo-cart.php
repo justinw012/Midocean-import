@@ -331,7 +331,7 @@ class MDO_Cart {
 		}
 		$data[] = array( 'key' => 'Bedrukking', 'value' => esc_html( self::short( $item['mdo'] ) ) );
 		if ( self::shortage( $item ) > 0 ) {
-			$data[] = array( 'key' => 'Levering', 'value' => 'Nu niet op voorraad – we laten je de leverdatum weten' );
+			$data[] = array( 'key' => 'Levering', 'value' => 'Nu niet op voorraad, leverdatum volgt' );
 		}
 		if ( 'rest' === $ctx && ! empty( $item['mdo_quote']['setup'] ) && ! empty( $item['data'] ) ) {
 			$data[] = array( 'key' => 'Instelkosten', 'value' => wp_strip_all_tags( self::money( $item['mdo_quote']['setup'], $item['data'] ) ) . ' (zit in de stukprijs)' );
@@ -345,11 +345,12 @@ class MDO_Cart {
 				$rows .= '<li><strong>' . esc_html( $l['key'] ) . ':</strong> ' . esc_html( $l['value'] ) . '</li>';
 			}
 			$edit = ! empty( $item['key'] ) ? add_query_arg( 'mdo_edit', $item['key'], get_permalink( $item['product_id'] ) ) : '';
+			// Blanco zonder opmerking: geen details, alleen "Wijzigen".
+			$det = ( empty( $item['mdo']['prints'] ) && empty( $item['mdo']['note'] ) ) ? '' : '<details class="mdo-ci-det"><summary>Bekijk details</summary><ul>' . $rows . '</ul></details>';
 			$data[] = array(
 				'key'     => 'Ontwerp',
 				'value'   => '',
-				'display' => '<span class="mdo-ci"><details class="mdo-ci-det"><summary>Bekijk details</summary><ul>' . $rows . '</ul></details>' .
-					( $edit ? '<a class="mdo-ci-edit" href="' . esc_url( $edit ) . '">Wijzigen</a>' : '' ) . '</span>',
+				'display' => '<span class="mdo-ci">' . $det . ( $edit ? '<a class="mdo-ci-edit" href="' . esc_url( $edit ) . '">' . ( $det ? 'Wijzigen' : 'Bedrukking toevoegen' ) . '</a>' : '' ) . '</span>',
 			);
 		}
 		return $data;
@@ -371,12 +372,13 @@ class MDO_Cart {
 			return $html;
 		}
 		$pc   = WC()->cart ? WC()->cart->get_product_price( $item['data'] ) : '';
-		$line = (int) $item['quantity'] . ' st. × ' . $pc;
+		$line = (int) $item['quantity'] > 1 ? (int) $item['quantity'] . ' st. × ' . $pc : '';
 		$inc  = empty( $item['mdo']['prints'] ) ? '' : 'incl. bedrukking';
 		if ( ! empty( $item['mdo_quote']['setup'] ) ) {
 			$inc .= ', waarvan ' . self::money( $item['mdo_quote']['setup'], $item['data'] ) . ' eenmalige instelkosten';
 		}
-		return '<strong class="mdo-ci-total">' . $html . '</strong><span class="mdo-ci-sub">' . $line . ( $inc ? '<br>' . $inc : '' ) . '</span>';
+		$sub = implode( '<br>', array_filter( array( $line, $inc ) ) );
+		return '<strong class="mdo-ci-total">' . $html . '</strong>' . ( $sub ? '<span class="mdo-ci-sub">' . $sub . '</span>' : '' );
 	}
 
 	// ---------- plaatje van het ontwerp ----------
@@ -618,7 +620,7 @@ class MDO_Cart {
 	public static function order_meta( $item, $cart_key, $values, $order ) {
 		$short = self::shortage( $values );
 		if ( $short > 0 ) {
-			$item->add_meta_data( 'Levering', 'Nu niet op voorraad – we laten je de leverdatum weten' );
+			$item->add_meta_data( 'Levering', 'Nu niet op voorraad, leverdatum volgt' );
 			$item->add_meta_data( '_mdo_short', $short );
 		}
 		if ( empty( $values['mdo'] ) ) {
@@ -765,7 +767,7 @@ class MDO_Cart {
 		}
 		foreach ( WC()->cart->get_cart() as $item ) {
 			if ( self::shortage( $item ) > 0 ) {
-				echo '<div class="woocommerce-info mdo-stock-info">Een of meer producten zijn nu niet (genoeg) op voorraad. Je kunt gewoon bestellen en betalen; na je bestelling laten we je weten wanneer het geleverd wordt.</div>';
+				echo '<p class="mdo-stock-info">Niet alles is nu op voorraad. Je kunt gewoon bestellen; we laten je daarna weten wanneer het geleverd wordt.</p>';
 				return;
 			}
 		}
