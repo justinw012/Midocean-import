@@ -260,3 +260,9 @@ body.mdo-has-bar{padding-bottom:84px}
 /* Het thema zet overflow-x:hidden op html en body; daardoor werkt "meescrollen" (sticky) niet. clip knipt net zo goed af zonder dat. */
 html:has(body.mdo-configured),body.mdo-configured{overflow-x:clip!important;overflow-y:visible!important}
 .mdo-row{display:flow-root}
+@media (max-width:767px){
+  /* Bij Kleur & aantal: wissel tussen ontwerp en productfoto's blijft zichtbaar in het compacte voorbeeld */
+  .mdo-configured .mdo-stage.is-compact.is-step0 .mdo-stage-tabs{display:flex;margin-bottom:4px}
+  .mdo-configured .mdo-stage.is-compact.is-step0 .mdo-stage-tabs button{padding-top:6px;padding-bottom:6px}
+  .mdo-configured .mdo-stage.is-compact .mdo-stage-main img{max-height:30vh;width:auto;max-width:100%}
+}
