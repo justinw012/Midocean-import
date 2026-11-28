@@ -32,3 +32,33 @@
 .mdo-stock-info{margin:0 0 18px;padding:10px 14px;border-radius:10px;background:#FFF6E5;color:#7A4B00;font-size:14px;line-height:1.45}
 .mdo-stock-info::before{content:"ⓘ ";font-weight:700}
 .browse-category-wrap{visibility:hidden}
+
+/* Winkelwagen op één scherm: producten links, totaal en "Afrekenen" rechts en meescrollend */
+.woocommerce-cart .woocommerce-cart-form th.product-price,.woocommerce-cart .woocommerce-cart-form td.product-price{display:none}
+.woocommerce-cart .woocommerce-cart-form td{padding-top:12px!important;padding-bottom:12px!important}
+.woocommerce-cart .woocommerce-cart-form dl.variation{font-size:13px;line-height:1.45;margin:4px 0 0}
+@media (min-width:1000px){
+  .woocommerce-cart .woocommerce{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:0 32px;align-items:start}
+  .woocommerce-cart .woocommerce>*{grid-column:1/-1}
+  .woocommerce-cart .woocommerce>form.woocommerce-cart-form{grid-column:1}
+  .woocommerce-cart .woocommerce>.cart-collaterals{grid-column:2;position:sticky;top:calc(var(--wp-admin--admin-bar--height,0px) + 16px);width:auto!important;margin:0!important}
+  .woocommerce-cart .cart-collaterals .cart_totals{width:100%!important;float:none!important;margin:0!important;padding:18px 20px!important;border:1px solid #ECEAE5;border-radius:16px;background:#fff}
+  .woocommerce-cart .cart-collaterals .cart_totals h2{font-size:18px!important;margin:0 0 8px!important}
+  .woocommerce-cart .cart-collaterals .cross-sells{display:none}
+  .woocommerce-cart .wc-proceed-to-checkout{padding:12px 0 0!important}
+  .woocommerce-cart .wc-proceed-to-checkout a.checkout-button{margin:0!important}
+}
+@media (max-width:999px){
+  .woocommerce-cart .cart-collaterals .cart_totals{width:100%!important;float:none!important}
+}
+@media (min-width:768px){
+  .woocommerce-cart .woocommerce-cart-form th.product-remove,.woocommerce-cart .woocommerce-cart-form td.product-remove{width:36px}
+  .woocommerce-cart .woocommerce-cart-form th.product-thumbnail,.woocommerce-cart .woocommerce-cart-form td.product-thumbnail{width:112px}
+  .woocommerce-cart .woocommerce-cart-form th.product-quantity,.woocommerce-cart .woocommerce-cart-form td.product-quantity{width:130px}
+  .woocommerce-cart .woocommerce-cart-form th.product-subtotal,.woocommerce-cart .woocommerce-cart-form td.product-subtotal{width:200px}
+  .woocommerce-cart .woocommerce-cart-form .quantity input.qty{width:84px!important}
+  .woocommerce-cart .woocommerce-cart-form dl.variation dt{float:left;clear:left;margin:0 4px 0 0!important}
+  .woocommerce-cart .woocommerce-cart-form dl.variation dd{margin:0!important}
+  .woocommerce-cart .woocommerce-cart-form dl.variation dd p{display:inline}
+}
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button{display:block;text-align:center;width:100%;box-sizing:border-box}

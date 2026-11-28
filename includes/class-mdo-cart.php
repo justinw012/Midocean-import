@@ -35,6 +35,7 @@ class MDO_Cart {
 		add_filter( 'woocommerce_product_backorders_allowed', array( __CLASS__, 'allow_backorder' ), 10, 3 );
 		add_filter( 'woocommerce_product_is_in_stock', array( __CLASS__, 'in_stock' ), 10, 2 );
 		add_filter( 'woocommerce_cart_contents_count', array( __CLASS__, 'contents_count' ) );
+		add_filter( 'woocommerce_widget_cart_item_quantity', array( __CLASS__, 'mini_qty' ), 10, 3 );
 		add_action( 'woocommerce_before_cart', array( __CLASS__, 'stock_notice' ) );
 		add_action( 'woocommerce_before_checkout_form', array( __CLASS__, 'stock_notice' ), 5 );
 		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'stock_order_note' ) );
@@ -717,6 +718,14 @@ class MDO_Cart {
 	 * Nabestellen toestaan als Midocean al een levering gepland heeft, en bij kleding
 	 * (daar controleert de configurator de voorraad per maat; WooCommerce ziet alleen één maat).
 	 */
+	/** Minicart: "250 st. · € 1.554,24" (totaal) in plaats van "250 × € 6,22". */
+	public static function mini_qty( $html, $item, $key ) {
+		if ( empty( $item['mdo'] ) || ! WC()->cart || empty( $item['data'] ) ) {
+			return $html;
+		}
+		return '<span class="quantity">' . (int) $item['quantity'] . ' st. · ' . WC()->cart->get_product_subtotal( $item['data'], (int) $item['quantity'] ) . '</span>';
+	}
+
 	/** Teller bij het winkelmandje: een bedrukt product telt als 1, niet als 50 stuks. */
 	public static function contents_count( $count ) {
 		if ( ! WC()->cart ) {

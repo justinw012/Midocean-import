@@ -255,3 +255,6 @@ body.mdo-has-bar{padding-bottom:84px}
   .mdo-leftcol .mdo-photo>img{max-height:min(360px,calc(100vh - 230px))}
   .mdo-leftcol .mdo-gallery-main img{max-height:calc(100vh - 230px);width:auto;max-width:100%;margin:0 auto}
 }
+/* Het thema zet overflow-x:hidden op html en body; daardoor werkt "meescrollen" (sticky) niet. clip knipt net zo goed af zonder dat. */
+html:has(body.mdo-configured),body.mdo-configured{overflow-x:clip!important;overflow-y:visible!important}
+.mdo-row{display:flow-root}

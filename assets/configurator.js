@@ -828,6 +828,16 @@
     track = document.createElement('div');
     track.className = 'mdo-track';
     gal.parentNode.insertBefore(leftCol, gal);
+    // Voorbeeld en keuzes in één rij: zo stopt het meescrollende voorbeeld onderaan de keuzes
+    // en schuift het niet over de beschrijving, beoordelingen en "Ook leuk" eronder.
+    var sum = document.querySelector('.mdo-configured .summary, .product .summary');
+    if (sum && sum.parentNode === leftCol.parentNode) {
+      var row = document.createElement('div');
+      row.className = 'mdo-row';
+      leftCol.parentNode.insertBefore(row, leftCol);
+      row.appendChild(leftCol);
+      row.appendChild(sum);
+    }
     leftCol.appendChild(track);
     track.appendChild(gal);
     gal.classList.remove('images');
