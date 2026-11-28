@@ -8,8 +8,22 @@ defined( 'ABSPATH' ) || exit;
 
 class MDO_Shop {
 
+	/** Korte omschrijving weglaten als die alleen de productnaam herhaalt (bijv. "PP lunchbox 800ml"). */
+	public static function short_desc( $html ) {
+		global $product;
+		if ( ! is_singular( 'product' ) || ! $product || ! is_object( $product ) ) {
+			return $html;
+		}
+		$t = trim( wp_strip_all_tags( (string) $html ) );
+		if ( '' !== $t && false !== mb_stripos( wp_strip_all_tags( $product->get_name() ), $t ) ) {
+			return '';
+		}
+		return $html;
+	}
+
 	public static function init() {
 		if ( ! is_admin() ) {
+			add_filter( 'woocommerce_short_description', array( __CLASS__, 'short_desc' ), 20 );
 			add_action( 'woocommerce_before_shop_loop_item_title', array( __CLASS__, 'badges' ), 15 );
 			// Productpagina: labels boven de titel.
 			add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'badges_single' ), 4 );

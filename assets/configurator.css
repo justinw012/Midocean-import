@@ -250,3 +250,8 @@ body.mdo-has-bar{padding-bottom:84px}
 .mdo-upwrap .mdo-upload{flex:1;min-width:0}
 .mdo-ti-price.is-cur{color:#6123E0;font-weight:700}
 .mdo-ti-price.is-less{color:#1A7F4B}
+/* Tablet en lage schermen: voorbeeld past altijd in beeld zodat het tijdens het kiezen zichtbaar blijft */
+@media (min-width:768px){
+  .mdo-leftcol .mdo-photo>img{max-height:min(360px,calc(100vh - 230px))}
+  .mdo-leftcol .mdo-gallery-main img{max-height:calc(100vh - 230px);width:auto;max-width:100%;margin:0 auto}
+}

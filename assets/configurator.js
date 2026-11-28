@@ -835,15 +835,27 @@
   }
   // Beschrijving direct onder het voorbeeld. Past de hele linkerkolom in beeld, dan scrollt hij mee
   // (zo blijft het voorbeeld zichtbaar tijdens het kiezen); anders blijft hij gewoon staan.
+  // Het voorbeeld moet tijdens het kiezen in beeld blijven. Past voorbeeld + beschrijving niet in het
+  // scherm (tablet, lage schermen), dan gaat de beschrijving terug onder de configurator en scrollt
+  // alleen het voorbeeld mee.
+  var tabsInColH = 0, sizing = false;
   function sizeTrack() {
-    if (!leftCol) return;
-    var on = !mobile.matches && tabsEl.parentNode === leftCol && leftCol.getBoundingClientRect().height <= window.innerHeight - 40;
-    leftCol.classList.toggle('is-sticky', on);
+    if (!leftCol || sizing) return;
+    sizing = true;
+    var room = window.innerHeight - 40;
+    if (mobile.matches) { leftCol.classList.remove('is-sticky'); sizing = false; return; }
+    if (tabsEl.parentNode === leftCol) tabsInColH = tabsEl.getBoundingClientRect().height + 24;
+    var galH = track.getBoundingClientRect().height;
+    var withTabs = galH + tabsInColH <= room;
+    if (withTabs && tabsEl.parentNode !== leftCol) leftCol.appendChild(tabsEl);
+    else if (!withTabs && tabsEl.parentNode === leftCol) tabsHome.parent.insertBefore(tabsEl, tabsHome.next);
+    leftCol.classList.toggle('is-sticky', galH <= room);
+    sizing = false;
   }
   window.addEventListener('resize', function () { sizeTrack(); });
   function placeTabs() {
     if (!leftCol) return;
-    if (!mobile.matches && tabsEl.parentNode !== leftCol) leftCol.appendChild(tabsEl);
+    if (!mobile.matches && tabsEl.parentNode !== leftCol && !tabsInColH) leftCol.appendChild(tabsEl);
     else if (mobile.matches && tabsEl.parentNode === leftCol) tabsHome.parent.insertBefore(tabsEl, tabsHome.next);
     sizeTrack();
   }
